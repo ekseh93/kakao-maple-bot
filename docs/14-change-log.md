@@ -176,6 +176,9 @@
 
 - `!날씨 <지역명>`으로 전 세계 지역의 현재 상태·기온·습도·PM10·PM2.5를 조회합니다.
 - Open-Meteo Geocoding, Weather Forecast, Air Quality API를 사용하며 결과는 5분간 캐시합니다.
+- Terraform 결과: 0개 추가, 1개 변경, 0개 삭제
+- 실제 API smoke test에서 `!날씨 도쿄`, `!날씨 New York` 모두 HTTP `200`과 기온·습도·PM10·PM2.5 응답을 확인했습니다.
+- 공기계 카카오톡 E2E는 아직 수행하지 않았습니다.
 
 ## 2026-08-27 로얄스타일 확률 미니게임 추가
 
