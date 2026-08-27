@@ -655,8 +655,10 @@ export function formatLunaCrystalDreamDraw(
     false,
     (item) =>
       item.category?.includes('쁘띠') || item.name.includes('쁘띠')
-        ? `[쁘티] ${item.name}`
-        : `[스윗] ${item.name}`,
+        ? `[쁘띠] ${item.name}`
+        : item.category?.includes('드림') || item.name.includes('드림')
+          ? `[뒤진펫] ${item.name}`
+          : item.name,
     false,
   );
 }
