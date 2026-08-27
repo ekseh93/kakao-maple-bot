@@ -21,6 +21,7 @@ import {
 import {
   createNexonClient,
   createInvenClient,
+  createNaverWebtoonClient,
   createStockClient,
   type Character,
   type DojangCharacter,
@@ -35,6 +36,8 @@ import {
   type NoticeList,
   type InvenTopPostList,
   type InvenClient,
+  type WebtoonClient,
+  type WebtoonList,
   type RoyalStyleList,
   type WonderBerryList,
   type BoutiqueGiftList,
@@ -67,6 +70,7 @@ const defaultNoticeAlertKeywords = ['채널 점검', '마이너버전', '클라�
 type Dependencies = {
   nexon?: NexonClient;
   inven?: InvenClient;
+  webtoon?: WebtoonClient;
   stock?: StockClient;
   now?: () => Date;
   seen?: Set<string>;
@@ -83,6 +87,7 @@ const equipmentCache = new Map<string, { value: EquipmentCharacter; expiresAt: n
 const experienceCache = new Map<string, { value: ExperienceHistory; expiresAt: number }>();
 let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
 let invenCache: { value: InvenTopPostList; expiresAt: number } | undefined;
+let webtoonCache: { value: WebtoonList; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 let wonderBerryCache: { value: WonderBerryList; expiresAt: number } | undefined;
@@ -185,6 +190,7 @@ export async function handleMessage(
     if (entry.expiresAt <= now) stockCandidatesCache.delete(query);
   if (noticeCache && noticeCache.expiresAt <= now) noticeCache = undefined;
   if (invenCache && invenCache.expiresAt <= now) invenCache = undefined;
+  if (webtoonCache && webtoonCache.expiresAt <= now) webtoonCache = undefined;
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
   if (wonderBerryCache && wonderBerryCache.expiresAt <= now) wonderBerryCache = undefined;
@@ -359,6 +365,20 @@ export async function handleMessage(
         const posts = await inven.findTopPosts(timeoutSignal());
         invenCache = { value: posts, expiresAt: now + 60_000 };
         return { reply: formatInven(posts), requestId, cache: 'miss' };
+      }
+      case 'webtoon': {
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        const client = deps.webtoon ?? createNaverWebtoonClient();
+        if (webtoonCache && webtoonCache.expiresAt > now) {
+          return {
+            reply: formatWebtoon(webtoonCache.value, Math.random),
+            requestId,
+            cache: 'hit',
+          };
+        }
+        const webtoons = await client.findCurrentWebtoons(timeoutSignal());
+        webtoonCache = { value: webtoons, expiresAt: now + 10 * 60_000 };
+        return { reply: formatWebtoon(webtoons, Math.random), requestId, cache: 'miss' };
       }
       case 'event': {
         if (eventCache && eventCache.expiresAt > now)
@@ -779,6 +799,17 @@ function formatInven(c: InvenTopPostList): string {
   ]
     .join('\n')
     .slice(0, 1000);
+}
+function formatWebtoon(c: WebtoonList, random: () => number): string {
+  const item = c.items[Math.floor(random() * c.items.length)];
+  if (!item) throw new Error('NOT_FOUND');
+  return [
+    '[네이버 웹툰 랜덤 추천]',
+    `작품: ${item.title}`,
+    `작가: ${item.author}`,
+    `연재 요일: ${item.weekday}요일`,
+    item.url,
+  ].join('\n');
 }
 function formatExperience(c: ExperienceHistory): string {
   const lines = ['[경험치 히스토리]', `캐릭터: ${c.name}`, '최근 8일 (당일 포함)', '────────────'];

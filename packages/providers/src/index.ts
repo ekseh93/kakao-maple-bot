@@ -89,6 +89,17 @@ export type InvenTopPostList = {
 export type InvenClient = {
   findTopPosts(signal: AbortSignal): Promise<InvenTopPostList>;
 };
+export type WebtoonItem = {
+  titleId: number;
+  title: string;
+  author: string;
+  weekday: string;
+  url: string;
+};
+export type WebtoonList = { items: WebtoonItem[]; fetchedAt: string };
+export type WebtoonClient = {
+  findCurrentWebtoons(signal: AbortSignal): Promise<WebtoonList>;
+};
 export type EventItem = {
   title: string;
   url: string;
@@ -1109,6 +1120,62 @@ export function createStockClient(
       }
       if (candidates.length === 0) throw firstProviderError ?? new Error('NOT_FOUND');
       return candidates;
+    },
+  };
+}
+
+export function createNaverWebtoonClient(fetcher: typeof fetch = fetch): WebtoonClient {
+  const weekdays = [
+    ['mon', '월'],
+    ['tue', '화'],
+    ['wed', '수'],
+    ['thu', '목'],
+    ['fri', '금'],
+    ['sat', '토'],
+    ['sun', '일'],
+  ] as const;
+  return {
+    async findCurrentWebtoons(signal) {
+      const lists = await Promise.all(
+        weekdays.map(async ([english, korean]) => {
+          const url = `https://comic.naver.com/api/webtoon/titlelist/weekday?week=${english}`;
+          const response = await fetchWithRetry(fetcher, url, {
+            headers: { Accept: 'application/json' },
+            signal,
+          });
+          if (!response.ok)
+            throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+          const body = (await response.json()) as {
+            titleList?: Array<{
+              titleId?: number;
+              titleName?: string;
+              author?: string;
+              finish?: boolean;
+              rest?: boolean;
+            }>;
+          };
+          if (!Array.isArray(body.titleList)) throw new Error('PROVIDER_SCHEMA');
+          return body.titleList
+            .filter(
+              (item) =>
+                item.finish !== true &&
+                item.rest !== true &&
+                typeof item.titleId === 'number' &&
+                typeof item.titleName === 'string' &&
+                typeof item.author === 'string',
+            )
+            .map((item) => ({
+              titleId: item.titleId!,
+              title: item.titleName!,
+              author: item.author!,
+              weekday: korean,
+              url: `https://comic.naver.com/webtoon/list?titleId=${item.titleId}`,
+            }));
+        }),
+      );
+      const items = lists.flat();
+      if (items.length === 0) throw new Error('NOT_FOUND');
+      return { items, fetchedAt: new Date().toISOString() };
     },
   };
 }

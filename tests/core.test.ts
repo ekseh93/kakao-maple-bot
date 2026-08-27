@@ -29,6 +29,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('!썬데이')).toEqual({ name: 'sunday', args: [] });
     expect(parseCommand('!선데이')).toEqual({ name: 'sunday', args: [] });
   });
+  it('parses the Naver webtoon recommendation command', () =>
+    expect(parseCommand('!웹툰')).toEqual({ name: 'webtoon', args: [] }));
   it('parses and formats the Korean and Japanese lotto command', () => {
     expect(parseCommand('!로또')).toEqual({ name: 'lotto', args: [] });
     let randomValue = 0;

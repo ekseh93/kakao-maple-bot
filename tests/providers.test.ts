@@ -1,11 +1,39 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createInvenClient,
+  createNaverWebtoonClient,
   createNexonClient,
   createStockClient,
 } from '@kakao-maple-bot/providers';
 
 describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
+  it('maps current Naver weekday webtoons and excludes finished/resting titles', async () => {
+    const fetcher = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            titleList: [
+              { titleId: 1, titleName: '연재 작품', author: '작가', finish: false, rest: false },
+              { titleId: 2, titleName: '완결 작품', author: '작가', finish: true, rest: false },
+              { titleId: 3, titleName: '휴재 작품', author: '작가', finish: false, rest: true },
+            ],
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+    const result = await createNaverWebtoonClient(fetcher).findCurrentWebtoons(
+      new AbortController().signal,
+    );
+    expect(result.items).toHaveLength(7);
+    expect(result.items[0]).toMatchObject({
+      title: '연재 작품',
+      weekday: '월',
+      url: 'https://comic.naver.com/webtoon/list?titleId=1',
+    });
+    expect(fetcher).toHaveBeenCalledTimes(7);
+  });
+
   it('maps the first five Inven 10-recommendation post titles', async () => {
     const html = `
       <div class="board-list"><a class="subject-link"><span class="category">[수다]</span> 첫 번째 글 </a>
