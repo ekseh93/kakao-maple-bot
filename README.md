@@ -22,6 +22,7 @@
 | 메이플 캐릭터   | !캐릭터 닉네임                        | Nexon Open API                              |
 | HEXA 코어       | !헥사 닉네임                          | Nexon Open API                              |
 | 솔 에르다 조각 시세 | !조각                              | 운영자 수동 입력값                          |
+| 로얄스타일 미니게임 | !로얄                              | Nexon 공식 확률 페이지                     |
 | 무릉 최고기록   | !무릉 닉네임                          | Nexon Open API                              |
 | 유니온 요약     | !유니온 닉네임                        | Nexon Open API                              |
 | 장비 요약       | !장비 닉네임                          | Nexon Open API                              |

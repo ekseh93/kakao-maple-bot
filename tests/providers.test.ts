@@ -222,6 +222,24 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       'https://open.api.nexon.com/maplestory/v1/notice-event',
     );
   });
+  it('maps the official Royal Style probability table', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        '<table><tr><th>구분</th><th>아이템명</th><th>획득확률</th></tr><tr><td rowspan="2">로얄스타일</td><td><span>테스트 라벨</span></td><td>3.0%</td></tr><tr><td>일반 아이템</td><td>5.0%</td></tr></table>',
+        { status: 200, headers: { 'content-type': 'text/html' } },
+      ),
+    );
+    const result = await createNexonClient(undefined, fetcher).findRoyalStyles?.(
+      new AbortController().signal,
+    );
+    expect(result?.items).toEqual([
+      { name: '테스트 라벨', probability: 3 },
+      { name: '일반 아이템', probability: 5 },
+    ]);
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      'https://maplestory.nexon.com/Guide/CashShop/Probability',
+    );
+  });
   it('maps eight official experience history snapshots', async () => {
     const fetcher = vi
       .fn()

@@ -1,5 +1,6 @@
 import {
   chooseItems,
+  formatRoyalDraw,
   formatSymbol,
   HELP,
   parseCommand,
@@ -21,6 +22,7 @@ import {
   type StockQuote,
   type UnionCharacter,
   type NoticeList,
+  type RoyalStyleList,
 } from '@kakao-maple-bot/providers';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
@@ -62,6 +64,7 @@ const equipmentCache = new Map<string, { value: EquipmentCharacter; expiresAt: n
 const experienceCache = new Map<string, { value: ExperienceHistory; expiresAt: number }>();
 let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
+let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -145,6 +148,7 @@ export async function handleMessage(
   for (const [code, entry] of stockCache) if (entry.expiresAt <= now) stockCache.delete(code);
   if (noticeCache && noticeCache.expiresAt <= now) noticeCache = undefined;
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
+  if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
   if (!message.eventId || seen.has(message.eventId))
     return { reply: null, requestId, cache: 'bypass' };
   seen.set(message.eventId, now);
@@ -326,6 +330,27 @@ export async function handleMessage(
           ].join('\n'),
           requestId,
           cache: 'bypass',
+        };
+      }
+      case 'royal': {
+        if (royalCache && royalCache.expiresAt > now)
+          return {
+            reply: formatRoyalDraw(
+              royalCache.value.items,
+              royalCache.value.sourceUrl,
+              royalCache.value.fetchedAt,
+            ),
+            requestId,
+            cache: 'hit',
+          };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findRoyalStyles) throw new Error('NOT_CONFIGURED');
+        const royal = await client.findRoyalStyles(timeoutSignal());
+        royalCache = { value: royal, expiresAt: now + 5 * 60_000 };
+        return {
+          reply: formatRoyalDraw(royal.items, royal.sourceUrl, royal.fetchedAt),
+          requestId,
+          cache: 'miss',
         };
       }
       case 'experience': {

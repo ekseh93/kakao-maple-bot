@@ -19,6 +19,7 @@ export type NexonClient = {
   findEquipment?(name: string, signal: AbortSignal): Promise<EquipmentCharacter | null>;
   findNotice?(signal: AbortSignal): Promise<NoticeList>;
   findEvents?(signal: AbortSignal): Promise<EventList>;
+  findRoyalStyles?(signal: AbortSignal): Promise<RoyalStyleList>;
 };
 export type ExperienceSnapshot = {
   date: string;
@@ -66,6 +67,8 @@ export type EventItem = {
   endDate?: string;
 };
 export type EventList = { events: EventItem[]; fetchedAt: string };
+export type RoyalStyleItem = { name: string; probability: number };
+export type RoyalStyleList = { items: RoyalStyleItem[]; sourceUrl: string; fetchedAt: string };
 export type StockQuote = {
   code: string;
   name?: string;
@@ -122,6 +125,39 @@ async function fetchWithRetry(
     if (error instanceof Error && error.name === 'AbortError') throw error;
     return await fetcher(input, init);
   }
+}
+
+function decodeHtml(value: string): string {
+  return value
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseRoyalStylePage(html: string, sourceUrl: string): RoyalStyleList {
+  const table = html.match(/<table\b[\s\S]*?획득확률[\s\S]*?<\/table>/i)?.[0];
+  if (!table) throw new Error('PROVIDER_SCHEMA');
+  const items: RoyalStyleItem[] = [];
+  for (const row of table.match(/<tr\b[\s\S]*?<\/tr>/gi) ?? []) {
+    const cells = [...row.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((match) => match[1]!);
+    if (cells.length < 2) continue;
+    const probabilityText = decodeHtml(cells[cells.length - 1]!);
+    const probabilityMatch = probabilityText.match(/^(\d+(?:\.\d+)?)%$/);
+    if (!probabilityMatch) continue;
+    const name = decodeHtml(cells[cells.length - 2]!);
+    const probability = Number(probabilityMatch[1]);
+    if (!name || !Number.isFinite(probability) || probability <= 0 || probability > 100)
+      throw new Error('PROVIDER_SCHEMA');
+    items.push({ name, probability });
+  }
+  if (items.length === 0) throw new Error('PROVIDER_SCHEMA');
+  return { items, sourceUrl, fetchedAt: new Date().toISOString() };
 }
 
 export function createNexonClient(
@@ -497,6 +533,12 @@ export function createNexonClient(
         };
       });
       return { events, fetchedAt: new Date().toISOString() };
+    },
+    async findRoyalStyles(signal) {
+      const sourceUrl = 'https://maplestory.nexon.com/Guide/CashShop/Probability';
+      const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return parseRoyalStylePage(await response.text(), sourceUrl);
     },
   };
 }

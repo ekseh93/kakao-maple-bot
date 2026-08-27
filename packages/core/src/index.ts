@@ -12,13 +12,14 @@ export type CommandName =
   | 'event'
   | 'sunday'
   | 'fragment'
+  | 'royal'
   | 'experience'
   | 'character'
   | 'stock'
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
-export const HELP = `[봇 도움말]\n!캐릭터 닉네임 (또는 !정보 닉네임)\n!헥사 닉네임\n!무릉 닉네임\n!유니온 닉네임\n!장비 닉네임\n!공지\n!이벤트\n!썬데이\n!조각\n!경험치 닉네임 (또는 /경험치 닉네임)\n!심볼 여로 1 20 (또는 !심볼계산)\n!심볼 기어드락 1 11\n!가위 / !바위 / !보\n!골라 짜장,짬뽕\n!뭐먹지 한식\n!주식 005930\n!상태 (관리자 전용)`;
+export const HELP = `[봇 도움말]\n!캐릭터 닉네임 (또는 !정보 닉네임)\n!헥사 닉네임\n!무릉 닉네임\n!유니온 닉네임\n!장비 닉네임\n!공지\n!이벤트\n!썬데이\n!조각\n!로얄\n!경험치 닉네임 (또는 /경험치 닉네임)\n!심볼 여로 1 20 (또는 !심볼계산)\n!심볼 기어드락 1 11\n!가위 / !바위 / !보\n!골라 짜장,짬뽕\n!뭐먹지 한식\n!주식 005930\n!상태 (관리자 전용)`;
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
@@ -38,6 +39,7 @@ const aliases: Record<string, CommandName> = {
   이벤트: 'event',
   썬데이: 'sunday',
   조각: 'fragment',
+  로얄: 'royal',
   경험치: 'experience',
   가위: 'rps',
   바위: 'rps',
@@ -281,6 +283,43 @@ const menus: Record<string, string[]> = {
 export function choose<T>(items: T[], random = Math.random): T {
   if (items.length === 0) throw new Error('INVALID_USAGE');
   return items[Math.floor(random() * items.length)] as T;
+}
+
+export type RoyalStyleItem = { name: string; probability: number };
+
+export function drawRoyalStyles(
+  items: RoyalStyleItem[],
+  count = 10,
+  random = Math.random,
+): RoyalStyleItem[] {
+  if (items.length === 0 || !Number.isInteger(count) || count < 1 || count > 10)
+    throw new Error('INVALID_USAGE');
+  const total = items.reduce((sum, item) => sum + item.probability, 0);
+  if (!Number.isFinite(total) || total <= 0) throw new Error('PROVIDER_SCHEMA');
+  return Array.from({ length: count }, () => {
+    let cursor = random() * total;
+    for (const item of items) {
+      cursor -= item.probability;
+      if (cursor < 0) return item;
+    }
+    return items[items.length - 1]!;
+  });
+}
+
+export function formatRoyalDraw(
+  items: RoyalStyleItem[],
+  sourceUrl: string,
+  fetchedAt: string,
+  random = Math.random,
+): string {
+  const draws = drawRoyalStyles(items, 10, random);
+  return [
+    '[로얄스타일 10회 뽑기]',
+    ...draws.map((item, index) => `${index + 1}. ${item.name} (${item.probability.toFixed(1)}%)`),
+    `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
+    sourceUrl,
+    '※ 실제 구매가 아닌 확률 기반 미니게임입니다.',
+  ].join('\n');
 }
 
 export function chooseItems(input: string): string {

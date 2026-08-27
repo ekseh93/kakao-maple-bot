@@ -3,6 +3,7 @@ import {
   calculateSymbol,
   calculateSymbolCost,
   chooseItems,
+  drawRoyalStyles,
   parseCommand,
   playRps,
   recommendFood,
@@ -20,6 +21,18 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('parses the fragment price command', () =>
     expect(parseCommand('!조각')).toEqual({ name: 'fragment', args: [] }));
+  it('draws ten royal items using weighted probabilities', () => {
+    const draws = drawRoyalStyles(
+      [
+        { name: 'A', probability: 90 },
+        { name: 'B', probability: 10 },
+      ],
+      10,
+      () => 0.95,
+    );
+    expect(draws).toHaveLength(10);
+    expect(draws.every((item) => item.name === 'B')).toBe(true);
+  });
   it('keeps help examples aligned with registered commands', () =>
     expect(parseCommand('!도움말')).toBeTruthy());
   it('T-009/T-010 calculates named arcane/authentic regions and progress', () => {

@@ -452,6 +452,27 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('기간: 2026-08-30~2026-08-30');
     expect(result.reply).toContain('https://maplestory.nexon.com/News/Event/30');
   });
+  it('handles ten weighted Royal Style draws', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findRoyalStyles: vi.fn().mockResolvedValue({
+        items: [
+          { name: '테스트 스페셜 라벨', probability: 3 },
+          { name: '테스트 일반 아이템', probability: 97 },
+        ],
+        sourceUrl: 'https://maplestory.nexon.com/Guide/CashShop/Probability',
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!로얄'), roomId: 'royal-room', senderId: 'royal-sender' },
+      { ...env, ALLOWED_ROOMS: 'royal-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[로얄스타일 10회 뽑기]');
+    expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(10);
+    expect(result.reply).toContain('실제 구매가 아닌');
+  });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {
       findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),
