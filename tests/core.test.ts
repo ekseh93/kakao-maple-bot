@@ -16,6 +16,7 @@ import {
   formatAnimeRecommendation,
   formatBossRewards,
   formatMekaBerry,
+  formatMepoEfficiency,
   formatFortune,
   formatBoutiqueGiftDraw,
   formatRoyalDraw,
@@ -72,6 +73,16 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(formatMekaBerry(['299'])).toContain('0.467%');
     expect(() => formatMekaBerry(['279'])).toThrow('INVALID_USAGE');
     expect(() => formatMekaBerry([])).toThrow('INVALID_USAGE');
+  });
+  it('parses and formats meso-point experience efficiency in descending order', () => {
+    expect(parseCommand('!메포효율')).toEqual({ name: 'mepoEfficiency', args: [] });
+    const output = formatMepoEfficiency();
+    expect(output).toContain('[메포 대비 경험치 효율]');
+    expect(output.indexOf('선데이몬파')).toBeLessThan(output.indexOf('하이마운틴'));
+    expect(output.indexOf('하이마운틴')).toBeLessThan(output.indexOf('메카베리'));
+    expect(output).toContain('17.8070');
+    expect(output).toContain('출처: https://www.inven.co.kr/board/maple/2304/48140');
+    expect(() => formatMepoEfficiency(['284'])).toThrow('INVALID_USAGE');
   });
   it('parses aliases and unknown commands as help', () => {
     expect(parseCommand(' !도움말 ')?.name).toBe('help');

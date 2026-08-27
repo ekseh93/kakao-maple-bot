@@ -18,6 +18,7 @@ export type CommandName =
   | 'notice'
   | 'inven'
   | 'mabbakDorosi'
+  | 'mepoEfficiency'
   | 'webtoon'
   | 'boutiqueGift'
   | 'event'
@@ -54,6 +55,7 @@ const aliases: Record<string, CommandName> = {
   공지: 'notice',
   인벤: 'inven',
   마빡도로시: 'mabbakDorosi',
+  메포효율: 'mepoEfficiency',
   웹툰: 'webtoon',
   부티크: 'boutiqueGift',
   이벤트: 'event',
@@ -543,6 +545,56 @@ export function formatMekaBerry(args: string[] = []): string {
     '※ 메카베리 농장 경험치 표 기준의 정적 계산값입니다.',
     '출처: https://matsu1207.tistory.com/1095',
     '출처: https://matsu1207.tistory.com/1308',
+  ].join('\n');
+}
+
+type MesoPointEfficiency = {
+  content: string;
+  efficiency: number;
+  experience: string;
+  meso: string;
+};
+
+const mesoPointEfficiencies: MesoPointEfficiency[] = [
+  { content: '선데이몬파', efficiency: 17.807, experience: '5.34%', meso: '3,000' },
+  {
+    content: '하이마운틴',
+    efficiency: 12.5465,
+    experience: '4.4372% (7.4323%)',
+    meso: '7,500 (-3,419.2)',
+  },
+  {
+    content: '앵글러컴퍼니',
+    efficiency: 10.1142,
+    experience: '6.656% (11.14%)',
+    meso: '10,000 (-3,419.2)',
+  },
+  {
+    content: '악몽선경',
+    efficiency: 9.7731,
+    experience: '8.8748% (14.8653%)',
+    meso: '12,500 (-3,419.2)',
+  },
+  { content: '일요일몬파', efficiency: 8.7403, experience: '2.62%', meso: '3,000' },
+  { content: '메카베리', efficiency: 6.9727, experience: '6.97%', meso: '10,000' },
+  { content: '몬파', efficiency: 6.927, experience: '2.03%', meso: '3,000' },
+  { content: '블루베리', efficiency: 6.3244, experience: '4.43%', meso: '7,000' },
+];
+
+export function formatMepoEfficiency(args: string[] = []): string {
+  if (args.length > 0) throw new Error('INVALID_USAGE');
+  return [
+    '[메포 대비 경험치 효율]',
+    '기준: 284레벨 / 효율 높은 순',
+    '┌──┬────────────┬──────────┬──────────────────┬──────────────────┐',
+    '│순위│ 콘텐츠     │효율(1%/1만)│ 추가 경험치       │ 사용 메포         │',
+    '├──┼────────────┼──────────┼──────────────────┼──────────────────┤',
+    ...mesoPointEfficiencies.map(
+      (item, index) =>
+        `│${String(index + 1).padStart(2, ' ')}│ ${item.content.padEnd(10, ' ')} │ ${item.efficiency.toFixed(4).padStart(8, ' ')} │ ${item.experience.padEnd(16, ' ')} │ ${item.meso.padEnd(16, ' ')} │`,
+    ),
+    '└──┴────────────┴──────────┴──────────────────┴──────────────────┘',
+    '출처: https://www.inven.co.kr/board/maple/2304/48140',
   ].join('\n');
 }
 

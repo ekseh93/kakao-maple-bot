@@ -637,7 +637,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     const result = await handleMessage(
       { ...message('!원더베리'), roomId: 'wonder-room', senderId: 'wonder-sender' },
       { ...env, ALLOWED_ROOMS: 'wonder-room' },
-      { nexon },
+      { nexon, now: () => new Date(Date.now() + 10 * 60_000) },
     );
     expect(result.reply).toContain('[위습의 원더베리 10회 뽑기]');
     expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
@@ -684,7 +684,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
         senderId: 'wonder-count-sender',
       },
       { ...env, ALLOWED_ROOMS: 'wonder-count-room' },
-      { nexon },
+      { nexon, now: () => new Date(Date.now() + 20 * 60_000) },
     );
     expect(result.reply).toContain('[위습의 원더베리 25회 뽑기]');
     expect(result.reply).toContain('상세 결과: 숨김');
