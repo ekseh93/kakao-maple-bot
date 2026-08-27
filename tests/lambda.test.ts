@@ -619,6 +619,27 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
     expect(result.reply).toContain('10. [피버 타임] 티켓 10개');
   });
+  it('handles the Red and Black Masterpiece command', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findMasterpiece: vi.fn().mockResolvedValue({
+        redItems: [{ name: '레드 테스트', probability: 7.3539 }],
+        blackItems: [{ name: '블랙 테스트', probability: 5.8135 }],
+        redSourceUrl: 'https://maplestory.nexon.com/Guide/CashShop/Probability/MasterpieceRed',
+        blackSourceUrl: 'https://maplestory.nexon.com/Guide/CashShop/Probability/MasterpieceBlack',
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!피스'), roomId: 'masterpiece-room', senderId: 'masterpiece-sender' },
+      { ...env, ALLOWED_ROOMS: 'masterpiece-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[마스터피스 레드·블랙 시뮬레이션]');
+    expect(result.reply).toContain('레드: 레드 테스트');
+    expect(result.reply).toContain('블랙: 블랙 테스트');
+    expect(nexon.findMasterpiece).toHaveBeenCalled();
+  });
   it('supports a custom Wonder Berry count and hides detailed results', async () => {
     const nexon = {
       findCharacter: vi.fn(),

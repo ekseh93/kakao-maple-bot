@@ -14,6 +14,7 @@ import {
   formatJapanTravelRecommendation,
   formatFortune,
   formatBoutiqueGiftDraw,
+  formatMasterpieceDraw,
 } from '@kakao-maple-bot/core';
 
 describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
@@ -57,6 +58,19 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('[부티크 기프트 10개 열기]');
     expect(output).toContain('9. 부티크 티켓 1개');
     expect(output).toContain('10. [피버 타임] 부티크 티켓 10개');
+  });
+  it('formats one official Red and Black Masterpiece result', () => {
+    const output = formatMasterpieceDraw(
+      [{ name: '레드 테스트', probability: 7.3539 }],
+      [{ name: '블랙 테스트', probability: 5.8135 }],
+      'https://example.com/red',
+      'https://example.com/black',
+      '2026-08-27T00:00:00.000Z',
+      () => 0,
+    );
+    expect(output).toContain('[마스터피스 레드·블랙 시뮬레이션]');
+    expect(output).toContain('레드: 레드 테스트 (7.3539%)');
+    expect(output).toContain('블랙: 블랙 테스트 (5.8135%)');
   });
   it('uses the shared count and result options for Wonder Berry', () =>
     expect(parseRoyalOptions(['25', 'false'])).toEqual({ count: 25, showResults: false }));

@@ -25,6 +25,7 @@ export type NexonClient = {
   findRoyalStyles?(signal: AbortSignal): Promise<RoyalStyleList>;
   findWonderBerry?(signal: AbortSignal): Promise<WonderBerryList>;
   findBoutiqueGift?(signal: AbortSignal): Promise<BoutiqueGiftList>;
+  findMasterpiece?(signal: AbortSignal): Promise<MasterpieceList>;
   findLunaCrystalSweet?(
     kind: '일반' | '스페셜',
     signal: AbortSignal,
@@ -110,6 +111,13 @@ export type BoutiqueGiftList = {
   normalItems: RoyalStyleItem[];
   feverItems: RoyalStyleItem[];
   sourceUrl: string;
+  fetchedAt: string;
+};
+export type MasterpieceList = {
+  redItems: RoyalStyleItem[];
+  blackItems: RoyalStyleItem[];
+  redSourceUrl: string;
+  blackSourceUrl: string;
   fetchedAt: string;
 };
 export type LunaCrystalSweetList = {
@@ -751,6 +759,24 @@ export function createNexonClient(
         normalItems: parseProbabilityPage(html, sourceUrl, 'first').items,
         feverItems: parseProbabilityPage(html, sourceUrl, 'last').items,
         sourceUrl,
+        fetchedAt: new Date().toISOString(),
+      };
+    },
+    async findMasterpiece(signal) {
+      const redSourceUrl = 'https://maplestory.nexon.com/Guide/CashShop/Probability/MasterpieceRed';
+      const blackSourceUrl =
+        'https://maplestory.nexon.com/Guide/CashShop/Probability/MasterpieceBlack';
+      const [redResponse, blackResponse] = await Promise.all([
+        fetchWithRetry(fetcher, redSourceUrl, { signal }),
+        fetchWithRetry(fetcher, blackSourceUrl, { signal }),
+      ]);
+      if (!redResponse.ok || !blackResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      const [redHtml, blackHtml] = await Promise.all([redResponse.text(), blackResponse.text()]);
+      return {
+        redItems: parseProbabilityPage(redHtml, redSourceUrl).items,
+        blackItems: parseProbabilityPage(blackHtml, blackSourceUrl).items,
+        redSourceUrl,
+        blackSourceUrl,
         fetchedAt: new Date().toISOString(),
       };
     },

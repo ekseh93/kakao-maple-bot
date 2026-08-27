@@ -14,6 +14,7 @@ export type CommandName =
   | 'notice'
   | 'inven'
   | 'boutiqueGift'
+  | 'masterpiece'
   | 'event'
   | 'sunday'
   | 'royal'
@@ -27,7 +28,7 @@ export type CommandName =
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
-export const HELP = `[봇 도움말]\n╔══════════════════════════════╗\n║        메이플스토리          ║\n╠══════════════════════════════╣\n║ !캐릭터 닉네임  캐릭터 조회  ║\n║ !헥사 닉네임    HEXA 코어    ║\n║ !무릉 닉네임    무릉 기록     ║\n║ !유니온 닉네임  유니온 요약   ║\n║ !유챔 닉네임    유니온 챔피언 ║\n║ !장비 닉네임    장비 요약     ║\n║ !경험치 닉네임  경험치 이력   ║\n║ !심볼 여로 1 20 심볼 계산     ║\n║ !공지            공식 공지     ║\n║ !이벤트          진행 이벤트   ║\n║ !썬데이 / !선데이 썬데이 메이플║\n║ !인벤            인벤 10추글   ║\n║ !부티크          부티크 기프트 ║\n║ !로얄            로얄스타일     ║\n║ !원더베리        위습의 원더베리║\n║ !루나스윗        루나 크리스탈 ║\n║ !루나드림        루나 크리스탈 ║\n╠══════════════════════════════╣\n║          기타 기능            ║\n╠══════════════════════════════╣\n║ !날씨 지역명     날씨 조회     ║\n║ !가위 / !바위 / !보 가위바위보  ║\n║ !골라 짜장,짬뽕 메뉴 선택      ║\n║ !뭐먹지          메뉴 추천     ║\n║ !일본여행        여행지 추천   ║\n║ !운세 00년생     오늘의 운세   ║\n║ !주식 이름       주식 시세     ║\n║ !상태            관리자 전용   ║\n╚══════════════════════════════╝`;
+export const HELP = `[봇 도움말]\n╔══════════════════════════════╗\n║        메이플스토리          ║\n╠══════════════════════════════╣\n║ !캐릭터 닉네임  캐릭터 조회  ║\n║ !헥사 닉네임    HEXA 코어    ║\n║ !무릉 닉네임    무릉 기록     ║\n║ !유니온 닉네임  유니온 요약   ║\n║ !유챔 닉네임    유니온 챔피언 ║\n║ !장비 닉네임    장비 요약     ║\n║ !경험치 닉네임  경험치 이력   ║\n║ !심볼 여로 1 20 심볼 계산     ║\n║ !공지            공식 공지     ║\n║ !이벤트          진행 이벤트   ║\n║ !썬데이 / !선데이 썬데이 메이플║\n║ !인벤            인벤 10추글   ║\n║ !부티크          부티크 기프트 ║\n║ !피스            마스터피스     ║\n║ !로얄            로얄스타일     ║\n║ !원더베리        위습의 원더베리║\n║ !루나스윗        루나 크리스탈 ║\n║ !루나드림        루나 크리스탈 ║\n╠══════════════════════════════╣\n║          기타 기능            ║\n╠══════════════════════════════╣\n║ !날씨 지역명     날씨 조회     ║\n║ !가위 / !바위 / !보 가위바위보  ║\n║ !골라 짜장,짬뽕 메뉴 선택      ║\n║ !뭐먹지          메뉴 추천     ║\n║ !일본여행        여행지 추천   ║\n║ !운세 00년생     오늘의 운세   ║\n║ !주식 이름       주식 시세     ║\n║ !상태            관리자 전용   ║\n╚══════════════════════════════╝`;
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
@@ -47,6 +48,7 @@ const aliases: Record<string, CommandName> = {
   공지: 'notice',
   인벤: 'inven',
   부티크: 'boutiqueGift',
+  피스: 'masterpiece',
   이벤트: 'event',
   썬데이: 'sunday',
   선데이: 'sunday',
@@ -560,6 +562,27 @@ export function formatBoutiqueGiftDraw(
     `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
     sourceUrl,
     '※ 실제 아이템을 지급하지 않는 확률 기반 미니게임입니다.',
+  ].join('\n');
+}
+
+export function formatMasterpieceDraw(
+  redItems: RoyalStyleItem[],
+  blackItems: RoyalStyleItem[],
+  redSourceUrl: string,
+  blackSourceUrl: string,
+  fetchedAt: string,
+  random = Math.random,
+): string {
+  const red = drawRoyalStyles(redItems, 1, random)[0]!;
+  const black = drawRoyalStyles(blackItems, 1, random)[0]!;
+  return [
+    '[마스터피스 레드·블랙 시뮬레이션]',
+    `레드: ${red.name} (${red.probability.toFixed(4)}%)`,
+    `블랙: ${black.name} (${black.probability.toFixed(4)}%)`,
+    `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
+    redSourceUrl,
+    blackSourceUrl,
+    '※ 공식 확률표의 첫 번째 합성 부위(모자) 표를 기준으로 한 결과이며 실제 아이템을 지급하지 않습니다.',
   ].join('\n');
 }
 
