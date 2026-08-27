@@ -545,6 +545,7 @@ export function formatRoyalDraw(
           ? item.name
           : `[스페셜 라벨] ${item.name}`
         : item.name,
+    false,
   );
 }
 

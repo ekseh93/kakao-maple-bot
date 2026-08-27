@@ -579,7 +579,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('[로얄스타일 10회 뽑기]');
     expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
-    expect(result.reply).toContain('실제 구매가 아닌');
+    expect(result.reply).not.toContain('기준: Nexon 공식 확률 페이지');
+    expect(result.reply).not.toContain('실제 구매가 아닌');
     expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');
   });
   it('supports a custom Royal Style count and hides detailed results', async () => {
