@@ -325,25 +325,6 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       ).reply,
     ).toContain('찾지 못했습니다');
   });
-  it('handles HEXA core lookup with a readable template', async () => {
-    const nexon = {
-      findCharacter: vi.fn(),
-      findHexa: vi.fn().mockResolvedValue({
-        name: '헥사캐릭터',
-        cores: [{ name: '마스터리', level: 30, type: '마스터리', linkedSkills: ['스킬'] }],
-        fetchedAt: '2026-08-27T00:00:00.000Z',
-      }),
-    };
-    const result = await handleMessage(
-      { ...message('!헥사 헥사캐릭터'), roomId: 'hexa-room', senderId: 'hexa-sender' },
-      { ...env, ALLOWED_ROOMS: 'hexa-room' },
-      { nexon },
-    );
-    expect(result.reply).toContain('캐릭터: 헥사캐릭터');
-    expect(result.reply).toContain('▸ 마스터리\n  코어: 마스터리');
-    expect(result.reply).toContain('레벨: Lv.30');
-    expect(result.reply).toContain('연결 스킬: 스킬');
-  });
   it('handles Dojang lookup with formatted time', async () => {
     const nexon = {
       findCharacter: vi.fn(),

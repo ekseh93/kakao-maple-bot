@@ -13,7 +13,6 @@ export type Character = {
 export type NexonClient = {
   findCharacter(name: string, signal: AbortSignal): Promise<Character | null>;
   findExperienceHistory?(name: string, signal: AbortSignal): Promise<ExperienceHistory | null>;
-  findHexa?(name: string, signal: AbortSignal): Promise<HexaCharacter | null>;
   findDojang?(name: string, signal: AbortSignal): Promise<DojangCharacter | null>;
   findUnion?(name: string, signal: AbortSignal): Promise<UnionCharacter | null>;
   findUnionChampion?(name: string, signal: AbortSignal): Promise<UnionChampion | null>;
@@ -43,13 +42,6 @@ export type ExperienceSnapshot = {
   experienceRate: number;
 };
 export type ExperienceHistory = { name: string; snapshots: ExperienceSnapshot[] };
-export type HexaCore = {
-  name: string;
-  level: number;
-  type: string;
-  linkedSkills: string[];
-};
-export type HexaCharacter = { name: string; cores: HexaCore[]; fetchedAt: string };
 export type DojangCharacter = {
   name: string;
   floor: number;
@@ -393,53 +385,6 @@ export function createNexonClient(
         });
       }
       return { name, snapshots };
-    },
-    async findHexa(name, signal) {
-      if (!apiKey) throw new Error('NOT_CONFIGURED');
-      const ocid = await findOcid(name, signal);
-      if (!ocid) return null;
-      const base = 'https://open.api.nexon.com/maplestory/v1';
-      const response = await fetchWithRetry(
-        fetcher,
-        `${base}/character/hexamatrix?ocid=${encodeURIComponent(ocid)}`,
-        { headers: { 'x-nxopen-api-key': apiKey }, signal },
-      );
-      if (!response.ok)
-        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
-      const body = (await response.json()) as {
-        date?: string | null;
-        character_hexa_core_equipment?: Array<{
-          hexa_core_name?: string;
-          hexa_core_level?: number;
-          hexa_core_type?: string;
-          linked_skill?: Array<{ hexa_skill_id?: string }>;
-        }> | null;
-      };
-      if (
-        body.character_hexa_core_equipment !== null &&
-        !Array.isArray(body.character_hexa_core_equipment)
-      )
-        throw new Error('PROVIDER_SCHEMA');
-      const cores = (body.character_hexa_core_equipment ?? []).map((core) => {
-        if (
-          typeof core.hexa_core_name !== 'string' ||
-          typeof core.hexa_core_level !== 'number' ||
-          !Number.isInteger(core.hexa_core_level) ||
-          typeof core.hexa_core_type !== 'string' ||
-          !Array.isArray(core.linked_skill)
-        )
-          throw new Error('PROVIDER_SCHEMA');
-        const linkedSkills = core.linked_skill.map((skill) => skill.hexa_skill_id);
-        if (linkedSkills.some((skill) => typeof skill !== 'string'))
-          throw new Error('PROVIDER_SCHEMA');
-        return {
-          name: core.hexa_core_name,
-          level: core.hexa_core_level,
-          type: core.hexa_core_type,
-          linkedSkills: linkedSkills as string[],
-        };
-      });
-      return { name, cores, fetchedAt: body.date ?? new Date().toISOString() };
     },
     async findDojang(name, signal) {
       if (!apiKey) throw new Error('NOT_CONFIGURED');

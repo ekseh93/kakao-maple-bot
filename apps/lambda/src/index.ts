@@ -27,7 +27,6 @@ import {
   type EquipmentCharacter,
   type EventList,
   type ExperienceHistory,
-  type HexaCharacter,
   type NexonClient,
   type StockClient,
   type StockQuote,
@@ -77,7 +76,6 @@ const roomRequests = new Map<string, number[]>();
 const senderRequests = new Map<string, number[]>();
 let globalRequests: number[] = [];
 const characterCache = new Map<string, { value: Character; expiresAt: number }>();
-const hexaCache = new Map<string, { value: HexaCharacter; expiresAt: number }>();
 const dojangCache = new Map<string, { value: DojangCharacter; expiresAt: number }>();
 const unionCache = new Map<string, { value: UnionCharacter; expiresAt: number }>();
 const unionChampionCache = new Map<string, { value: UnionChampion; expiresAt: number }>();
@@ -296,18 +294,6 @@ export async function handleMessage(
         if (!character) throw new Error('NOT_FOUND');
         characterCache.set(name, { value: character, expiresAt: now + 5 * 60_000 });
         return { reply: formatCharacter(character), requestId, cache: 'miss' };
-      }
-      case 'hexa': {
-        const name = validateCharacterName(parsed.args[0]);
-        const cached = hexaCache.get(name);
-        if (cached && cached.expiresAt > now)
-          return { reply: formatHexa(cached.value), requestId, cache: 'hit' };
-        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
-        if (!client.findHexa) throw new Error('NOT_CONFIGURED');
-        const hexa = await client.findHexa(name, timeoutSignal());
-        if (!hexa) throw new Error('NOT_FOUND');
-        hexaCache.set(name, { value: hexa, expiresAt: now + 5 * 60_000 });
-        return { reply: formatHexa(hexa), requestId, cache: 'miss' };
       }
       case 'dojang': {
         const name = validateCharacterName(parsed.args[0]);
@@ -679,27 +665,6 @@ function formatCharacter(c: Character): string {
     .filter(Boolean)
     .join('\n')
     .slice(0, 1000);
-}
-function formatHexa(c: HexaCharacter): string {
-  const lines = [
-    '[HEXA 코어]',
-    `캐릭터: ${c.name}`,
-    `장착 코어: ${c.cores.length}개`,
-    '────────────',
-  ];
-  for (const core of c.cores) {
-    lines.push(
-      `▸ ${core.type}`,
-      `  코어: ${core.name}`,
-      `  레벨: Lv.${core.level}`,
-      `  연결 스킬: ${core.linkedSkills.length ? core.linkedSkills.join(', ') : '없음'}`,
-    );
-  }
-  lines.push('────────────', `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`);
-  const full = lines.join('\n');
-  if (full.length <= 1000) return full;
-  const footer = `\n… ${c.cores.length}개 중 일부만 표시 (응답 제한)`;
-  return full.slice(0, 1000 - footer.length).trimEnd() + footer;
 }
 function formatDojang(c: DojangCharacter): string {
   const minutes = Math.floor(c.timeSeconds / 60);
