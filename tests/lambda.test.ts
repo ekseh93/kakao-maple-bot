@@ -329,6 +329,28 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('테스트 모자 / 스타포스 22');
     expect(result.reply).toContain('잠재 레전드리 / 에디 에픽');
   });
+  it('handles notice lookup with official links and a bounded list', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findNotice: vi.fn().mockResolvedValue({
+        notices: [
+          {
+            title: '메이플스토리 공지',
+            url: 'https://maplestory.nexon.com/News/Notice/1',
+            date: '2026-08-27T00:00:00.000Z',
+          },
+        ],
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!공지'), roomId: 'notice-room', senderId: 'notice-sender' },
+      { ...env, ALLOWED_ROOMS: 'notice-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[메이플스토리 공지]');
+    expect(result.reply).toContain('https://maplestory.nexon.com/News/Notice/1');
+  });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {
       findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),

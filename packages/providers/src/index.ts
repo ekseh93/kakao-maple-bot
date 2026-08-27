@@ -13,6 +13,7 @@ export type NexonClient = {
   findDojang?(name: string, signal: AbortSignal): Promise<DojangCharacter | null>;
   findUnion?(name: string, signal: AbortSignal): Promise<UnionCharacter | null>;
   findEquipment?(name: string, signal: AbortSignal): Promise<EquipmentCharacter | null>;
+  findNotice?(signal: AbortSignal): Promise<NoticeList>;
 };
 export type HexaCore = {
   name: string;
@@ -44,6 +45,8 @@ export type EquipmentItem = {
   additionalPotentialGrade?: string;
 };
 export type EquipmentCharacter = { name: string; items: EquipmentItem[]; fetchedAt: string };
+export type NoticeItem = { title: string; url: string; date?: string };
+export type NoticeList = { notices: NoticeItem[]; fetchedAt: string };
 export type StockQuote = {
   code: string;
   name?: string;
@@ -312,6 +315,29 @@ export function createNexonClient(
         };
       });
       return { name, items, fetchedAt: body.date ?? new Date().toISOString() };
+    },
+    async findNotice(signal) {
+      if (!apiKey) throw new Error('NOT_CONFIGURED');
+      const response = await fetchWithRetry(
+        fetcher,
+        'https://open.api.nexon.com/maplestory/v1/notice',
+        { headers: { 'x-nxopen-api-key': apiKey }, signal },
+      );
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = (await response.json()) as {
+        notice?: Array<{ title?: string; url?: string; date?: string }> | null;
+      };
+      if (!Array.isArray(body.notice)) throw new Error('PROVIDER_SCHEMA');
+      const notices = body.notice.slice(0, 3).map((notice) => {
+        if (typeof notice.title !== 'string' || typeof notice.url !== 'string')
+          throw new Error('PROVIDER_SCHEMA');
+        if (!/^https:\/\/(www\.)?maplestory\.nexon\.com\//.test(notice.url))
+          throw new Error('PROVIDER_SCHEMA');
+        const date = optionalString(notice.date);
+        return { title: notice.title, url: notice.url, ...(date ? { date } : {}) };
+      });
+      return { notices, fetchedAt: new Date().toISOString() };
     },
   };
 }

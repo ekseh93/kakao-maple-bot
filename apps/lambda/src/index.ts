@@ -18,6 +18,7 @@ import {
   type StockClient,
   type StockQuote,
   type UnionCharacter,
+  type NoticeList,
 } from '@kakao-maple-bot/providers';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
@@ -54,6 +55,7 @@ const hexaCache = new Map<string, { value: HexaCharacter; expiresAt: number }>()
 const dojangCache = new Map<string, { value: DojangCharacter; expiresAt: number }>();
 const unionCache = new Map<string, { value: UnionCharacter; expiresAt: number }>();
 const equipmentCache = new Map<string, { value: EquipmentCharacter; expiresAt: number }>();
+let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -133,6 +135,7 @@ export async function handleMessage(
   for (const [name, entry] of characterCache)
     if (entry.expiresAt <= now) characterCache.delete(name);
   for (const [code, entry] of stockCache) if (entry.expiresAt <= now) stockCache.delete(code);
+  if (noticeCache && noticeCache.expiresAt <= now) noticeCache = undefined;
   if (!message.eventId || seen.has(message.eventId))
     return { reply: null, requestId, cache: 'bypass' };
   seen.set(message.eventId, now);
@@ -262,6 +265,15 @@ export async function handleMessage(
         equipmentCache.set(name, { value: equipment, expiresAt: now + 5 * 60_000 });
         return { reply: formatEquipment(equipment), requestId, cache: 'miss' };
       }
+      case 'notice': {
+        if (noticeCache && noticeCache.expiresAt > now)
+          return { reply: formatNotice(noticeCache.value), requestId, cache: 'hit' };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findNotice) throw new Error('NOT_CONFIGURED');
+        const notices = await client.findNotice(timeoutSignal());
+        noticeCache = { value: notices, expiresAt: now + 5 * 60_000 };
+        return { reply: formatNotice(notices), requestId, cache: 'miss' };
+      }
       case 'stock': {
         if (env.STOCK_ENABLED !== 'true') throw new Error('NOT_CONFIGURED');
         const code = parsed.args[0] ?? '';
@@ -356,6 +368,18 @@ function formatEquipment(c: EquipmentCharacter): string {
     c.name,
     `장비 수: ${c.items.length}`,
     ...lines,
+    `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
+  ]
+    .join('\n')
+    .slice(0, 1000);
+}
+function formatNotice(c: NoticeList): string {
+  return [
+    '[메이플스토리 공지]',
+    ...c.notices.map(
+      (notice) =>
+        `- ${notice.title}${notice.date ? ` (${notice.date.slice(0, 10)})` : ''}\n  ${notice.url}`,
+    ),
     `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
   ]
     .join('\n')

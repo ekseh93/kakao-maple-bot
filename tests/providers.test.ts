@@ -147,6 +147,31 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       ],
     });
   });
+  it('maps only the first three official notices and keeps official links', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          notice: [
+            {
+              title: '첫 공지',
+              url: 'https://maplestory.nexon.com/News/Notice/1',
+              date: '2026-08-27',
+            },
+            { title: '둘째 공지', url: 'https://maplestory.nexon.com/News/Notice/2' },
+            { title: '셋째 공지', url: 'https://www.maplestory.nexon.com/News/Notice/3' },
+            { title: '제외 공지', url: 'https://maplestory.nexon.com/News/Notice/4' },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    const result = await createNexonClient('fixture-key', fetcher).findNotice?.(
+      new AbortController().signal,
+    );
+    expect(result?.notices).toHaveLength(3);
+    expect(result?.notices[0]).toMatchObject({ title: '첫 공지', date: '2026-08-27' });
+    expect(fetcher.mock.calls[0]?.[0]).toBe('https://open.api.nexon.com/maplestory/v1/notice');
+  });
   it('maps KIS quote fixture without order or account endpoints', async () => {
     const fetcher = vi
       .fn()
