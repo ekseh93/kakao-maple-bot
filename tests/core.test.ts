@@ -15,6 +15,7 @@ import {
   formatNetflixRecommendation,
   formatAnimeRecommendation,
   formatBossRewards,
+  formatMekaBerry,
   formatFortune,
   formatBoutiqueGiftDraw,
   formatRoyalDraw,
@@ -61,6 +62,14 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('8,740,000,000');
     expect(output).toContain('출처: https://matsu1207.tistory.com/757');
     expect(() => formatBossRewards(['닉네임'])).toThrow('INVALID_USAGE');
+  });
+  it('parses and formats Meka Berry rates for levels 280 through 299', () => {
+    expect(parseCommand('!메카베리 280')).toEqual({ name: 'mekaBerry', args: ['280'] });
+    expect(formatMekaBerry(['280'])).toContain('메카베리             │ 9.705%');
+    expect(formatMekaBerry(['280'])).toContain('크림슨 메카베리      │ 15.097%');
+    expect(formatMekaBerry(['299'])).toContain('0.467%');
+    expect(() => formatMekaBerry(['279'])).toThrow('INVALID_USAGE');
+    expect(() => formatMekaBerry([])).toThrow('INVALID_USAGE');
   });
   it('parses aliases and unknown commands as help', () => {
     expect(parseCommand(' !도움말 ')?.name).toBe('help');

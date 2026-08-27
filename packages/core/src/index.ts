@@ -5,6 +5,7 @@ export type CommandName =
   | 'food'
   | 'japanTravel'
   | 'boss'
+  | 'mekaBerry'
   | 'netflix'
   | 'anime'
   | 'fortune'
@@ -44,6 +45,7 @@ const aliases: Record<string, CommandName> = {
   심볼: 'symbol',
   심볼계산: 'symbol',
   보스: 'boss',
+  메카베리: 'mekaBerry',
   무릉: 'dojang',
   유니온: 'union',
   유챔: 'unionChampion',
@@ -496,6 +498,51 @@ const grandisBossRewards: BossRewardRow[] = [
   { name: '유피테르', easy: null, normal: 1_615_000_000, hard: 4_845_000_000, extreme: null },
   { name: '벨로나', easy: 440_000_000, normal: 850_000_000, hard: 2_950_000_000, extreme: null },
 ];
+
+type MekaBerryRate = { level: number; meka: number; crimson: number };
+
+const mekaBerryRates: MekaBerryRate[] = [
+  { level: 280, meka: 9.705, crimson: 15.097 },
+  { level: 281, meka: 8.943, crimson: 13.912 },
+  { level: 282, meka: 8.228, crimson: 12.799 },
+  { level: 283, meka: 7.58, crimson: 11.792 },
+  { level: 284, meka: 6.973, crimson: 10.846 },
+  { level: 285, meka: 5.174, crimson: 6.036 },
+  { level: 286, meka: 4.758, crimson: 5.551 },
+  { level: 287, meka: 4.382, crimson: 5.112 },
+  { level: 288, meka: 4.035, crimson: 4.708 },
+  { level: 289, meka: 3.71, crimson: 4.328 },
+  { level: 290, meka: 2.236, crimson: 2.408 },
+  { level: 291, meka: 2.055, crimson: 2.213 },
+  { level: 292, meka: 1.892, crimson: 2.037 },
+  { level: 293, meka: 1.741, crimson: 1.875 },
+  { level: 294, meka: 1.6, crimson: 1.724 },
+  { level: 295, meka: 0.89, crimson: 0.959 },
+  { level: 296, meka: 0.819, crimson: 0.882 },
+  { level: 297, meka: 0.754, crimson: 0.812 },
+  { level: 298, meka: 0.692, crimson: 0.746 },
+  { level: 299, meka: 0.467, crimson: 0.503 },
+];
+
+export function formatMekaBerry(args: string[] = []): string {
+  if (args.length !== 1 || !/^(?:28|29)[0-9]$/.test(args[0]!)) throw new Error('INVALID_USAGE');
+  const level = Number(args[0]);
+  const rate = mekaBerryRates.find((item) => item.level === level);
+  if (!rate) throw new Error('INVALID_USAGE');
+  return [
+    '[메카베리 경험치]',
+    `레벨: ${rate.level}`,
+    '┌──────────────────────┬──────────┐',
+    '│ 항목                 │ 1개당 상승 │',
+    '├──────────────────────┼──────────┤',
+    `│ 메카베리             │ ${rate.meka.toFixed(3)}%   │`,
+    `│ 크림슨 메카베리      │ ${rate.crimson.toFixed(3)}%   │`,
+    '└──────────────────────┴──────────┘',
+    '※ 메카베리 농장 경험치 표 기준의 정적 계산값입니다.',
+    '출처: https://matsu1207.tistory.com/1095',
+    '출처: https://matsu1207.tistory.com/1308',
+  ].join('\n');
+}
 
 function formatMeso(value: number | null): string {
   return value === null ? '-' : value.toLocaleString('ko-KR');
