@@ -3,7 +3,6 @@ import {
   formatRoyalDraw,
   formatWonderBerryDraw,
   formatBoutiqueGiftDraw,
-  formatMasterpieceDraw,
   formatLunaCrystalSweetDraw,
   formatLunaCrystalDreamDraw,
   formatSymbol,
@@ -41,7 +40,6 @@ import {
   type RoyalStyleList,
   type WonderBerryList,
   type BoutiqueGiftList,
-  type MasterpieceList,
   type WeatherSnapshot,
   type LunaCrystalSweetList,
 } from '@kakao-maple-bot/providers';
@@ -92,7 +90,6 @@ let eventCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 let wonderBerryCache: { value: WonderBerryList; expiresAt: number } | undefined;
 let boutiqueGiftCache: { value: BoutiqueGiftList; expiresAt: number } | undefined;
-let masterpieceCache: { value: MasterpieceList; expiresAt: number } | undefined;
 const lunaSweetCache = new Map<
   '일반' | '스페셜',
   { value: LunaCrystalSweetList; expiresAt: number }
@@ -493,32 +490,6 @@ export async function handleMessage(
             boutiqueGift.normalItems,
             boutiqueGift.feverItems,
             boutiqueGift.fetchedAt,
-          ),
-          requestId,
-          cache: 'miss',
-        };
-      }
-      case 'masterpiece': {
-        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
-        if (masterpieceCache && masterpieceCache.expiresAt > now)
-          return {
-            reply: formatMasterpieceDraw(
-              masterpieceCache.value.redItems,
-              masterpieceCache.value.blackItems,
-              masterpieceCache.value.fetchedAt,
-            ),
-            requestId,
-            cache: 'hit',
-          };
-        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
-        if (!client.findMasterpiece) throw new Error('NOT_CONFIGURED');
-        const masterpiece = await client.findMasterpiece(timeoutSignal());
-        masterpieceCache = { value: masterpiece, expiresAt: now + 5 * 60_000 };
-        return {
-          reply: formatMasterpieceDraw(
-            masterpiece.redItems,
-            masterpiece.blackItems,
-            masterpiece.fetchedAt,
           ),
           requestId,
           cache: 'miss',

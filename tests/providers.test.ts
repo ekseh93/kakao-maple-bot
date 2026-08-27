@@ -420,31 +420,6 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result?.feverItems).toEqual([{ name: '티켓 10개', probability: 100 }]);
     expect(fetcher.mock.calls[0]?.[0]).toContain('BoutiqueGift');
   });
-  it('maps official Red and Black Masterpiece probability tables', async () => {
-    const fetcher = vi
-      .fn()
-      .mockResolvedValueOnce(
-        new Response(
-          '<table><tr><th>구분</th><th>아이템명</th><th>획득확률</th></tr><tr><td>레드라벨</td><td>레드 테스트</td><td>7.3539%</td></tr></table>',
-          { status: 200 },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          '<table><tr><th>구분</th><th>아이템명</th><th>획득확률</th></tr><tr><td>블랙라벨</td><td>블랙 테스트</td><td>5.8135%</td></tr></table>',
-          { status: 200 },
-        ),
-      );
-    const result = await createNexonClient(undefined, fetcher).findMasterpiece?.(
-      new AbortController().signal,
-    );
-    expect(result?.redItems).toEqual([{ name: '레드 테스트', probability: 7.3539 }]);
-    expect(result?.blackItems).toEqual([{ name: '블랙 테스트', probability: 5.8135 }]);
-    expect(fetcher.mock.calls.map(([url]) => url)).toEqual([
-      'https://maplestory.nexon.com/Guide/CashShop/Probability/MasterpieceRed',
-      'https://maplestory.nexon.com/Guide/CashShop/Probability/MasterpieceBlack',
-    ]);
-  });
   it('maps the selected official Luna Crystal Sweet probability table', async () => {
     const fetcher = vi
       .fn()
