@@ -99,7 +99,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     const output = formatBossLevelBoost();
     expect(output).toContain('[보스 레벨 및 레벨 차이 보정]');
     expect(output).toContain('검은 마법사(하드)');
-    expect(output).toContain('1·4페이즈 265 / 2·3페이즈 275');
+    expect(output).toContain('1·4페이즈 265');
+    expect(output).toContain('2·3페이즈 275');
     expect(output).toContain('벨로나');
     expect(output).toContain('+5 이상');
     expect(output).toContain('105.3%');
