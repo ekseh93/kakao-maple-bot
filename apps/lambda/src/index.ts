@@ -12,6 +12,8 @@ import {
   playRps,
   formatFoodRecommendation,
   formatJapanTravelRecommendation,
+  formatNetflixRecommendation,
+  formatAnimeRecommendation,
   formatFortune,
   formatLotto,
   validateCharacterName,
@@ -261,6 +263,12 @@ export async function handleMessage(
           requestId,
           cache: 'bypass',
         };
+      case 'netflix':
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        return { reply: formatNetflixRecommendation(), requestId, cache: 'bypass' };
+      case 'anime':
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        return { reply: formatAnimeRecommendation(), requestId, cache: 'bypass' };
       case 'fortune':
         return {
           reply: formatFortune(parsed.args),

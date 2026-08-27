@@ -12,6 +12,8 @@ import {
   foodProbabilities,
   formatWonderBerryDraw,
   formatJapanTravelRecommendation,
+  formatNetflixRecommendation,
+  formatAnimeRecommendation,
   formatFortune,
   formatBoutiqueGiftDraw,
   formatRoyalDraw,
@@ -221,6 +223,12 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(formatJapanTravelRecommendation([], () => 0)).toContain('도시: 삿포로');
     expect(formatJapanTravelRecommendation([], () => 0.999999)).toContain('현/도: 오키나와현');
     expect(() => formatJapanTravelRecommendation(['도쿄'])).toThrow('INVALID_USAGE');
+  });
+  it('recommends a Netflix title and an anime category without external calls', () => {
+    expect(formatNetflixRecommendation(() => 0)).toContain('오징어 게임');
+    const anime = formatAnimeRecommendation(() => 0);
+    expect(anime).toContain('[일본 애니메이션 랜덤 추천]');
+    expect(anime).toContain('분류: 완결');
   });
   it('formats a date-stable entertainment fortune for a birth year', () => {
     const now = new Date('2026-08-27T03:00:00.000Z');

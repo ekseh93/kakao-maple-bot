@@ -4,6 +4,8 @@ export type CommandName =
   | 'choice'
   | 'food'
   | 'japanTravel'
+  | 'netflix'
+  | 'anime'
   | 'fortune'
   | 'lotto'
   | 'symbol'
@@ -28,7 +30,7 @@ export type CommandName =
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
-export const HELP = `[봇 도움말]\n【메이플스토리】\n!정보 닉네임 — 캐릭터 조회\n!무릉 닉네임 — 무릉 기록\n!유니온 닉네임 — 유니온 요약\n!유챔 닉네임 — 유니온 챔피언\n!장비 닉네임 — 장비 요약\n!경험치 닉네임 — 경험치 이력\n!심볼 기어드락 1 11 — 심볼 계산\n!공지 — 공식 공지\n!이벤트 — 진행 이벤트\n!썬데이 / !선데이 — 썬데이 메이플\n!인벤 — 인벤 10추글\n!웹툰 — 네이버 웹툰 추천\n!부티크 — 부티크 기프트\n!로얄 — 로얄스타일\n!원더베리 — 위습의 원더베리\n!루나스윗 — 루나 크리스탈\n!루나드림 — 루나 크리스탈\n\n【기타 기능】\n!날씨 지역명 — 날씨 조회\n!가위 / !바위 / !보 — 가위바위보\n!골라 치킨 짬뽕 — 메뉴 선택\n!뭐먹지 — 메뉴 추천\n!일본여행 — 여행지 추천\n!운세 00년생 — 오늘의 운세\n!로또 — 한·일 번호 추천\n!주식 이름 — 주식 시세\n!상태 — 관리자 전용`;
+export const HELP = `[봇 도움말]\n【메이플스토리】\n!정보 닉네임 — 캐릭터 조회\n!무릉 닉네임 — 무릉 기록\n!유니온 닉네임 — 유니온 요약\n!유챔 닉네임 — 유니온 챔피언\n!장비 닉네임 — 장비 요약\n!경험치 닉네임 — 경험치 이력\n!심볼 기어드락 1 11 — 심볼 계산\n!공지 — 공식 공지\n!이벤트 — 진행 이벤트\n!썬데이 / !선데이 — 썬데이 메이플\n!인벤 — 인벤 10추글\n!웹툰 — 네이버 웹툰 추천\n!부티크 — 부티크 기프트\n!로얄 — 로얄스타일\n!원더베리 — 위습의 원더베리\n!루나스윗 — 루나 크리스탈\n!루나드림 — 루나 크리스탈\n\n【기타 기능】\n!날씨 지역명 — 날씨 조회\n!가위 / !바위 / !보 — 가위바위보\n!골라 치킨 짬뽕 — 메뉴 선택\n!뭐먹지 — 메뉴 추천\n!일본여행 — 여행지 추천\n!운세 00년생 — 오늘의 운세\n!로또 — 한·일 번호 추천\n!넷플 — 넷플릭스 추천\n!애니 — 일본 애니 추천\n!주식 이름 — 주식 시세\n!상태 — 관리자 전용`;
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
@@ -67,6 +69,9 @@ const aliases: Record<string, CommandName> = {
   메뉴: 'food',
   뭐먹을까: 'food',
   일본여행: 'japanTravel',
+  넷플: 'netflix',
+  넷플릭스: 'netflix',
+  애니: 'anime',
   운세: 'fortune',
   로또: 'lotto',
   주식: 'stock',
@@ -448,6 +453,74 @@ const japanTravelPlaces = [
   { prefecture: '가고시마현', city: '가고시마', highlight: '사쿠라지마·온천·흑돼지' },
   { prefecture: '오키나와현', city: '나하', highlight: '해변·섬 풍경·류큐 문화' },
 ] as const;
+
+const netflixTitles = [
+  '오징어 게임',
+  '기묘한 이야기',
+  '더 글로리',
+  '브리저튼',
+  '웬즈데이',
+  '종이의 집',
+  '나르코스',
+  '블랙 미러',
+  '퀸스 갬빗',
+  'D.P.',
+  '스위트홈',
+  '킹덤',
+  '지옥',
+  '이상한 변호사 우영우',
+  '마스크걸',
+  '더 에이트 쇼',
+  '사냥개들',
+  '살인자ㅇ난감',
+] as const;
+
+const animeCatalog = {
+  완결: [
+    '카우보이 비밥',
+    '어떤 마술의 금서목록',
+    '슈타인즈 게이트',
+    '하이큐!!',
+    '고블린 슬레이어',
+    '세토의 신부',
+    '꼭두각시 서커스',
+    '시원찮은 그녀를 위한 육성방법',
+  ],
+  방영중: [
+    'Re: 제로부터 시작하는 이세계 생활 4기',
+    '원피스',
+    '무직전생 Ⅲ ~이세계에 갔으면 최선을 다한다~',
+    '전생했더니 슬라임이었던 건에 대하여 4기',
+    '공각기동대 THE GHOST IN THE SHELL',
+    '유녀전기 2기',
+    '그랑블루 3기',
+    '블리치 천년혈전 편',
+  ],
+  극장판: [
+    '스즈메의 문단속',
+    '너의 이름은.',
+    '날씨의 아이',
+    '더 퍼스트 슬램덩크',
+    '극장판 귀멸의 칼날: 무한열차편',
+    '센과 치히로의 행방불명',
+    '하울의 움직이는 성',
+    '목소리의 형태',
+  ],
+} as const;
+
+export function formatNetflixRecommendation(random = Math.random): string {
+  return ['[넷플릭스 랜덤 추천]', `작품: ${choose([...netflixTitles], random)}`].join('\n');
+}
+
+export function formatAnimeRecommendation(random = Math.random): string {
+  const categories = Object.keys(animeCatalog) as Array<keyof typeof animeCatalog>;
+  const category = choose(categories, random);
+  return [
+    '[일본 애니메이션 랜덤 추천]',
+    `분류: ${category}`,
+    `작품: ${choose([...animeCatalog[category]], random)}`,
+  ].join('\n');
+}
 
 const fortuneMessages = {
   overall: [
