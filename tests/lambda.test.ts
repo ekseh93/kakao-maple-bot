@@ -621,9 +621,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { ...env, ALLOWED_ROOMS: 'luna-room' },
       { nexon },
     );
-    expect(result.reply).toContain('[루나 크리스탈 스윗 10회 뽑기]');
-    expect(result.reply).toContain('조합: 원더 블랙 + 원더 블랙');
-    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
+    expect(result.reply).toContain('[루나 크리스탈 스윗 합성]');
+    expect(result.reply).toContain('재료: 원더 블랙 + 원더 블랙');
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(1);
     expect(nexon.findLunaCrystalSweet).toHaveBeenCalledWith('스페셜', expect.anything());
   });
   it('handles a default Luna Crystal Dream draw', async () => {
@@ -641,9 +641,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { ...env, ALLOWED_ROOMS: 'dream-room' },
       { nexon },
     );
-    expect(result.reply).toContain('[루나 크리스탈 드림 10회 뽑기]');
-    expect(result.reply).toContain('조합: 원더 스윗 + 원더 블랙');
-    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
+    expect(result.reply).toContain('[루나 크리스탈 드림 합성]');
+    expect(result.reply).toContain('재료: 원더 스윗 + 원더 블랙');
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(1);
     expect(nexon.findLunaCrystalDream).toHaveBeenCalledWith('일반', expect.anything());
   });
   it('handles global weather lookup', async () => {

@@ -381,7 +381,7 @@ export type RoyalStyleItem = { name: string; probability: number };
 
 export function drawRoyalStyles(
   items: RoyalStyleItem[],
-  count = 10,
+  count = 1,
   random = Math.random,
 ): RoyalStyleItem[] {
   if (items.length === 0 || !Number.isInteger(count) || count < 1 || count > 25)
@@ -461,7 +461,7 @@ export function formatLunaCrystalSweetDraw(
   random = Math.random,
 ): string {
   return formatWeightedDraw(
-    `[루나 크리스탈 스윗 ${count}회 뽑기]\n조합: 원더 블랙 + 원더 블랙`,
+    `[루나 크리스탈 스윗 합성]\n재료: 원더 블랙 + 원더 블랙`,
     items,
     sourceUrl,
     fetchedAt,
@@ -476,12 +476,12 @@ export function formatLunaCrystalDreamDraw(
   items: RoyalStyleItem[],
   sourceUrl: string,
   fetchedAt: string,
-  count = 10,
+  count = 1,
   showResults = true,
   random = Math.random,
 ): string {
   return formatWeightedDraw(
-    `[루나 크리스탈 드림 ${count}회 뽑기]\n조합: 원더 스윗 + 원더 블랙`,
+    `[루나 크리스탈 드림 합성]\n재료: 원더 스윗 + 원더 블랙`,
     items,
     sourceUrl,
     fetchedAt,

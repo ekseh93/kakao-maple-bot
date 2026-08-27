@@ -440,7 +440,7 @@ export async function handleMessage(
       case 'lunaSweet': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
         const kind = '스페셜' as const;
-        const options = parseRoyalOptions([]);
+        const options = { count: 1, showResults: true };
         const cached = lunaSweetCache.get(kind);
         if (cached && cached.expiresAt > now)
           return {
@@ -475,7 +475,7 @@ export async function handleMessage(
       case 'lunaDream': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
         const kind = '일반' as const;
-        const options = parseRoyalOptions([]);
+        const options = { count: 1, showResults: true };
         const cached = lunaDreamCache.get(kind);
         if (cached && cached.expiresAt > now)
           return {
