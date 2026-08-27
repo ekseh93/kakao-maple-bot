@@ -106,14 +106,20 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(royal).not.toContain('[스페셜 라벨] 테스트 일반 아이템');
     const luna = formatLunaCrystalSweetDraw(
       '일반',
-      [{ name: '루나 쁘띠펫 테스트', probability: 100 }],
+      [
+        { name: '루나 쁘띠펫 테스트', probability: 50, category: '루나 쁘띠 펫' },
+        { name: '루나 스윗펫 테스트', probability: 50, category: '루나 스윗 펫' },
+      ],
       'https://example.com/luna',
       '2026-08-27T00:00:00.000Z',
       1,
       true,
-      () => 0,
+      () => 0.75,
     );
-    expect(luna).toContain('[쁘띠] 루나 쁘띠펫 테스트');
+    expect(luna).toContain('[스윗] 루나 스윗펫 테스트');
+    expect(luna).not.toContain('[쁘티]');
+    expect(luna).not.toContain('기준: Nexon');
+    expect(luna).not.toContain('https://example.com/luna');
   });
   it('uses the shared count and result options for Wonder Berry', () =>
     expect(parseRoyalOptions(['25', 'false'])).toEqual({ count: 25, showResults: false }));

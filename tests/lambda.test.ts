@@ -680,6 +680,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('[루나 크리스탈 스윗 합성]');
     expect(result.reply).toContain('재료: 원더 블랙 + 원더 블랙');
     expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(1);
+    expect(result.reply).toContain('[스윗] 테스트 루나 펫');
+    expect(result.reply).not.toContain('기준: Nexon');
+    expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');
     expect(nexon.findLunaCrystalSweet).toHaveBeenCalledWith('스페셜', expect.anything());
   });
   it('handles a default Luna Crystal Dream draw', async () => {
@@ -700,6 +703,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('[루나 크리스탈 드림 합성]');
     expect(result.reply).toContain('재료: 원더 스윗 + 원더 블랙');
     expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(1);
+    expect(result.reply).toContain('[스윗] 테스트 드림 펫');
+    expect(result.reply).not.toContain('기준: Nexon');
+    expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');
     expect(nexon.findLunaCrystalDream).toHaveBeenCalledWith('일반', expect.anything());
   });
   it('handles global weather lookup', async () => {

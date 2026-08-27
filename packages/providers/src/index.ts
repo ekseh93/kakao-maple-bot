@@ -96,7 +96,7 @@ export type EventItem = {
   endDate?: string;
 };
 export type EventList = { events: EventItem[]; fetchedAt: string };
-export type RoyalStyleItem = { name: string; probability: number };
+export type RoyalStyleItem = { name: string; probability: number; category?: string };
 export type RoyalStyleList = { items: RoyalStyleItem[]; sourceUrl: string; fetchedAt: string };
 export type WonderBerryList = { items: RoyalStyleItem[]; sourceUrl: string; fetchedAt: string };
 export type BoutiqueGiftList = {
@@ -239,6 +239,7 @@ function parseProbabilityPage(
   html: string,
   sourceUrl: string,
   tablePosition: 'first' | 'last' = 'first',
+  includeCategory = false,
 ): RoyalStyleList {
   const tables = html.match(/<table\b[\s\S]*?획득확률[\s\S]*?<\/table>/gi) ?? [];
   const table = tablePosition === 'last' ? tables.at(-1) : tables[0];
@@ -251,10 +252,12 @@ function parseProbabilityPage(
     const probabilityMatch = probabilityText.match(/^(\d+(?:\.\d+)?)%$/);
     if (!probabilityMatch) continue;
     const name = decodeHtml(cells[cells.length - 2]!);
+    const category =
+      includeCategory && cells.length >= 3 ? decodeHtml(cells[cells.length - 3]!) : undefined;
     const probability = Number(probabilityMatch[1]);
     if (!name || !Number.isFinite(probability) || probability <= 0 || probability > 100)
       throw new Error('PROVIDER_SCHEMA');
-    items.push({ name, probability });
+    items.push({ name, probability, ...(category ? { category } : {}) });
   }
   if (items.length === 0) throw new Error('PROVIDER_SCHEMA');
   return { items, sourceUrl, fetchedAt: new Date().toISOString() };
@@ -756,7 +759,7 @@ export function createNexonClient(
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
       return {
         kind,
-        ...parseProbabilityPage(await response.text(), sourceUrl),
+        ...parseProbabilityPage(await response.text(), sourceUrl, 'first', true),
       };
     },
     async findLunaCrystalDream(kind, signal) {
@@ -768,7 +771,7 @@ export function createNexonClient(
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
       return {
         kind,
-        ...parseProbabilityPage(await response.text(), sourceUrl),
+        ...parseProbabilityPage(await response.text(), sourceUrl, 'first', true),
       };
     },
     async findWeather(region, signal) {

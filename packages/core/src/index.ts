@@ -489,7 +489,7 @@ export function choose<T>(items: T[], random = Math.random): T {
   return items[Math.floor(random() * items.length)] as T;
 }
 
-export type RoyalStyleItem = { name: string; probability: number };
+export type RoyalStyleItem = { name: string; probability: number; category?: string };
 
 export function drawRoyalStyles(
   items: RoyalStyleItem[],
@@ -626,8 +626,12 @@ export function formatLunaCrystalSweetDraw(
     count,
     showResults,
     random,
-    true,
-    (item) => (item.name.includes('쁘띠') ? `[쁘띠] ${item.name}` : item.name),
+    false,
+    (item) =>
+      item.category?.includes('쁘띠') || item.name.includes('쁘띠')
+        ? `[쁘티] ${item.name}`
+        : `[스윗] ${item.name}`,
+    false,
   );
 }
 
@@ -648,8 +652,12 @@ export function formatLunaCrystalDreamDraw(
     count,
     showResults,
     random,
-    true,
-    (item) => (item.name.includes('쁘띠') ? `[쁘띠] ${item.name}` : item.name),
+    false,
+    (item) =>
+      item.category?.includes('쁘띠') || item.name.includes('쁘띠')
+        ? `[쁘티] ${item.name}`
+        : `[스윗] ${item.name}`,
+    false,
   );
 }
 
@@ -663,6 +671,7 @@ function formatWeightedDraw(
   random = Math.random,
   includeSourceUrl = true,
   label: (item: RoyalStyleItem) => string = (item) => item.name,
+  includeMetadata = true,
 ): string {
   const draws = drawRoyalStyles(items, count, random);
   return [
@@ -670,9 +679,13 @@ function formatWeightedDraw(
     ...(showResults
       ? draws.map((item, index) => `${index + 1}. ${label(item)} (${item.probability.toFixed(1)}%)`)
       : [`상세 결과: 숨김`, `총 뽑기: ${count}개`]),
-    `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
-    ...(includeSourceUrl ? [sourceUrl] : []),
-    '※ 실제 구매가 아닌 확률 기반 미니게임입니다.',
+    ...(includeMetadata
+      ? [
+          `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
+          ...(includeSourceUrl ? [sourceUrl] : []),
+          '※ 실제 구매가 아닌 확률 기반 미니게임입니다.',
+        ]
+      : []),
   ].join('\n');
 }
 
