@@ -71,12 +71,13 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     const output = formatBoutiqueGiftDraw(
       [{ name: '부티크 티켓 1개', probability: 100 }],
       [{ name: '부티크 티켓 10개', probability: 100 }],
-      '2026-08-27T00:00:00.000Z',
       () => 0,
     );
     expect(output).toContain('[부티크 기프트 10개 열기]');
     expect(output).toContain('9. 부티크 티켓 1개');
     expect(output).toContain('10. [피버 타임] 부티크 티켓 10개');
+    expect(output).not.toContain('기준: Nexon 공식 확률 페이지');
+    expect(output).not.toContain('실제 아이템을 지급하지 않는');
     expect(output).not.toContain('https://example.com/boutique');
   });
   it('labels only Royal special-label items and Luna petit pets', () => {

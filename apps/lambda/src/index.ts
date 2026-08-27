@@ -476,7 +476,6 @@ export async function handleMessage(
             reply: formatBoutiqueGiftDraw(
               boutiqueGiftCache.value.normalItems,
               boutiqueGiftCache.value.feverItems,
-              boutiqueGiftCache.value.fetchedAt,
             ),
             requestId,
             cache: 'hit',
@@ -486,11 +485,7 @@ export async function handleMessage(
         const boutiqueGift = await client.findBoutiqueGift(timeoutSignal());
         boutiqueGiftCache = { value: boutiqueGift, expiresAt: now + 5 * 60_000 };
         return {
-          reply: formatBoutiqueGiftDraw(
-            boutiqueGift.normalItems,
-            boutiqueGift.feverItems,
-            boutiqueGift.fetchedAt,
-          ),
+          reply: formatBoutiqueGiftDraw(boutiqueGift.normalItems, boutiqueGift.feverItems),
           requestId,
           cache: 'miss',
         };
