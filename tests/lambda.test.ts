@@ -35,9 +35,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { ...message('안녕하세요'), roomId: 'chat-room' },
       roomEnv,
     );
-    const command = await handleMessage({ ...message('!주사위'), roomId: 'chat-room' }, roomEnv);
+    const command = await handleMessage({ ...message('!가위'), roomId: 'chat-room' }, roomEnv);
     expect(ordinary.reply).toBeNull();
-    expect(command.reply).toContain('🎲');
+    expect(command.reply).toContain('[가위바위보]');
   });
   it('T-005 returns bounded help for unknown commands', async () =>
     expect((await handleMessage(message('!없는명령'), env)).reply).toContain('[봇 도움말]'));
@@ -69,20 +69,20 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
   });
   it('T-016 deduplicates the same event', async () => {
     const id = crypto.randomUUID();
-    expect((await handleMessage(message('!주사위', id), env)).reply).toContain('🎲');
-    expect((await handleMessage(message('!주사위', id), env)).reply).toBeNull();
+    expect((await handleMessage(message('!가위', id), env)).reply).toContain('[가위바위보]');
+    expect((await handleMessage(message('!가위', id), env)).reply).toBeNull();
   });
   it('T-016 permits an event id again after the two-minute TTL', async () => {
     const ttlEnv = { ...env, ALLOWED_ROOMS: 'ttl-room' };
     const id = crypto.randomUUID();
-    const first = await handleMessage({ ...message('!주사위', id), roomId: 'ttl-room' }, ttlEnv, {
+    const first = await handleMessage({ ...message('!가위', id), roomId: 'ttl-room' }, ttlEnv, {
       now: () => new Date(0),
     });
-    const second = await handleMessage({ ...message('!주사위', id), roomId: 'ttl-room' }, ttlEnv, {
+    const second = await handleMessage({ ...message('!가위', id), roomId: 'ttl-room' }, ttlEnv, {
       now: () => new Date(120001),
     });
-    expect(first.reply).toContain('🎲');
-    expect(second.reply).toContain('🎲');
+    expect(first.reply).toContain('[가위바위보]');
+    expect(second.reply).toContain('[가위바위보]');
   });
   it('T-017 blocks the sixth request in a ten-second room window', async () => {
     const rateEnv = { ...env, ALLOWED_ROOMS: 'rate-room' };
@@ -90,7 +90,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     for (let index = 0; index < 6; index++)
       results.push(
         await handleMessage(
-          { ...message('!주사위', crypto.randomUUID()), roomId: 'rate-room' },
+          { ...message('!가위', crypto.randomUUID()), roomId: 'rate-room' },
           rateEnv,
           { now: () => new Date(index) },
         ),
@@ -104,7 +104,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       results.push(
         await handleMessage(
           {
-            ...message('!주사위', crypto.randomUUID()),
+            ...message('!가위', crypto.randomUUID()),
             roomId: 'sender-room',
             senderId: 'limited-sender',
           },

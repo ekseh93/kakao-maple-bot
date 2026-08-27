@@ -1,10 +1,9 @@
 import {
-  choose,
   chooseItems,
   formatSymbol,
   HELP,
-  mapleLinks,
   parseCommand,
+  playRps,
   recommendFood,
   validateCharacterName,
 } from '@kakao-maple-bot/core';
@@ -163,15 +162,14 @@ export async function handleMessage(
           requestId,
           cache: 'bypass',
         };
-      case 'dice': {
-        const n = parsed.args[0] ? Number(parsed.args[0]) : 6;
-        if (!Number.isInteger(n) || n < 2 || n > 1000) throw new Error('INVALID_USAGE');
+      case 'rps':
         return {
-          reply: `🎲 1~${n} 결과: ${1 + Math.floor(Math.random() * n)}`,
+          reply: playRps(
+            parsed.args[0] === '가위바위보' ? (parsed.args[1] ?? '') : (parsed.args[0] ?? ''),
+          ),
           requestId,
           cache: 'bypass',
         };
-      }
       case 'choice':
         return {
           reply: `제가 고른 건: ${chooseItems(parsed.args.join(' '))}`,
@@ -197,8 +195,6 @@ export async function handleMessage(
           cache: 'bypass',
         };
       }
-      case 'mapleLink':
-        return { reply: mapleLinks(parsed.args[0] ?? ''), requestId, cache: 'bypass' };
       case 'character': {
         const name = validateCharacterName(parsed.args[0]);
         const cached = characterCache.get(name);

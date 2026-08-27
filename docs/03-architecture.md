@@ -100,7 +100,7 @@ KisStockAdapter:
 ### Calculators and Static Data
 
 - Arcane/Authentic symbol growth calculator
-- dice and choice randomizer
+- rock-paper-scissors and choice randomizer
 - food catalog
 
 계산식은 순수 함수로 만들고 공급자 호출과 분리합니다. 계산식·정적 데이터에는 source URL, effective date, verified date를 포함합니다.
@@ -119,15 +119,15 @@ MVP에서 과도한 모노레포 도구는 피하되 도메인 로직이 Lambda 
 
 ## 4. 캐시와 상태
 
-| 데이터 | 권장 TTL | 저장 위치 | 비고 |
-|---|---:|---|---|
-| 캐릭터 OCID | 6시간 이하 | Cache API/KV | OCID 변경 가능성 고려 |
-| 캐릭터 기본·스탯 | 5분 | Cache API | Nexon 갱신 시차 표시 |
-| 심볼 장착 | 5분 | Cache API | 캐릭터 조회와 키 분리 |
-| 주식 현재가 | 5~15초 | 메모리/Cache API | 장중·장외 표시 |
-| KIS 접근 토큰 | 만료 5분 전까지 | encrypted secret/cache | 로그 금지 |
-| 중복 이벤트 ID | 2분 | KV 또는 경량 저장 | TTL 필수 |
-| 메뉴 목록 | 빌드 시점 | 코드/JSON | 기준 버전 기록 |
+| 데이터           |        권장 TTL | 저장 위치              | 비고                  |
+| ---------------- | --------------: | ---------------------- | --------------------- |
+| 캐릭터 OCID      |      6시간 이하 | Cache API/KV           | OCID 변경 가능성 고려 |
+| 캐릭터 기본·스탯 |             5분 | Cache API              | Nexon 갱신 시차 표시  |
+| 심볼 장착        |             5분 | Cache API              | 캐릭터 조회와 키 분리 |
+| 주식 현재가      |          5~15초 | 메모리/Cache API       | 장중·장외 표시        |
+| KIS 접근 토큰    | 만료 5분 전까지 | encrypted secret/cache | 로그 금지             |
+| 중복 이벤트 ID   |             2분 | KV 또는 경량 저장      | TTL 필수              |
+| 메뉴 목록        |       빌드 시점 | 코드/JSON              | 기준 버전 기록        |
 
 KV가 무료 한도나 복잡도를 높이면 MVP 중복 제거는 공기계 측 짧은 LRU로 시작하고 ADR에 기록합니다.
 
@@ -183,4 +183,3 @@ KV가 무료 한도나 복잡도를 높이면 MVP 중복 제거는 공기계 측
 ## 8. 확장 지점
 
 새 명령은 Command 인터페이스에 등록합니다. 새 외부 데이터원은 Provider 인터페이스와 명시적 데이터 정책 검토를 거칩니다. 공기계 앱을 Iris로 바꾸더라도 HTTP 계약과 도메인 로직은 유지합니다.
-

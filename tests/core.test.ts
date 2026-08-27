@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   calculateSymbol,
   chooseItems,
-  mapleLinks,
   parseCommand,
+  playRps,
   recommendFood,
 } from '@kakao-maple-bot/core';
 
@@ -15,18 +15,22 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('keeps help examples aligned with registered commands', () =>
     expect(parseCommand('!도움말')).toBeTruthy());
-  it('T-009/T-010 calculates arcane boundaries and progress', () => {
-    expect(calculateSymbol('아케인', 1, 20)).toBe(2679);
-    expect(calculateSymbol('arcane', 1, 2, 3)).toBe(9);
+  it('T-009/T-010 calculates named arcane/authentic regions and progress', () => {
+    expect(calculateSymbol('여로', 1, 20)).toBe(2679);
+    expect(calculateSymbol('기어드락', 1, 11)).toBe(1806);
+    expect(calculateSymbol('츄츄', 1, 2, 3)).toBe(9);
   });
   it('rejects invalid symbol ranges', () =>
     expect(() => calculateSymbol('arcane', 0, 2)).toThrow('INVALID_USAGE'));
-  it('T-011 generates valid dice domain through backend contract', () =>
-    expect(Math.floor(Math.random() * 1000) + 1).toBeGreaterThanOrEqual(1));
+  it('supports rock-paper-scissors and taunts after a win', () => {
+    expect(playRps('가위', () => 0.66)).toContain('졌다');
+    expect(playRps('가위', () => 0.66)).toContain('내가 이겼지롱');
+    expect(playRps('가위', () => 0.8)).toContain('이겼다');
+  });
+  it('removes the retired maple link command', () =>
+    expect(parseCommand('!메이플링크 닉네임')?.name).toBe('help'));
   it('T-012 trims and deduplicates choices', () =>
     expect(chooseItems(' A, A, B')).toMatch(/^(A|B)$/));
   it('T-013 recommends supported menus', () =>
     expect(recommendFood('한식')).toMatch(/김치찌개|비빔밥/));
-  it('T-019 encodes names and uses link-only third-party references', () =>
-    expect(mapleLinks('가나')).toContain('https://maple.gg/u/%EA%B0%80%EB%82%98'));
 });
