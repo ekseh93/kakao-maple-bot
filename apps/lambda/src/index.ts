@@ -16,6 +16,7 @@ import {
   type NexonClient,
   type StockClient,
   type StockQuote,
+  type UnionCharacter,
 } from '@kakao-maple-bot/providers';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
@@ -50,6 +51,7 @@ let globalRequests: number[] = [];
 const characterCache = new Map<string, { value: Character; expiresAt: number }>();
 const hexaCache = new Map<string, { value: HexaCharacter; expiresAt: number }>();
 const dojangCache = new Map<string, { value: DojangCharacter; expiresAt: number }>();
+const unionCache = new Map<string, { value: UnionCharacter; expiresAt: number }>();
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -234,6 +236,18 @@ export async function handleMessage(
         dojangCache.set(name, { value: dojang, expiresAt: now + 5 * 60_000 });
         return { reply: formatDojang(dojang), requestId, cache: 'miss' };
       }
+      case 'union': {
+        const name = validateCharacterName(parsed.args[0]);
+        const cached = unionCache.get(name);
+        if (cached && cached.expiresAt > now)
+          return { reply: formatUnion(cached.value), requestId, cache: 'hit' };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findUnion) throw new Error('NOT_CONFIGURED');
+        const union = await client.findUnion(name, timeoutSignal());
+        if (!union) throw new Error('NOT_FOUND');
+        unionCache.set(name, { value: union, expiresAt: now + 5 * 60_000 });
+        return { reply: formatUnion(union), requestId, cache: 'miss' };
+      }
       case 'stock': {
         if (env.STOCK_ENABLED !== 'true') throw new Error('NOT_CONFIGURED');
         const code = parsed.args[0] ?? '';
@@ -295,6 +309,21 @@ function formatDojang(c: DojangCharacter): string {
     '[무릉도장 최고 기록]',
     `${c.name}: ${c.floor}층 / ${minutes}분 ${seconds}초`,
     c.recordDate ? `기록일: ${c.recordDate.slice(0, 10)}` : '',
+    `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+function formatUnion(c: UnionCharacter): string {
+  return [
+    '[유니온 정보]',
+    c.name,
+    c.level !== undefined ? `유니온 레벨: ${c.level.toLocaleString('ko-KR')}` : '',
+    c.grade ? `유니온 등급: ${c.grade}` : '',
+    c.artifactLevel !== undefined ? `아티팩트 레벨: ${c.artifactLevel}` : '',
+    c.artifactPoint !== undefined
+      ? `아티팩트 포인트: ${c.artifactPoint.toLocaleString('ko-KR')}`
+      : '',
     `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
   ]
     .filter(Boolean)

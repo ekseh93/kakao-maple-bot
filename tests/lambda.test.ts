@@ -284,6 +284,26 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('80층 / 20분 34초');
   });
+  it('handles Union lookup with a concise summary', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findUnion: vi.fn().mockResolvedValue({
+        name: '유니온캐릭터',
+        level: 8500,
+        grade: '그랜드 마스터 유니온 2',
+        artifactLevel: 40,
+        artifactPoint: 1200,
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!유니온 유니온캐릭터'), roomId: 'union-room', senderId: 'union-sender' },
+      { ...env, ALLOWED_ROOMS: 'union-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('유니온 레벨: 8,500');
+    expect(result.reply).toContain('아티팩트 포인트: 1,200');
+  });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {
       findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),

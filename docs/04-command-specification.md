@@ -83,6 +83,14 @@ Nexon Open API의 `character/hexamatrix`에서 장착 중인 HEXA 코어명, 레
 
 Nexon Open API의 `character/dojang`에서 무릉도장 역대 최고 층수, 기록 시간, 기록일을 조회합니다.
 
+### !유니온
+
+형식:
+
+    !유니온 <캐릭터명>
+
+캐릭터명을 OCID로 변환한 뒤 Nexon Open API의 `user/union`에서 유니온 레벨·등급과 제공되는 아티팩트 요약을 조회합니다.
+
 ### !심볼
 
 형식:

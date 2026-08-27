@@ -11,6 +11,7 @@ export type NexonClient = {
   findCharacter(name: string, signal: AbortSignal): Promise<Character | null>;
   findHexa?(name: string, signal: AbortSignal): Promise<HexaCharacter | null>;
   findDojang?(name: string, signal: AbortSignal): Promise<DojangCharacter | null>;
+  findUnion?(name: string, signal: AbortSignal): Promise<UnionCharacter | null>;
 };
 export type HexaCore = {
   name: string;
@@ -24,6 +25,14 @@ export type DojangCharacter = {
   floor: number;
   timeSeconds: number;
   recordDate?: string;
+  fetchedAt: string;
+};
+export type UnionCharacter = {
+  name: string;
+  level?: number;
+  grade?: string;
+  artifactLevel?: number;
+  artifactPoint?: number;
   fetchedAt: string;
 };
 export type StockQuote = {
@@ -203,6 +212,52 @@ export function createNexonClient(
         floor: body.dojang_best_floor,
         timeSeconds: body.dojang_best_time,
         recordDate: body.date_dojang_record ?? undefined,
+        fetchedAt: body.date ?? new Date().toISOString(),
+      };
+    },
+    async findUnion(name, signal) {
+      if (!apiKey) throw new Error('NOT_CONFIGURED');
+      const ocid = await findOcid(name, signal);
+      if (!ocid) return null;
+      const base = 'https://open.api.nexon.com/maplestory/v1';
+      const response = await fetchWithRetry(
+        fetcher,
+        `${base}/user/union?ocid=${encodeURIComponent(ocid)}`,
+        { headers: { 'x-nxopen-api-key': apiKey }, signal },
+      );
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = (await response.json()) as {
+        date?: string | null;
+        union_level?: number | null;
+        union_grade?: string | null;
+        union_artifact_level?: number | null;
+        union_artifact_point?: number | null;
+      };
+      const numericFields = [
+        body.union_level,
+        body.union_artifact_level,
+        body.union_artifact_point,
+      ];
+      if (
+        numericFields.some(
+          (value) =>
+            value !== undefined && value !== null && (!Number.isInteger(value) || value < 0),
+        )
+      )
+        throw new Error('PROVIDER_SCHEMA');
+      if (
+        body.union_grade !== undefined &&
+        body.union_grade !== null &&
+        typeof body.union_grade !== 'string'
+      )
+        throw new Error('PROVIDER_SCHEMA');
+      return {
+        name,
+        level: body.union_level ?? undefined,
+        grade: body.union_grade ?? undefined,
+        artifactLevel: body.union_artifact_level ?? undefined,
+        artifactPoint: body.union_artifact_point ?? undefined,
         fetchedAt: body.date ?? new Date().toISOString(),
       };
     },

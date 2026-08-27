@@ -83,6 +83,30 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     );
     expect(result).toMatchObject({ name: '테스트', floor: 80, timeSeconds: 1234 });
   });
+  it('maps the official Union summary response', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ocid: 'ocid-fixture' }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            date: '2026-08-27T00:00:00+09:00',
+            union_level: 8500,
+            union_grade: '그랜드 마스터 유니온 2',
+            union_artifact_level: 40,
+            union_artifact_point: 1200,
+          }),
+          { status: 200 },
+        ),
+      );
+    const result = await createNexonClient('fixture-key', fetcher).findUnion?.(
+      '테스트',
+      new AbortController().signal,
+    );
+    expect(result).toMatchObject({ name: '테스트', level: 8500, artifactPoint: 1200 });
+  });
   it('maps KIS quote fixture without order or account endpoints', async () => {
     const fetcher = vi
       .fn()

@@ -65,3 +65,8 @@
 
 - `!무릉 <닉네임>`으로 Nexon Open API `character/dojang`의 최고 층수·기록 시간·기록일을 제공합니다.
 - 공식 응답 필드 타입을 검증하는 provider fixture와 Lambda 포맷 테스트를 추가했습니다.
+
+## 2026-08-27 유니온 요약 조회 추가
+
+- `!유니온 <닉네임>`으로 Nexon Open API `user/union`의 유니온 레벨·등급·아티팩트 요약을 제공합니다.
+- OCID 변환과 공식 응답 필드 타입을 검증하는 fixture 테스트를 추가했습니다.
