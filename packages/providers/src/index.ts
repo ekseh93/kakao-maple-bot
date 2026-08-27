@@ -67,7 +67,7 @@ export type UnionChampionAbility = { name: string; value: string };
 export type UnionChampionEntry = {
   name: string;
   grade?: string;
-  level?: number;
+  className?: string;
   slot?: number;
   abilities: UnionChampionAbility[];
 };
@@ -501,41 +501,38 @@ export function createNexonClient(
         union_champion?: Array<{
           champion_name?: string | null;
           champion_grade?: string | null;
-          champion_level?: number | null;
           champion_slot?: number | null;
-          champion_ability?: Array<{
-            ability_name?: string | null;
-            ability_value?: string | null;
-          }> | null;
+          champion_class?: string | null;
+          champion_badge_info?: Array<{ stat?: string | null }> | null;
         }> | null;
       };
       if (!Array.isArray(body.union_champion)) throw new Error('PROVIDER_SCHEMA');
       const champions = body.union_champion.map((champion) => {
-        if (typeof champion.champion_name !== 'string' || !Array.isArray(champion.champion_ability))
+        if (
+          typeof champion.champion_name !== 'string' ||
+          !Array.isArray(champion.champion_badge_info)
+        )
           throw new Error('PROVIDER_SCHEMA');
         if (
           (champion.champion_grade !== undefined &&
             champion.champion_grade !== null &&
             typeof champion.champion_grade !== 'string') ||
-          (champion.champion_level !== undefined &&
-            champion.champion_level !== null &&
-            (!Number.isInteger(champion.champion_level) || champion.champion_level < 0)) ||
           (champion.champion_slot !== undefined &&
             champion.champion_slot !== null &&
-            (!Number.isInteger(champion.champion_slot) || champion.champion_slot < 0))
+            (!Number.isInteger(champion.champion_slot) || champion.champion_slot < 0)) ||
+          (champion.champion_class !== undefined &&
+            champion.champion_class !== null &&
+            typeof champion.champion_class !== 'string')
         )
           throw new Error('PROVIDER_SCHEMA');
-        const abilities = champion.champion_ability.map((ability) => {
-          if (typeof ability.ability_name !== 'string' || typeof ability.ability_value !== 'string')
-            throw new Error('PROVIDER_SCHEMA');
-          return { name: ability.ability_name, value: ability.ability_value };
+        const abilities = champion.champion_badge_info.map((badge) => {
+          if (typeof badge.stat !== 'string') throw new Error('PROVIDER_SCHEMA');
+          return { name: '챔피언 휘장', value: badge.stat };
         });
         return {
           name: champion.champion_name,
           ...(champion.champion_grade ? { grade: champion.champion_grade } : {}),
-          ...(champion.champion_level !== undefined && champion.champion_level !== null
-            ? { level: champion.champion_level }
-            : {}),
+          ...(champion.champion_class ? { className: champion.champion_class } : {}),
           ...(champion.champion_slot !== undefined && champion.champion_slot !== null
             ? { slot: champion.champion_slot }
             : {}),

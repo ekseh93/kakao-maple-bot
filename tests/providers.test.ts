@@ -177,11 +177,11 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
               {
                 champion_name: '메르세데스',
                 champion_grade: 'S',
-                champion_level: 250,
                 champion_slot: 1,
-                champion_ability: [
-                  { ability_name: '경험치 획득량', ability_value: '+15%' },
-                  { ability_name: '재사용 대기시간 감소', ability_value: '-5%' },
+                champion_class: '궁수',
+                champion_badge_info: [
+                  { stat: '경험치 획득량 +15%' },
+                  { stat: '재사용 대기시간 감소 -5%' },
                 ],
               },
             ],
@@ -195,11 +195,11 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     );
     expect(result).toMatchObject({
       name: '테스트',
-      champions: [{ name: '메르세데스', grade: 'S', level: 250 }],
+      champions: [{ name: '메르세데스', grade: 'S', className: '궁수' }],
     });
     expect(result?.champions[0]?.abilities).toContainEqual({
-      name: '경험치 획득량',
-      value: '+15%',
+      name: '챔피언 휘장',
+      value: '경험치 획득량 +15%',
     });
     expect(fetcher.mock.calls[1]?.[0]).toContain('/user/union-champion?ocid=ocid-fixture');
   });

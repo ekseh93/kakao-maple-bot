@@ -620,12 +620,7 @@ function formatUnionChampion(c: UnionChampion): string {
     '────────────',
   ];
   for (const champion of c.champions) {
-    const detail = [
-      champion.grade,
-      champion.level !== undefined ? `Lv.${champion.level}` : undefined,
-    ]
-      .filter(Boolean)
-      .join(' ');
+    const detail = [champion.grade, champion.className].filter(Boolean).join(' ');
     lines.push(`▸ ${champion.name}${detail ? ` (${detail})` : ''}`);
     for (const ability of champion.abilities) lines.push(`  - ${ability.name}: ${ability.value}`);
   }

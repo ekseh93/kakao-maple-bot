@@ -330,9 +330,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
           {
             name: '메르세데스',
             grade: 'S',
-            level: 250,
+            className: '궁수',
             slot: 1,
-            abilities: [{ name: '경험치 획득량', value: '+15%' }],
+            abilities: [{ name: '챔피언 휘장', value: '경험치 획득량 +15%' }],
           },
         ],
         fetchedAt: '2026-08-27T00:00:00.000Z',
@@ -348,8 +348,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply).toContain('[유니온 챔피언 능력치]');
-    expect(result.reply).toContain('메르세데스 (S Lv.250)');
-    expect(result.reply).toContain('경험치 획득량: +15%');
+    expect(result.reply).toContain('메르세데스 (S 궁수)');
+    expect(result.reply).toContain('챔피언 휘장: 경험치 획득량 +15%');
     expect(nexon.findUnionChampion).toHaveBeenCalledWith('유챔캐릭터', expect.anything());
   });
   it('handles equipment lookup with a readable template', async () => {

@@ -141,7 +141,7 @@ Nexon Open API의 `character/dojang`에서 무릉도장 역대 최고 층수, �
 
     !유챔 <캐릭터명>
 
-캐릭터명을 OCID로 변환한 뒤 Nexon Open API의 `user/union-champion`에서 해당 계정의 유니온 챔피언 이름·등급·레벨·적용 능력치를 조회합니다. API 응답 기준이며 챔피언 능력치를 직접 계산하거나 추정하지 않습니다.
+캐릭터명을 OCID로 변환한 뒤 Nexon Open API의 `user/union-champion`에서 해당 계정의 유니온 챔피언 이름·등급·직업·휘장 능력치를 조회합니다. API 응답 기준이며 챔피언 능력치를 직접 계산하거나 추정하지 않습니다.
 
 ### !장비
 
