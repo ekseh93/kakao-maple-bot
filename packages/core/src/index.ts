@@ -435,10 +435,10 @@ export function formatFortune(args: string[] = [], now = new Date()): string {
   const birthText = args[0]!.slice(0, -2);
   const birthYear = Number(birthText.length === 2 ? `20${birthText}` : birthText);
   const currentYear = Number(
-    new Intl.DateTimeFormat('en', { timeZone: 'Asia/Tokyo', year: 'numeric' }).format(now),
+    new Intl.DateTimeFormat('en', { timeZone: 'Asia/Seoul', year: 'numeric' }).format(now),
   );
   if (birthYear < 1900 || birthYear > currentYear) throw new Error('INVALID_USAGE');
-  const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(now);
+  const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(now);
   const seed = `${date}:${birthYear}`;
   return [
     '[오늘의 운세]',
