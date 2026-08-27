@@ -520,6 +520,7 @@ export function formatRoyalDraw(
     showResults,
     random,
     false,
+    (item) => `[라벨] ${item.name}`,
   );
 }
 
@@ -575,10 +576,14 @@ export function formatMasterpieceDraw(
 ): string {
   const red = drawRoyalStyles(redItems, 1, random)[0]!;
   const black = drawRoyalStyles(blackItems, 1, random)[0]!;
+  const label = (item: RoyalStyleItem) =>
+    item.name.includes('마스터') || item.name.includes('마스터라벨')
+      ? `[마라벨] ${item.name}`
+      : item.name;
   return [
     '[마스터피스 레드·블랙 시뮬레이션]',
-    `레드: ${red.name} (${red.probability.toFixed(4)}%)`,
-    `블랙: ${black.name} (${black.probability.toFixed(4)}%)`,
+    `레드: ${label(red)} (${red.probability.toFixed(4)}%)`,
+    `블랙: ${label(black)} (${black.probability.toFixed(4)}%)`,
     `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
     redSourceUrl,
     blackSourceUrl,
@@ -603,6 +608,8 @@ export function formatLunaCrystalSweetDraw(
     count,
     showResults,
     random,
+    true,
+    (item) => (item.name.includes('쁘띠') ? `[쁘띠] ${item.name}` : item.name),
   );
 }
 
@@ -623,6 +630,8 @@ export function formatLunaCrystalDreamDraw(
     count,
     showResults,
     random,
+    true,
+    (item) => (item.name.includes('쁘띠') ? `[쁘띠] ${item.name}` : item.name),
   );
 }
 

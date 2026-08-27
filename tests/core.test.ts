@@ -15,6 +15,8 @@ import {
   formatFortune,
   formatBoutiqueGiftDraw,
   formatMasterpieceDraw,
+  formatRoyalDraw,
+  formatLunaCrystalSweetDraw,
 } from '@kakao-maple-bot/core';
 
 describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
@@ -61,16 +63,37 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('formats one official Red and Black Masterpiece result', () => {
     const output = formatMasterpieceDraw(
-      [{ name: '레드 테스트', probability: 7.3539 }],
-      [{ name: '블랙 테스트', probability: 5.8135 }],
+      [{ name: '마스터 어밴든 세트 선택권', probability: 7.3539 }],
+      [{ name: '마스터 어밴든 헤어 쿠폰', probability: 5.8135 }],
       'https://example.com/red',
       'https://example.com/black',
       '2026-08-27T00:00:00.000Z',
       () => 0,
     );
     expect(output).toContain('[마스터피스 레드·블랙 시뮬레이션]');
-    expect(output).toContain('레드: 레드 테스트 (7.3539%)');
-    expect(output).toContain('블랙: 블랙 테스트 (5.8135%)');
+    expect(output).toContain('레드: [마라벨] 마스터 어밴든 세트 선택권 (7.3539%)');
+    expect(output).toContain('블랙: [마라벨] 마스터 어밴든 헤어 쿠폰 (5.8135%)');
+  });
+  it('adds the requested labels to Royal and Luna results', () => {
+    const royal = formatRoyalDraw(
+      [{ name: '로얄 테스트', probability: 100 }],
+      'https://example.com/royal',
+      '2026-08-27T00:00:00.000Z',
+      1,
+      true,
+      () => 0,
+    );
+    expect(royal).toContain('[라벨] 로얄 테스트');
+    const luna = formatLunaCrystalSweetDraw(
+      '일반',
+      [{ name: '루나 쁘띠펫 테스트', probability: 100 }],
+      'https://example.com/luna',
+      '2026-08-27T00:00:00.000Z',
+      1,
+      true,
+      () => 0,
+    );
+    expect(luna).toContain('[쁘띠] 루나 쁘띠펫 테스트');
   });
   it('uses the shared count and result options for Wonder Berry', () =>
     expect(parseRoyalOptions(['25', 'false'])).toEqual({ count: 25, showResults: false }));
