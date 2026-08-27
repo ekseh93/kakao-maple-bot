@@ -4,6 +4,7 @@ export type CommandName =
   | 'choice'
   | 'food'
   | 'japanTravel'
+  | 'fortune'
   | 'symbol'
   | 'hexa'
   | 'dojang'
@@ -26,7 +27,7 @@ export type CommandName =
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
-export const HELP = `[봇 도움말]\n╔══════════════════════════════╗\n║        메이플스토리          ║\n╠══════════════════════════════╣\n║ !캐릭터 닉네임  캐릭터 조회  ║\n║ !헥사 닉네임    HEXA 코어    ║\n║ !무릉 닉네임    무릉 기록     ║\n║ !유니온 닉네임  유니온 요약   ║\n║ !유챔 닉네임    유니온 챔피언 ║\n║ !장비 닉네임    장비 요약     ║\n║ !경험치 닉네임  경험치 이력   ║\n║ !심볼 여로 1 20 심볼 계산     ║\n║ !공지            공식 공지     ║\n║ !이벤트          진행 이벤트   ║\n║ !썬데이 / !선데이 썬데이 메이플║\n║ !인벤            인벤 10추글   ║\n║ !부티크          부티크 기프트 ║\n║ !로얄            로얄스타일     ║\n║ !원더베리        위습의 원더베리║\n║ !루나스윗        루나 크리스탈 ║\n║ !루나드림        루나 크리스탈 ║\n╠══════════════════════════════╣\n║          기타 기능            ║\n╠══════════════════════════════╣\n║ !날씨 지역명     날씨 조회     ║\n║ !가위 / !바위 / !보 가위바위보  ║\n║ !골라 짜장,짬뽕 메뉴 선택      ║\n║ !뭐먹지          메뉴 추천     ║\n║ !일본여행        여행지 추천   ║\n║ !주식 이름       주식 시세     ║\n║ !상태            관리자 전용   ║\n╚══════════════════════════════╝`;
+export const HELP = `[봇 도움말]\n╔══════════════════════════════╗\n║        메이플스토리          ║\n╠══════════════════════════════╣\n║ !캐릭터 닉네임  캐릭터 조회  ║\n║ !헥사 닉네임    HEXA 코어    ║\n║ !무릉 닉네임    무릉 기록     ║\n║ !유니온 닉네임  유니온 요약   ║\n║ !유챔 닉네임    유니온 챔피언 ║\n║ !장비 닉네임    장비 요약     ║\n║ !경험치 닉네임  경험치 이력   ║\n║ !심볼 여로 1 20 심볼 계산     ║\n║ !공지            공식 공지     ║\n║ !이벤트          진행 이벤트   ║\n║ !썬데이 / !선데이 썬데이 메이플║\n║ !인벤            인벤 10추글   ║\n║ !부티크          부티크 기프트 ║\n║ !로얄            로얄스타일     ║\n║ !원더베리        위습의 원더베리║\n║ !루나스윗        루나 크리스탈 ║\n║ !루나드림        루나 크리스탈 ║\n╠══════════════════════════════╣\n║          기타 기능            ║\n╠══════════════════════════════╣\n║ !날씨 지역명     날씨 조회     ║\n║ !가위 / !바위 / !보 가위바위보  ║\n║ !골라 짜장,짬뽕 메뉴 선택      ║\n║ !뭐먹지          메뉴 추천     ║\n║ !일본여행        여행지 추천   ║\n║ !운세 00년생     오늘의 운세   ║\n║ !주식 이름       주식 시세     ║\n║ !상태            관리자 전용   ║\n╚══════════════════════════════╝`;
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
@@ -65,6 +66,7 @@ const aliases: Record<string, CommandName> = {
   메뉴: 'food',
   뭐먹을까: 'food',
   일본여행: 'japanTravel',
+  운세: 'fortune',
   주식: 'stock',
   상태: 'status',
 };
@@ -390,6 +392,64 @@ const japanTravelPlaces = [
   { prefecture: '이시카와현', city: '가나자와', highlight: '정원·전통 공예·해산물' },
   { prefecture: '가나가와현', city: '하코네', highlight: '온천·료칸·후지산 풍경' },
 ] as const;
+
+const fortuneMessages = {
+  overall: [
+    '작은 기회가 좋은 흐름으로 이어지는 날입니다.',
+    '서두르기보다 순서를 지키면 운이 따릅니다.',
+    '새로운 제안은 메모해 두면 좋은 결과로 이어집니다.',
+    '익숙한 일에서도 의외의 행운을 발견할 수 있습니다.',
+  ],
+  work: [
+    '미뤄 둔 일을 하나 정리하면 집중력이 올라갑니다.',
+    '혼자 판단하기보다 주변 의견을 들으면 실수가 줄어듭니다.',
+    '짧고 명확하게 말할수록 협업운이 좋아집니다.',
+    '오전에 중요한 일을 먼저 처리해 보세요.',
+  ],
+  money: [
+    '충동구매를 한 번 미루면 금전운이 안정됩니다.',
+    '작은 절약이 생각보다 큰 도움이 됩니다.',
+    '오늘은 수익보다 지출 점검에 유리한 날입니다.',
+    '계획에 없는 결제는 내일 다시 확인하세요.',
+  ],
+  relationship: [
+    '먼저 건넨 짧은 인사가 분위기를 바꿉니다.',
+    '상대의 말을 끝까지 들으면 좋은 대화가 됩니다.',
+    '고마운 사람에게 안부를 전해 보세요.',
+    '가볍게 웃을 수 있는 대화가 행운을 부릅니다.',
+  ],
+  luckyItem: ['파란색 소품', '따뜻한 음료', '작은 메모장', '편한 운동화'],
+} as const;
+
+function fortuneIndex(seed: string, length: number): number {
+  let hash = 0;
+  for (const character of seed) hash = (hash * 31 + character.codePointAt(0)!) >>> 0;
+  return hash % length;
+}
+
+export function formatFortune(args: string[] = [], now = new Date()): string {
+  if (args.length !== 1 || !/^(?:\d{2}|\d{4})년생$/.test(args[0]!))
+    throw new Error('INVALID_USAGE');
+  const birthText = args[0]!.slice(0, -2);
+  const birthYear = Number(birthText.length === 2 ? `20${birthText}` : birthText);
+  const currentYear = Number(
+    new Intl.DateTimeFormat('en', { timeZone: 'Asia/Tokyo', year: 'numeric' }).format(now),
+  );
+  if (birthYear < 1900 || birthYear > currentYear) throw new Error('INVALID_USAGE');
+  const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(now);
+  const seed = `${date}:${birthYear}`;
+  return [
+    '[오늘의 운세]',
+    `출생연도: ${birthYear}년생`,
+    `기준일: ${date}`,
+    `총운: ${fortuneMessages.overall[fortuneIndex(seed + ':overall', fortuneMessages.overall.length)]}`,
+    `일/공부운: ${fortuneMessages.work[fortuneIndex(seed + ':work', fortuneMessages.work.length)]}`,
+    `금전운: ${fortuneMessages.money[fortuneIndex(seed + ':money', fortuneMessages.money.length)]}`,
+    `대인운: ${fortuneMessages.relationship[fortuneIndex(seed + ':relationship', fortuneMessages.relationship.length)]}`,
+    `행운 아이템: ${fortuneMessages.luckyItem[fortuneIndex(seed + ':item', fortuneMessages.luckyItem.length)]}`,
+    '※ 생년월일 기반 오락용 콘텐츠이며 실제 예측이나 투자·의료·법률 조언이 아닙니다.',
+  ].join('\n');
+}
 
 export function formatJapanTravelRecommendation(args: string[] = [], random = Math.random): string {
   if (args.length > 0) throw new Error('INVALID_USAGE');

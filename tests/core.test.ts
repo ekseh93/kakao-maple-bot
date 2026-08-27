@@ -12,6 +12,7 @@ import {
   foodProbabilities,
   formatWonderBerryDraw,
   formatJapanTravelRecommendation,
+  formatFortune,
   formatBoutiqueGiftDraw,
 } from '@kakao-maple-bot/core';
 
@@ -133,6 +134,14 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(formatJapanTravelRecommendation([], () => 0)).toContain('현/도: 도쿄도');
     expect(formatJapanTravelRecommendation([], () => 0)).toContain('도시: 도쿄');
     expect(() => formatJapanTravelRecommendation(['도쿄'])).toThrow('INVALID_USAGE');
+  });
+  it('formats a date-stable entertainment fortune for a birth year', () => {
+    const now = new Date('2026-08-27T03:00:00.000Z');
+    const first = formatFortune(['00년생'], now);
+    expect(first).toContain('[오늘의 운세]');
+    expect(first).toContain('출생연도: 2000년생');
+    expect(first).toBe(formatFortune(['00년생'], now));
+    expect(() => formatFortune(['2000'])).toThrow('INVALID_USAGE');
   });
   it('rejects the retired food category argument', () =>
     expect(() => formatFoodRecommendation(['한식'])).toThrow('INVALID_USAGE'));

@@ -30,10 +30,21 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(nexon.findCharacter).not.toHaveBeenCalled();
   });
   it('formats a static Japan travel recommendation', async () => {
-    const result = await handleMessage({ ...message('!일본여행'), roomId: 'room-a' }, env);
+    const result = await handleMessage(
+      { ...message('!일본여행'), roomId: 'japan-travel-room' },
+      { ...env, ALLOWED_ROOMS: 'japan-travel-room' },
+    );
     expect(result.reply).toContain('[일본여행 추천]');
     expect(result.reply).toContain('현/도:');
     expect(result.reply).toContain('도시:');
+  });
+  it('formats today fortune for a birth year', async () => {
+    const result = await handleMessage(
+      { ...message('!운세 00년생'), roomId: 'fortune-room' },
+      { ...env, ALLOWED_ROOMS: 'fortune-room' },
+    );
+    expect(result.reply).toContain('[오늘의 운세]');
+    expect(result.reply).toContain('출생연도: 2000년생');
   });
 
   it('formats Inven 10-recommendation titles and board link', async () => {
