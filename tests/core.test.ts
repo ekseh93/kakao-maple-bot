@@ -217,8 +217,9 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     );
   });
   it('recommends a Japan prefecture and city without external calls', () => {
-    expect(formatJapanTravelRecommendation([], () => 0)).toContain('현/도: 도쿄도');
-    expect(formatJapanTravelRecommendation([], () => 0)).toContain('도시: 도쿄');
+    expect(formatJapanTravelRecommendation([], () => 0)).toContain('현/도: 홋카이도');
+    expect(formatJapanTravelRecommendation([], () => 0)).toContain('도시: 삿포로');
+    expect(formatJapanTravelRecommendation([], () => 0.999999)).toContain('현/도: 오키나와현');
     expect(() => formatJapanTravelRecommendation(['도쿄'])).toThrow('INVALID_USAGE');
   });
   it('formats a date-stable entertainment fortune for a birth year', () => {
