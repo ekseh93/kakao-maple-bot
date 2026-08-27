@@ -131,7 +131,7 @@ GitHub secret 등록, Nexon/KIS 키 발급, 공기계 설치·컴파일·카카�
 
 배포 확인 URL: `https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com/health` (확인 결과 `200`, `{"status":"ok"}`)
 
-배포 API smoke test에서 `!도움말`, `!공지`, `!이벤트` 응답을 확인했습니다. 공지·이벤트 응답에는 공식 넥슨 링크가 포함되며, 공기계의 `sharedSecret` 입력·컴파일·카카오톡 E2E는 사용자가 별도로 수행해야 합니다.
+배포 API smoke test에서 `!도움말`, `!공지`, `!이벤트` 응답을 확인했습니다. `!장비` 템플릿은 로컬 Lambda 경계 테스트로 확인하고 배포했으며, 공지·이벤트 응답에는 공식 넥슨 링크가 포함됩니다. 공기계의 `sharedSecret` 입력·컴파일·카카오톡 E2E는 사용자가 별도로 수행해야 합니다.
 
 ### AWS CLI 인증 준비
 
