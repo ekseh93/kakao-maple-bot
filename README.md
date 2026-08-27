@@ -2,7 +2,7 @@
 
 공기계의 카카오톡 계정을 입구로 사용해 메이플스토리 정보, 심볼 계산, 랜덤 게임, 메뉴 추천, 국내 주식 시세를 제공하는 개인용 챗봇 프로젝트입니다.
 
-> 현재 단계: Phase 0~6 로컬 구현·검증 완료 (실제 배포·공기계 검증 전)
+> 현재 단계: Phase 0~6 로컬 구현·검증 및 AWS Lambda/API Gateway 배포 완료 (공기계 E2E 검증 전)
 
 ## 핵심 결정
 
@@ -104,7 +104,7 @@ Lambda 로컬 검증은 비밀을 저장소에 넣지 않고 환경 변수 또�
 
 구현된 범위는 Phase 0 기반, Phase 1 순수 명령, Phase 2 인증·방 권한·kill switch·중복 이벤트 TTL·방 rate limit, Phase 3 Nexon 어댑터와 링크 전용 외부 상세보기, Phase 4 MessengerBot R 릴레이 스크립트와 운영 문서, Phase 5 읽기 전용 KIS 현재가 어댑터, Phase 6 로컬 안전성 보완입니다. 공급자 테스트는 fetch mock으로 수행하며 실제 키·계정·외부 배포는 사용하지 않았습니다.
 
-실제 AWS 배포, GitHub secret 등록, Nexon/KIS 키 발급, 공기계 설치·컴파일·카카오 E2E는 별도 승인과 준비가 필요한 후속 단계입니다. Maple.GG와 Maplescouter에는 링크 생성 외 HTTP 요청을 하지 않습니다.
+GitHub secret 등록, Nexon/KIS 키 발급, 공기계 설치·컴파일·카카오 E2E는 별도 승인과 준비가 필요한 후속 단계입니다. Maple.GG와 Maplescouter에는 링크 생성 외 HTTP 요청을 하지 않습니다.
 
 ## Cloudflare에서 AWS로 변경한 이유
 
@@ -125,7 +125,7 @@ Lambda 로컬 검증은 비밀을 저장소에 넣지 않고 환경 변수 또�
 
 이 프로젝트를 AWS 서버리스 운영·IAM·Lambda·API Gateway 경험을 보여주는 취업 포트폴리오로 발전시키기 위해서입니다. AWS 공식 문서상 HTTP API는 Lambda와 직접 통합할 수 있고, API Gateway HTTP API에는 신규 계정 기준 월 100만 호출 Free Tier가 최대 12개월 제공되지만, Free Tier가 무조건 무비용을 보장하지는 않으므로 Budget과 사용량 감시를 전제로 합니다. [AWS HTTP API 문서](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html) · [AWS API Gateway 요금](https://aws.amazon.com/api-gateway/pricing/)
 
-현재 전환은 코드·문서·로컬 검증까지 완료했습니다. AWS IAM Identity Center에는 프로젝트 전용 사용자와 최소 권한 권한 세트를 준비했으며, Lambda/API Gateway 리소스는 도쿄 리전(`ap-northeast-1`)에 배포했습니다. `BOT_ENABLED=false`와 빈 secret으로 `/health`만 실제 확인했으며, 운영 secret 등록과 카카오 비공개 시험방 E2E는 아직 수행하지 않았습니다.
+현재 전환은 코드·문서·로컬 검증까지 완료했으며, Lambda/API Gateway 리소스는 도쿄 리전(`ap-northeast-1`)에 배포했습니다. `BOT_ENABLED=true`와 허용 방 설정은 적용되어 있고, `/health`가 `200`으로 응답하는 것을 확인했습니다. 운영 secret 등록과 카카오 비공개 시험방 E2E는 아직 수행하지 않았습니다.
 
 배포 확인 URL: `https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com/health` (확인 결과 `200`, `{"status":"ok"}`)
 
