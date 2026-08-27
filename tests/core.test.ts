@@ -11,6 +11,7 @@ import {
   formatFoodRecommendation,
   foodProbabilities,
   formatWonderBerryDraw,
+  formatJapanTravelRecommendation,
   formatBoutiqueGiftDraw,
 } from '@kakao-maple-bot/core';
 
@@ -126,6 +127,11 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(formatFoodRecommendation([], () => 0)).toContain('전체 요리 확률');
     expect(formatFoodRecommendation([], () => 0)).toContain('재획:');
     expect(farming.weight / normal.weight).toBeCloseTo(1.5, 3);
+  });
+  it('recommends a Japan prefecture and city without external calls', () => {
+    expect(formatJapanTravelRecommendation([], () => 0)).toContain('현/도: 도쿄도');
+    expect(formatJapanTravelRecommendation([], () => 0)).toContain('도시: 도쿄');
+    expect(() => formatJapanTravelRecommendation(['도쿄'])).toThrow('INVALID_USAGE');
   });
   it('rejects the retired food category argument', () =>
     expect(() => formatFoodRecommendation(['한식'])).toThrow('INVALID_USAGE'));

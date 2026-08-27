@@ -29,6 +29,12 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toBeNull();
     expect(nexon.findCharacter).not.toHaveBeenCalled();
   });
+  it('formats a static Japan travel recommendation', async () => {
+    const result = await handleMessage({ ...message('!일본여행'), roomId: 'room-a' }, env);
+    expect(result.reply).toContain('[일본여행 추천]');
+    expect(result.reply).toContain('현/도:');
+    expect(result.reply).toContain('도시:');
+  });
 
   it('formats Inven 10-recommendation titles and board link', async () => {
     const inven = {

@@ -11,6 +11,7 @@ import {
   parseRoyalOptions,
   playRps,
   formatFoodRecommendation,
+  formatJapanTravelRecommendation,
   validateCharacterName,
   validateRegion,
 } from '@kakao-maple-bot/core';
@@ -245,6 +246,12 @@ export async function handleMessage(
       case 'food':
         return {
           reply: formatFoodRecommendation(parsed.args),
+          requestId,
+          cache: 'bypass',
+        };
+      case 'japanTravel':
+        return {
+          reply: formatJapanTravelRecommendation(parsed.args),
           requestId,
           cache: 'bypass',
         };

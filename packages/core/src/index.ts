@@ -3,6 +3,7 @@ export type CommandName =
   | 'rps'
   | 'choice'
   | 'food'
+  | 'japanTravel'
   | 'symbol'
   | 'hexa'
   | 'dojang'
@@ -25,7 +26,7 @@ export type CommandName =
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
-export const HELP = `[봇 도움말]\n╔══════════════════════════════╗\n║        메이플스토리          ║\n╠══════════════════════════════╣\n║ !캐릭터 닉네임  캐릭터 조회  ║\n║ !헥사 닉네임    HEXA 코어    ║\n║ !무릉 닉네임    무릉 기록     ║\n║ !유니온 닉네임  유니온 요약   ║\n║ !유챔 닉네임    유니온 챔피언 ║\n║ !장비 닉네임    장비 요약     ║\n║ !경험치 닉네임  경험치 이력   ║\n║ !심볼 여로 1 20 심볼 계산     ║\n║ !공지            공식 공지     ║\n║ !이벤트          진행 이벤트   ║\n║ !썬데이 / !선데이 썬데이 메이플║\n║ !인벤            인벤 10추글   ║\n║ !부티크          부티크 기프트 ║\n║ !로얄            로얄스타일     ║\n║ !원더베리        위습의 원더베리║\n║ !루나스윗        루나 크리스탈 ║\n║ !루나드림        루나 크리스탈 ║\n╠══════════════════════════════╣\n║          기타 기능            ║\n╠══════════════════════════════╣\n║ !날씨 지역명     날씨 조회     ║\n║ !가위 / !바위 / !보 가위바위보  ║\n║ !골라 짜장,짬뽕 메뉴 선택      ║\n║ !뭐먹지          메뉴 추천     ║\n║ !주식 이름       주식 시세     ║\n║ !상태            관리자 전용   ║\n╚══════════════════════════════╝`;
+export const HELP = `[봇 도움말]\n╔══════════════════════════════╗\n║        메이플스토리          ║\n╠══════════════════════════════╣\n║ !캐릭터 닉네임  캐릭터 조회  ║\n║ !헥사 닉네임    HEXA 코어    ║\n║ !무릉 닉네임    무릉 기록     ║\n║ !유니온 닉네임  유니온 요약   ║\n║ !유챔 닉네임    유니온 챔피언 ║\n║ !장비 닉네임    장비 요약     ║\n║ !경험치 닉네임  경험치 이력   ║\n║ !심볼 여로 1 20 심볼 계산     ║\n║ !공지            공식 공지     ║\n║ !이벤트          진행 이벤트   ║\n║ !썬데이 / !선데이 썬데이 메이플║\n║ !인벤            인벤 10추글   ║\n║ !부티크          부티크 기프트 ║\n║ !로얄            로얄스타일     ║\n║ !원더베리        위습의 원더베리║\n║ !루나스윗        루나 크리스탈 ║\n║ !루나드림        루나 크리스탈 ║\n╠══════════════════════════════╣\n║          기타 기능            ║\n╠══════════════════════════════╣\n║ !날씨 지역명     날씨 조회     ║\n║ !가위 / !바위 / !보 가위바위보  ║\n║ !골라 짜장,짬뽕 메뉴 선택      ║\n║ !뭐먹지          메뉴 추천     ║\n║ !일본여행        여행지 추천   ║\n║ !주식 이름       주식 시세     ║\n║ !상태            관리자 전용   ║\n╚══════════════════════════════╝`;
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
@@ -63,6 +64,7 @@ const aliases: Record<string, CommandName> = {
   뭐먹지: 'food',
   메뉴: 'food',
   뭐먹을까: 'food',
+  일본여행: 'japanTravel',
   주식: 'stock',
   상태: 'status',
 };
@@ -371,6 +373,33 @@ export function formatFoodRecommendation(args: string[] = [], random = Math.rand
     '전체 요리 확률:',
     ...probabilities.map((item) => `- ${item.name}: ${item.probability.toFixed(2)}%`),
     '※ 재획은 다른 음식보다 50% 높은 가중치로 계산했습니다.',
+  ].join('\n');
+}
+
+const japanTravelPlaces = [
+  { prefecture: '도쿄도', city: '도쿄', highlight: '도심 관광·쇼핑·전시' },
+  { prefecture: '오사카부', city: '오사카', highlight: '먹거리·도톤보리·근교 여행' },
+  { prefecture: '교토부', city: '교토', highlight: '사찰·전통 거리·문화재' },
+  { prefecture: '홋카이도', city: '삿포로', highlight: '미식·자연·계절 축제' },
+  { prefecture: '후쿠오카현', city: '후쿠오카', highlight: '라멘·온천·짧은 도심 여행' },
+  { prefecture: '오키나와현', city: '나하', highlight: '해변·섬 풍경·류큐 문화' },
+  { prefecture: '나라현', city: '나라', highlight: '사슴공원·고찰·역사 산책' },
+  { prefecture: '효고현', city: '고베', highlight: '항구 야경·온천·카페' },
+  { prefecture: '히로시마현', city: '히로시마', highlight: '평화공원·미야지마·미식' },
+  { prefecture: '나가노현', city: '마쓰모토', highlight: '성곽·산악 풍경·온천' },
+  { prefecture: '이시카와현', city: '가나자와', highlight: '정원·전통 공예·해산물' },
+  { prefecture: '가나가와현', city: '하코네', highlight: '온천·료칸·후지산 풍경' },
+] as const;
+
+export function formatJapanTravelRecommendation(args: string[] = [], random = Math.random): string {
+  if (args.length > 0) throw new Error('INVALID_USAGE');
+  const place = choose([...japanTravelPlaces], random);
+  return [
+    '[일본여행 추천]',
+    `현/도: ${place.prefecture}`,
+    `도시: ${place.city}`,
+    `추천 포인트: ${place.highlight}`,
+    '※ 교통·영업시간·기상은 출발 전에 다시 확인해 주세요.',
   ].join('\n');
 }
 
