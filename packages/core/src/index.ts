@@ -5,6 +5,7 @@ export type CommandName =
   | 'food'
   | 'japanTravel'
   | 'fortune'
+  | 'lotto'
   | 'symbol'
   | 'hexa'
   | 'dojang'
@@ -28,7 +29,7 @@ export type CommandName =
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
-export const HELP = `[봇 도움말]\n╔══════════════════════════════╗\n║        메이플스토리          ║\n╠══════════════════════════════╣\n║ !캐릭터 닉네임  캐릭터 조회  ║\n║ !헥사 닉네임    HEXA 코어    ║\n║ !무릉 닉네임    무릉 기록     ║\n║ !유니온 닉네임  유니온 요약   ║\n║ !유챔 닉네임    유니온 챔피언 ║\n║ !장비 닉네임    장비 요약     ║\n║ !경험치 닉네임  경험치 이력   ║\n║ !심볼 여로 1 20 심볼 계산     ║\n║ !공지            공식 공지     ║\n║ !이벤트          진행 이벤트   ║\n║ !썬데이 / !선데이 썬데이 메이플║\n║ !인벤            인벤 10추글   ║\n║ !부티크          부티크 기프트 ║\n║ !피스            마스터피스     ║\n║ !로얄            로얄스타일     ║\n║ !원더베리        위습의 원더베리║\n║ !루나스윗        루나 크리스탈 ║\n║ !루나드림        루나 크리스탈 ║\n╠══════════════════════════════╣\n║          기타 기능            ║\n╠══════════════════════════════╣\n║ !날씨 지역명     날씨 조회     ║\n║ !가위 / !바위 / !보 가위바위보  ║\n║ !골라 짜장,짬뽕 메뉴 선택      ║\n║ !뭐먹지          메뉴 추천     ║\n║ !일본여행        여행지 추천   ║\n║ !운세 00년생     오늘의 운세   ║\n║ !주식 이름       주식 시세     ║\n║ !상태            관리자 전용   ║\n╚══════════════════════════════╝`;
+export const HELP = `[봇 도움말]\n╔══════════════════════════════╗\n║        메이플스토리          ║\n╠══════════════════════════════╣\n║ !캐릭터 닉네임  캐릭터 조회  ║\n║ !헥사 닉네임    HEXA 코어    ║\n║ !무릉 닉네임    무릉 기록     ║\n║ !유니온 닉네임  유니온 요약   ║\n║ !유챔 닉네임    유니온 챔피언 ║\n║ !장비 닉네임    장비 요약     ║\n║ !경험치 닉네임  경험치 이력   ║\n║ !심볼 여로 1 20 심볼 계산     ║\n║ !공지            공식 공지     ║\n║ !이벤트          진행 이벤트   ║\n║ !썬데이 / !선데이 썬데이 메이플║\n║ !인벤            인벤 10추글   ║\n║ !부티크          부티크 기프트 ║\n║ !피스            마스터피스     ║\n║ !로얄            로얄스타일     ║\n║ !원더베리        위습의 원더베리║\n║ !루나스윗        루나 크리스탈 ║\n║ !루나드림        루나 크리스탈 ║\n╠══════════════════════════════╣\n║          기타 기능            ║\n╠══════════════════════════════╣\n║ !날씨 지역명     날씨 조회     ║\n║ !가위 / !바위 / !보 가위바위보  ║\n║ !골라 짜장,짬뽕 메뉴 선택      ║\n║ !뭐먹지          메뉴 추천     ║\n║ !일본여행        여행지 추천   ║\n║ !운세 00년생     오늘의 운세   ║\n║ !로또            한·일 번호 추천 ║\n║ !주식 이름       주식 시세     ║\n║ !상태            관리자 전용   ║\n╚══════════════════════════════╝`;
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
@@ -69,6 +70,7 @@ const aliases: Record<string, CommandName> = {
   뭐먹을까: 'food',
   일본여행: 'japanTravel',
   운세: 'fortune',
+  로또: 'lotto',
   주식: 'stock',
   상태: 'status',
 };
@@ -450,6 +452,25 @@ export function formatFortune(args: string[] = [], now = new Date()): string {
     `대인운: ${fortuneMessages.relationship[fortuneIndex(seed + ':relationship', fortuneMessages.relationship.length)]}`,
     `행운 아이템: ${fortuneMessages.luckyItem[fortuneIndex(seed + ':item', fortuneMessages.luckyItem.length)]}`,
     '※ 생년월일 기반 오락용 콘텐츠이며 실제 예측이나 투자·의료·법률 조언이 아닙니다.',
+  ].join('\n');
+}
+
+export function drawLottoNumbers(max: number, count: number, random = Math.random): number[] {
+  if (!Number.isInteger(max) || !Number.isInteger(count) || max < 1 || count < 1 || count > max)
+    throw new Error('INVALID_USAGE');
+  const numbers = new Set<number>();
+  while (numbers.size < count) numbers.add(Math.floor(random() * max) + 1);
+  return [...numbers].sort((a, b) => a - b);
+}
+
+export function formatLotto(random = Math.random): string {
+  const korean = drawLottoNumbers(45, 6, random);
+  const japanese = drawLottoNumbers(37, 7, random);
+  return [
+    '[로또 랜덤 뽑기]',
+    `한국 로또 6/45: ${korean.map((number) => String(number).padStart(2, '0')).join(', ')}`,
+    `일본 로또7: ${japanese.map((number) => String(number).padStart(2, '0')).join(', ')}`,
+    '※ 실제 복권 구매·당첨을 보장하지 않는 랜덤 번호 추천입니다.',
   ].join('\n');
 }
 

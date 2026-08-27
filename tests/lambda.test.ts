@@ -728,6 +728,16 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('습도: 72%');
     expect(result.reply).toContain('PM2.5: 8.2');
   });
+  it('handles the local Korean and Japanese lotto command', async () => {
+    const result = await handleMessage(
+      { ...message('!로또'), roomId: 'lotto-room', senderId: 'lotto-sender' },
+      { ...env, ALLOWED_ROOMS: 'lotto-room' },
+    );
+    expect(result.reply).toContain('[로또 랜덤 뽑기]');
+    expect(result.reply).toMatch(/한국 로또 6\/45: (?:\d{2}, ){5}\d{2}/);
+    expect(result.reply).toMatch(/일본 로또7: (?:\d{2}, ){6}\d{2}/);
+    expect(result.cache).toBe('bypass');
+  });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {
       findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),

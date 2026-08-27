@@ -14,6 +14,7 @@ import {
   formatFoodRecommendation,
   formatJapanTravelRecommendation,
   formatFortune,
+  formatLotto,
   validateCharacterName,
   validateRegion,
 } from '@kakao-maple-bot/core';
@@ -262,6 +263,13 @@ export async function handleMessage(
       case 'fortune':
         return {
           reply: formatFortune(parsed.args),
+          requestId,
+          cache: 'bypass',
+        };
+      case 'lotto':
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        return {
+          reply: formatLotto(),
           requestId,
           cache: 'bypass',
         };

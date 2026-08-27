@@ -17,6 +17,8 @@ import {
   formatMasterpieceDraw,
   formatRoyalDraw,
   formatLunaCrystalSweetDraw,
+  drawLottoNumbers,
+  formatLotto,
 } from '@kakao-maple-bot/core';
 
 describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
@@ -26,6 +28,20 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   it('accepts both Sunday Maple command spellings', () => {
     expect(parseCommand('!썬데이')).toEqual({ name: 'sunday', args: [] });
     expect(parseCommand('!선데이')).toEqual({ name: 'sunday', args: [] });
+  });
+  it('parses and formats the Korean and Japanese lotto command', () => {
+    expect(parseCommand('!로또')).toEqual({ name: 'lotto', args: [] });
+    let randomValue = 0;
+    const random = () => (randomValue++ % 100) / 100;
+    const numbers = drawLottoNumbers(45, 6, random);
+    expect(numbers).toHaveLength(6);
+    expect(new Set(numbers).size).toBe(6);
+    expect(numbers.every((number) => number >= 1 && number <= 45)).toBe(true);
+    randomValue = 0;
+    const output = formatLotto(random);
+    expect(output).toContain('한국 로또 6/45: 01, 02, 03, 04, 05, 06');
+    expect(output).toContain('일본 로또7: 05, 06, 07, 08, 09, 10, 11');
+    expect(output).toContain('실제 복권 구매');
   });
 
   it('parses the Inven hot-post command', () =>
