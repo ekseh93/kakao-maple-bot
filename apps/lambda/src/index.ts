@@ -874,9 +874,17 @@ function formatWeeklyNewProduct(post: NaverBlogPost | null): string {
   return ['[금주의 신상]', `제목: ${post.title}`, `게시글: ${post.url}`].join('\n');
 }
 function formatExperience(c: ExperienceHistory): string {
-  const lines = ['[경험치 히스토리]', `캐릭터: ${c.name}`, '최근 8일 (당일 포함)', '────────────'];
-  for (const [index, snapshot] of c.snapshots.entries()) {
-    const previous = c.snapshots[index + 1];
+  const current = c.snapshots[0];
+  const orderedSnapshots = [...c.snapshots].reverse();
+  const currentExperience = current ? current.experience.toLocaleString('ko-KR') : '-';
+  const lines = [
+    '[경험치 히스토리]',
+    `캐릭터: ${c.name} (현재 경험치: ${currentExperience} EXP)`,
+    '최근 8일 (오래된 기록 → 최신 기록)',
+    '────────────',
+  ];
+  for (const [index, snapshot] of orderedSnapshots.entries()) {
+    const previous = orderedSnapshots[index - 1];
     const dailyChange =
       previous && previous.level === snapshot.level
         ? ` / 전날 대비 ${formatSignedPercent(snapshot.experienceRate - previous.experienceRate)}`
@@ -886,8 +894,7 @@ function formatExperience(c: ExperienceHistory): string {
       `  Lv.${snapshot.level} / ${snapshot.experienceRate.toFixed(2)}%${dailyChange}`,
     );
   }
-  const oldest = c.snapshots.at(-1);
-  const current = c.snapshots[0];
+  const oldest = orderedSnapshots[0];
   if (oldest && current && oldest.level === current.level) {
     const weekly = current.experienceRate - oldest.experienceRate;
     const dailyAverage = weekly / 7;
