@@ -14,6 +14,7 @@ export type NexonClient = {
   findUnion?(name: string, signal: AbortSignal): Promise<UnionCharacter | null>;
   findEquipment?(name: string, signal: AbortSignal): Promise<EquipmentCharacter | null>;
   findNotice?(signal: AbortSignal): Promise<NoticeList>;
+  findEvents?(signal: AbortSignal): Promise<EventList>;
 };
 export type HexaCore = {
   name: string;
@@ -47,6 +48,13 @@ export type EquipmentItem = {
 export type EquipmentCharacter = { name: string; items: EquipmentItem[]; fetchedAt: string };
 export type NoticeItem = { title: string; url: string; date?: string };
 export type NoticeList = { notices: NoticeItem[]; fetchedAt: string };
+export type EventItem = {
+  title: string;
+  url: string;
+  startDate?: string;
+  endDate?: string;
+};
+export type EventList = { events: EventItem[]; fetchedAt: string };
 export type StockQuote = {
   code: string;
   name?: string;
@@ -338,6 +346,40 @@ export function createNexonClient(
         return { title: notice.title, url: notice.url, ...(date ? { date } : {}) };
       });
       return { notices, fetchedAt: new Date().toISOString() };
+    },
+    async findEvents(signal) {
+      if (!apiKey) throw new Error('NOT_CONFIGURED');
+      const response = await fetchWithRetry(
+        fetcher,
+        'https://open.api.nexon.com/maplestory/v1/notice-event',
+        { headers: { 'x-nxopen-api-key': apiKey }, signal },
+      );
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = (await response.json()) as {
+        event_notice?: Array<{
+          title?: string;
+          url?: string;
+          date_event_start?: string;
+          date_event_end?: string;
+        }> | null;
+      };
+      if (!Array.isArray(body.event_notice)) throw new Error('PROVIDER_SCHEMA');
+      const events = body.event_notice.map((event) => {
+        if (typeof event.title !== 'string' || typeof event.url !== 'string')
+          throw new Error('PROVIDER_SCHEMA');
+        if (!/^https:\/\/(www\.)?maplestory\.nexon\.com\//.test(event.url))
+          throw new Error('PROVIDER_SCHEMA');
+        const startDate = optionalString(event.date_event_start);
+        const endDate = optionalString(event.date_event_end);
+        return {
+          title: event.title,
+          url: event.url,
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        };
+      });
+      return { events, fetchedAt: new Date().toISOString() };
     },
   };
 }

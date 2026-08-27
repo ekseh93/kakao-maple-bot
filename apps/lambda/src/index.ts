@@ -13,6 +13,7 @@ import {
   type Character,
   type DojangCharacter,
   type EquipmentCharacter,
+  type EventList,
   type HexaCharacter,
   type NexonClient,
   type StockClient,
@@ -56,6 +57,7 @@ const dojangCache = new Map<string, { value: DojangCharacter; expiresAt: number 
 const unionCache = new Map<string, { value: UnionCharacter; expiresAt: number }>();
 const equipmentCache = new Map<string, { value: EquipmentCharacter; expiresAt: number }>();
 let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
+let eventCache: { value: EventList; expiresAt: number } | undefined;
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -136,6 +138,7 @@ export async function handleMessage(
     if (entry.expiresAt <= now) characterCache.delete(name);
   for (const [code, entry] of stockCache) if (entry.expiresAt <= now) stockCache.delete(code);
   if (noticeCache && noticeCache.expiresAt <= now) noticeCache = undefined;
+  if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
   if (!message.eventId || seen.has(message.eventId))
     return { reply: null, requestId, cache: 'bypass' };
   seen.set(message.eventId, now);
@@ -274,6 +277,15 @@ export async function handleMessage(
         noticeCache = { value: notices, expiresAt: now + 5 * 60_000 };
         return { reply: formatNotice(notices), requestId, cache: 'miss' };
       }
+      case 'event': {
+        if (eventCache && eventCache.expiresAt > now)
+          return { reply: formatEvents(eventCache.value), requestId, cache: 'hit' };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findEvents) throw new Error('NOT_CONFIGURED');
+        const events = await client.findEvents(timeoutSignal());
+        eventCache = { value: events, expiresAt: now + 5 * 60_000 };
+        return { reply: formatEvents(events), requestId, cache: 'miss' };
+      }
       case 'stock': {
         if (env.STOCK_ENABLED !== 'true') throw new Error('NOT_CONFIGURED');
         const code = parsed.args[0] ?? '';
@@ -384,6 +396,27 @@ function formatNotice(c: NoticeList): string {
   ]
     .join('\n')
     .slice(0, 1000);
+}
+function formatEvents(c: EventList): string {
+  const lines = c.events.map((event) => {
+    const period =
+      event.startDate || event.endDate
+        ? ` (${event.startDate?.slice(0, 10) ?? '?'}~${event.endDate?.slice(0, 10) ?? '?'})`
+        : '';
+    return `- ${event.title}${period}\n  ${event.url}`;
+  });
+  const header = `[메이플스토리 진행 중 이벤트]\n전체 ${c.events.length}건`;
+  const footer = `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`;
+  const output = [header, ...lines, footer].join('\n');
+  if (output.length <= 1000) return output;
+  let result = `${header}\n`;
+  let included = 0;
+  for (const line of lines) {
+    if ((result + line + '\n').length + footer.length + 20 > 1000) break;
+    result += `${line}\n`;
+    included += 1;
+  }
+  return `${result}${footer}\n(응답 제한으로 ${c.events.length - included}건은 생략)`;
 }
 function formatStock(q: StockQuote): string {
   return [

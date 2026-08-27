@@ -172,6 +172,32 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result?.notices[0]).toMatchObject({ title: '첫 공지', date: '2026-08-27' });
     expect(fetcher.mock.calls[0]?.[0]).toBe('https://open.api.nexon.com/maplestory/v1/notice');
   });
+  it('maps the official ongoing event list', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          event_notice: [
+            {
+              title: '테스트 이벤트',
+              url: 'https://maplestory.nexon.com/News/Event/1',
+              date_event_start: '2026-08-01',
+              date_event_end: '2026-08-31',
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    const result = await createNexonClient('fixture-key', fetcher).findEvents?.(
+      new AbortController().signal,
+    );
+    expect(result?.events).toMatchObject([
+      { title: '테스트 이벤트', startDate: '2026-08-01', endDate: '2026-08-31' },
+    ]);
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      'https://open.api.nexon.com/maplestory/v1/notice-event',
+    );
+  });
   it('maps KIS quote fixture without order or account endpoints', async () => {
     const fetcher = vi
       .fn()
