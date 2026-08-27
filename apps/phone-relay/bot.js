@@ -3,7 +3,7 @@
 var CONFIG = {
   endpoint: 'https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com',
   sharedSecret: '',
-  noticeRoom: '태환',
+  noticeRooms: ['태환', '엘리시움 팔레트'],
 };
 var knownNoticeUrls = [];
 var noticeInitialized = false;
@@ -12,7 +12,7 @@ var runtimePolling = false;
 var lastRuntimeAlertAt = 0;
 
 function pollNoticeAlerts() {
-  if (noticePolling || !CONFIG.endpoint || !CONFIG.sharedSecret || !CONFIG.noticeRoom) return;
+  if (noticePolling || !CONFIG.endpoint || !CONFIG.sharedSecret || !CONFIG.noticeRooms.length) return;
   noticePolling = true;
   try {
     var known = encodeURIComponent(knownNoticeUrls.join('|'));
@@ -36,7 +36,9 @@ function pollNoticeAlerts() {
     notices.forEach(function (notice) {
       if (!notice || typeof notice.title !== 'string' || typeof notice.url !== 'string') return;
       if (typeof Api !== 'undefined' && typeof Api.replyRoom === 'function') {
-        Api.replyRoom(CONFIG.noticeRoom, '[메이플 공지 알림]\n' + notice.title + '\n' + notice.url);
+        CONFIG.noticeRooms.forEach(function (roomName) {
+          Api.replyRoom(roomName, '[메이플 공지 알림]\n' + notice.title + '\n' + notice.url);
+        });
       }
       knownNoticeUrls.push(notice.url);
     });
@@ -53,7 +55,7 @@ if (typeof setInterval === 'function') setInterval(pollNoticeAlerts, 60000);
 // MessengerBot R cannot press its own compile/runtime controls. This watchdog
 // checks the backend once a day while this script is active and reports outages.
 function checkBackendRuntime() {
-  if (runtimePolling || !CONFIG.endpoint || !CONFIG.noticeRoom) return;
+  if (runtimePolling || !CONFIG.endpoint || !CONFIG.noticeRooms.length) return;
   runtimePolling = true;
   try {
     var connection = org.jsoup.Jsoup.connect(CONFIG.endpoint + '/health');
@@ -65,10 +67,12 @@ function checkBackendRuntime() {
     if (result.statusCode() === 200) return;
     if (Date.now() - lastRuntimeAlertAt < 86400000) return;
     if (typeof Api !== 'undefined' && typeof Api.replyRoom === 'function') {
-      Api.replyRoom(
-        CONFIG.noticeRoom,
-        '[봇 런타임 점검]\n백엔드 상태 확인에 실패했습니다. 공기계에서 MessengerBot R 실행 상태를 확인해 주세요.',
-      );
+      CONFIG.noticeRooms.forEach(function (roomName) {
+        Api.replyRoom(
+          roomName,
+          '[봇 런타임 점검]\n백엔드 상태 확인에 실패했습니다. 공기계에서 MessengerBot R 실행 상태를 확인해 주세요.',
+        );
+      });
       lastRuntimeAlertAt = Date.now();
     }
   } catch (error) {
