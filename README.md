@@ -129,6 +129,8 @@ GitHub secret 등록, Nexon/KIS 키 발급, 공기계 설치·컴파일·카카�
 
 배포 확인 URL: `https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com/health` (확인 결과 `200`, `{"status":"ok"}`)
 
+배포 API smoke test에서 `!도움말`과 `!공지` 응답을 확인했습니다. 공지 응답에는 공식 넥슨 링크가 포함되며, 공기계의 `sharedSecret` 입력·컴파일·카카오톡 E2E는 사용자가 별도로 수행해야 합니다.
+
 ### AWS CLI 인증 준비
 
 IAM Identity Center access portal에서 프로젝트 전용 사용자의 초기 비밀번호를 설정한 뒤, 로컬에서 SSO 프로필을 구성합니다. 프로필 이름은 예시이며 실제 구성값에 맞춰 사용합니다.
