@@ -241,7 +241,7 @@ export async function handleMessage(
     switch (parsed.name) {
       case 'help':
         return {
-          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개\n!메포효율 — 메포 대비 경험치 효율\n!금주의신상 — 금주의 신상 최신 글`,
+          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개\n!메포효율 — 메포 대비 경험치 효율\n!금주의신상 — 금주의 신상 최신 글\n!디코 — 디스코드 링크`,
           requestId,
           cache: 'bypass',
         };
@@ -429,6 +429,14 @@ export async function handleMessage(
         weeklyNewProductCache = { value: post, expiresAt: now + 10 * 60_000 };
         return { reply: formatWeeklyNewProduct(post), requestId, cache: 'miss' };
       }
+      case 'discord':
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        return {
+          reply:
+            '[디스코드 안내]\n길드디코: https://discord.gg/Kzc9BKKfJ\n라운지디코: https://discord.gg/Vq2QfH77V',
+          requestId,
+          cache: 'bypass',
+        };
       case 'event': {
         if (eventCache && eventCache.expiresAt > now)
           return { reply: formatEvents(eventCache.value), requestId, cache: 'hit' };

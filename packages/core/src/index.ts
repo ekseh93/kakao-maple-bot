@@ -20,6 +20,7 @@ export type CommandName =
   | 'mabbakDorosi'
   | 'mepoEfficiency'
   | 'weeklyNewProduct'
+  | 'discord'
   | 'webtoon'
   | 'boutiqueGift'
   | 'event'
@@ -58,6 +59,7 @@ const aliases: Record<string, CommandName> = {
   마빡도로시: 'mabbakDorosi',
   메포효율: 'mepoEfficiency',
   금주의신상: 'weeklyNewProduct',
+  디코: 'discord',
   웹툰: 'webtoon',
   부티크: 'boutiqueGift',
   이벤트: 'event',
