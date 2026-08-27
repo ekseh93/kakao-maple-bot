@@ -16,6 +16,7 @@ import {
   formatBoutiqueGiftDraw,
   formatRoyalDraw,
   formatLunaCrystalSweetDraw,
+  formatLunaCrystalDreamDraw,
   drawLottoNumbers,
   formatLotto,
 } from '@kakao-maple-bot/core';
@@ -113,6 +114,28 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(luna).not.toContain('[쁘티]');
     expect(luna).not.toContain('기준: Nexon');
     expect(luna).not.toContain('https://example.com/luna');
+  });
+  it('labels Luna Dream and petit pets from official categories', () => {
+    const dream = formatLunaCrystalDreamDraw(
+      '일반',
+      [{ name: '테스트 펫', probability: 100, category: '루나 드림 펫' }],
+      'https://example.com/luna-dream',
+      '2026-08-27T00:00:00.000Z',
+      1,
+      true,
+      () => 0,
+    );
+    const petit = formatLunaCrystalDreamDraw(
+      '일반',
+      [{ name: '테스트 펫', probability: 100, category: '루나 쁘띠 펫' }],
+      'https://example.com/luna-dream',
+      '2026-08-27T00:00:00.000Z',
+      1,
+      true,
+      () => 0,
+    );
+    expect(dream).toContain('[뒤진펫] 테스트 펫');
+    expect(petit).toContain('[쁘띠] 테스트 펫');
   });
   it('uses the shared count and result options for Wonder Berry', () =>
     expect(parseRoyalOptions(['25', 'false'])).toEqual({ count: 25, showResults: false }));
