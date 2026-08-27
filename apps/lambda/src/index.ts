@@ -14,6 +14,7 @@ import {
   formatJapanTravelRecommendation,
   formatNetflixRecommendation,
   formatAnimeRecommendation,
+  formatBossRewards,
   formatFortune,
   formatLotto,
   validateCharacterName,
@@ -228,7 +229,11 @@ export async function handleMessage(
   try {
     switch (parsed.name) {
       case 'help':
-        return { reply: HELP, requestId, cache: 'bypass' };
+        return {
+          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표`,
+          requestId,
+          cache: 'bypass',
+        };
       case 'status':
         if (!allowed(message.senderId, env.ADMIN_SENDERS))
           return { reply: null, requestId, cache: 'bypass' };
@@ -263,6 +268,8 @@ export async function handleMessage(
           requestId,
           cache: 'bypass',
         };
+      case 'boss':
+        return { reply: formatBossRewards(parsed.args), requestId, cache: 'bypass' };
       case 'netflix':
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
         return { reply: formatNetflixRecommendation(), requestId, cache: 'bypass' };

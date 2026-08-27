@@ -4,6 +4,7 @@ export type CommandName =
   | 'choice'
   | 'food'
   | 'japanTravel'
+  | 'boss'
   | 'netflix'
   | 'anime'
   | 'fortune'
@@ -42,6 +43,7 @@ const aliases: Record<string, CommandName> = {
   캐릭: 'character',
   심볼: 'symbol',
   심볼계산: 'symbol',
+  보스: 'boss',
   무릉: 'dojang',
   유니온: 'union',
   유챔: 'unionChampion',
@@ -453,6 +455,68 @@ const japanTravelPlaces = [
   { prefecture: '가고시마현', city: '가고시마', highlight: '사쿠라지마·온천·흑돼지' },
   { prefecture: '오키나와현', city: '나하', highlight: '해변·섬 풍경·류큐 문화' },
 ] as const;
+
+type BossRewardRow = {
+  name: string;
+  easy: number | null;
+  normal: number | null;
+  hard: number | null;
+  extreme: number | null;
+};
+
+// Snapshot of the four difficulty columns in the referenced decision-price table.
+// A dash in the source is represented as null and displayed as '-'.
+const grandisBossRewards: BossRewardRow[] = [
+  { name: '검은 마법사', easy: null, normal: null, hard: 665_000_000, extreme: 8_740_000_000 },
+  { name: '세렌', easy: null, normal: 239_000_000, hard: 356_000_000, extreme: 2_835_000_000 },
+  {
+    name: '칼로스',
+    easy: 280_000_000,
+    normal: 505_000_000,
+    hard: 1_273_000_000,
+    extreme: 4_104_000_000,
+  },
+  {
+    name: '카링',
+    easy: 377_000_000,
+    normal: 678_000_000,
+    hard: 1_739_000_000,
+    extreme: 5_387_000_000,
+  },
+  { name: '림보', easy: null, normal: 1_026_000_000, hard: 2_385_000_000, extreme: null },
+  { name: '발드릭스', easy: null, normal: 1_368_000_000, hard: 3_078_000_000, extreme: null },
+  {
+    name: '최초의 대적자',
+    easy: 308_000_000,
+    normal: 560_000_000,
+    hard: 1_435_000_000,
+    extreme: 4_712_000_000,
+  },
+  { name: '찬란한 흉성', easy: null, normal: 625_000_000, hard: 2_678_000_000, extreme: null },
+  { name: '유피테르', easy: null, normal: 1_615_000_000, hard: 4_845_000_000, extreme: null },
+  { name: '벨로나', easy: 440_000_000, normal: 850_000_000, hard: 2_950_000_000, extreme: null },
+];
+
+function formatMeso(value: number | null): string {
+  return value === null ? '-' : value.toLocaleString('ko-KR');
+}
+
+export function formatBossRewards(args: string[] = []): string {
+  if (args.length > 0) throw new Error('INVALID_USAGE');
+  const lines = [
+    '[그란디스·검은 마법사 보스 결정 가격]',
+    '단위: 메소',
+    '보스             이지           노말           하드        익스트림',
+    '────────────────────────────────────────────────────────────',
+    ...grandisBossRewards.map(
+      (boss) =>
+        `${boss.name.padEnd(9, ' ')} ${formatMeso(boss.easy).padStart(12, ' ')} ${formatMeso(boss.normal).padStart(12, ' ')} ${formatMeso(boss.hard).padStart(12, ' ')} ${formatMeso(boss.extreme).padStart(12, ' ')}`,
+    ),
+    '※ -는 원문 표에 해당 난이도 값이 없는 항목입니다.',
+    '출처: https://matsu1207.tistory.com/757',
+  ];
+  return lines.join('\n');
+}
 
 const netflixTitles = [
   '오징어 게임',

@@ -14,6 +14,7 @@ import {
   formatJapanTravelRecommendation,
   formatNetflixRecommendation,
   formatAnimeRecommendation,
+  formatBossRewards,
   formatFortune,
   formatBoutiqueGiftDraw,
   formatRoyalDraw,
@@ -50,6 +51,17 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
 
   it('parses the Inven hot-post command', () =>
     expect(parseCommand('!인벤')).toEqual({ name: 'inven', args: [] }));
+  it('parses and formats the Grandis and Black Mage boss table', () => {
+    expect(parseCommand('!보스')).toEqual({ name: 'boss', args: [] });
+    const output = formatBossRewards();
+    expect(output).toContain('[그란디스·검은 마법사 보스 결정 가격]');
+    expect(output).toContain('이지');
+    expect(output).toContain('익스트림');
+    expect(output).toContain('검은 마법사');
+    expect(output).toContain('8,740,000,000');
+    expect(output).toContain('출처: https://matsu1207.tistory.com/757');
+    expect(() => formatBossRewards(['닉네임'])).toThrow('INVALID_USAGE');
+  });
   it('parses aliases and unknown commands as help', () => {
     expect(parseCommand(' !도움말 ')?.name).toBe('help');
     expect(parseCommand('!unknown')?.name).toBe('help');
