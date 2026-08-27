@@ -12,6 +12,7 @@ export type NexonClient = {
   findHexa?(name: string, signal: AbortSignal): Promise<HexaCharacter | null>;
   findDojang?(name: string, signal: AbortSignal): Promise<DojangCharacter | null>;
   findUnion?(name: string, signal: AbortSignal): Promise<UnionCharacter | null>;
+  findEquipment?(name: string, signal: AbortSignal): Promise<EquipmentCharacter | null>;
 };
 export type HexaCore = {
   name: string;
@@ -35,6 +36,14 @@ export type UnionCharacter = {
   artifactPoint?: number;
   fetchedAt: string;
 };
+export type EquipmentItem = {
+  part: string;
+  name: string;
+  starforce: number;
+  potentialGrade?: string;
+  additionalPotentialGrade?: string;
+};
+export type EquipmentCharacter = { name: string; items: EquipmentItem[]; fetchedAt: string };
 export type StockQuote = {
   code: string;
   name?: string;
@@ -260,6 +269,49 @@ export function createNexonClient(
         artifactPoint: body.union_artifact_point ?? undefined,
         fetchedAt: body.date ?? new Date().toISOString(),
       };
+    },
+    async findEquipment(name, signal) {
+      if (!apiKey) throw new Error('NOT_CONFIGURED');
+      const ocid = await findOcid(name, signal);
+      if (!ocid) return null;
+      const base = 'https://open.api.nexon.com/maplestory/v1';
+      const response = await fetchWithRetry(
+        fetcher,
+        `${base}/character/item-equipment?ocid=${encodeURIComponent(ocid)}`,
+        { headers: { 'x-nxopen-api-key': apiKey }, signal },
+      );
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = (await response.json()) as {
+        date?: string | null;
+        item_equipment?: Array<{
+          item_equipment_part?: string;
+          item_name?: string;
+          starforce?: string;
+          potential_option_grade?: string | null;
+          additional_potential_option_grade?: string | null;
+        }> | null;
+      };
+      if (!Array.isArray(body.item_equipment)) throw new Error('PROVIDER_SCHEMA');
+      const items = body.item_equipment.map((item) => {
+        if (
+          typeof item.item_equipment_part !== 'string' ||
+          typeof item.item_name !== 'string' ||
+          typeof item.starforce !== 'string' ||
+          !/^\d+$/.test(item.starforce)
+        )
+          throw new Error('PROVIDER_SCHEMA');
+        const potentialGrade = optionalString(item.potential_option_grade);
+        const additionalPotentialGrade = optionalString(item.additional_potential_option_grade);
+        return {
+          part: item.item_equipment_part,
+          name: item.item_name,
+          starforce: Number(item.starforce),
+          ...(potentialGrade ? { potentialGrade } : {}),
+          ...(additionalPotentialGrade ? { additionalPotentialGrade } : {}),
+        };
+      });
+      return { name, items, fetchedAt: body.date ?? new Date().toISOString() };
     },
   };
 }

@@ -70,3 +70,9 @@
 
 - `!유니온 <닉네임>`으로 Nexon Open API `user/union`의 유니온 레벨·등급·아티팩트 요약을 제공합니다.
 - OCID 변환과 공식 응답 필드 타입을 검증하는 fixture 테스트를 추가했습니다.
+
+## 2026-08-27 장비 요약 조회 추가
+
+- `!장비 <닉네임>`으로 Nexon Open API `character/item-equipment`의 장착 장비 부위·이름·스타포스·잠재 등급을 요약합니다.
+- 잠재능력 옵션 상세 문구는 응답 길이와 개인정보 최소화를 위해 반환하지 않습니다.
+- 공식 API fixture를 이용한 provider·Lambda 테스트를 추가했습니다.

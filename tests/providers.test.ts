@@ -107,6 +107,46 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     );
     expect(result).toMatchObject({ name: '테스트', level: 8500, artifactPoint: 1200 });
   });
+  it('maps the official equipment response', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ocid: 'ocid-fixture' }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            date: '2026-08-27T00:00:00+09:00',
+            item_equipment: [
+              {
+                item_equipment_part: '모자',
+                item_name: '테스트 모자',
+                starforce: '22',
+                potential_option_grade: '레전드리',
+                additional_potential_option_grade: '에픽',
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      );
+    const result = await createNexonClient('fixture-key', fetcher).findEquipment?.(
+      '테스트',
+      new AbortController().signal,
+    );
+    expect(result).toMatchObject({
+      name: '테스트',
+      items: [
+        {
+          part: '모자',
+          name: '테스트 모자',
+          starforce: 22,
+          potentialGrade: '레전드리',
+          additionalPotentialGrade: '에픽',
+        },
+      ],
+    });
+  });
   it('maps KIS quote fixture without order or account endpoints', async () => {
     const fetcher = vi
       .fn()

@@ -12,6 +12,7 @@ import {
   createStockClient,
   type Character,
   type DojangCharacter,
+  type EquipmentCharacter,
   type HexaCharacter,
   type NexonClient,
   type StockClient,
@@ -52,6 +53,7 @@ const characterCache = new Map<string, { value: Character; expiresAt: number }>(
 const hexaCache = new Map<string, { value: HexaCharacter; expiresAt: number }>();
 const dojangCache = new Map<string, { value: DojangCharacter; expiresAt: number }>();
 const unionCache = new Map<string, { value: UnionCharacter; expiresAt: number }>();
+const equipmentCache = new Map<string, { value: EquipmentCharacter; expiresAt: number }>();
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -248,6 +250,18 @@ export async function handleMessage(
         unionCache.set(name, { value: union, expiresAt: now + 5 * 60_000 });
         return { reply: formatUnion(union), requestId, cache: 'miss' };
       }
+      case 'equipment': {
+        const name = validateCharacterName(parsed.args[0]);
+        const cached = equipmentCache.get(name);
+        if (cached && cached.expiresAt > now)
+          return { reply: formatEquipment(cached.value), requestId, cache: 'hit' };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findEquipment) throw new Error('NOT_CONFIGURED');
+        const equipment = await client.findEquipment(name, timeoutSignal());
+        if (!equipment) throw new Error('NOT_FOUND');
+        equipmentCache.set(name, { value: equipment, expiresAt: now + 5 * 60_000 });
+        return { reply: formatEquipment(equipment), requestId, cache: 'miss' };
+      }
       case 'stock': {
         if (env.STOCK_ENABLED !== 'true') throw new Error('NOT_CONFIGURED');
         const code = parsed.args[0] ?? '';
@@ -328,6 +342,24 @@ function formatUnion(c: UnionCharacter): string {
   ]
     .filter(Boolean)
     .join('\n');
+}
+function formatEquipment(c: EquipmentCharacter): string {
+  const lines = c.items.map((item) => {
+    const potential = item.potentialGrade ? ` / 잠재 ${item.potentialGrade}` : '';
+    const additional = item.additionalPotentialGrade
+      ? ` / 에디 ${item.additionalPotentialGrade}`
+      : '';
+    return `- ${item.part}: ${item.name} / 스타포스 ${item.starforce}${potential}${additional}`;
+  });
+  return [
+    '[장비 요약]',
+    c.name,
+    `장비 수: ${c.items.length}`,
+    ...lines,
+    `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
+  ]
+    .join('\n')
+    .slice(0, 1000);
 }
 function formatStock(q: StockQuote): string {
   return [

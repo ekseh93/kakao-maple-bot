@@ -91,6 +91,14 @@ Nexon Open API의 `character/dojang`에서 무릉도장 역대 최고 층수, �
 
 캐릭터명을 OCID로 변환한 뒤 Nexon Open API의 `user/union`에서 유니온 레벨·등급과 제공되는 아티팩트 요약을 조회합니다.
 
+### !장비
+
+형식:
+
+    !장비 <캐릭터명>
+
+캐릭터명을 OCID로 변환한 뒤 Nexon Open API의 `character/item-equipment`에서 장착 장비의 부위·이름·스타포스·잠재능력 등급을 요약합니다. 잠재능력 옵션의 상세 문구는 응답 길이와 개인정보 최소화를 위해 반환하지 않습니다.
+
 ### !심볼
 
 형식:
