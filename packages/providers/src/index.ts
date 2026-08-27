@@ -117,15 +117,18 @@ export type StockQuote = {
   code: string;
   name?: string;
   price: number;
-  currency: 'KRW' | 'USD';
-  market: 'KRX' | 'US';
+  currency: 'KRW' | 'USD' | 'JPY';
+  market: 'KRX' | 'US' | 'JP';
   change?: number;
   changeRate?: number;
   volume?: number;
   fetchedAt: string;
   dataType: 'daily' | 'realtime';
 };
-export type StockClient = { quote(query: string, signal: AbortSignal): Promise<StockQuote> };
+export type StockClient = {
+  quote(query: string, signal: AbortSignal): Promise<StockQuote>;
+  quoteCandidates?(query: string, signal: AbortSignal): Promise<StockQuote[]>;
+};
 
 function finiteNumber(value: string | undefined): number {
   const parsed = Number(value);
@@ -836,6 +839,18 @@ function tokyoTradingDate(): string {
     .replaceAll('-', '');
 }
 
+const yahooSearchAliases: Record<string, string> = {
+  넥슨: 'NEXON',
+  닌텐도: 'Nintendo',
+  소니: 'Sony',
+  도요타: 'Toyota',
+};
+
+const yahooPublicHeaders = {
+  Accept: 'application/json',
+  'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+};
+
 export function createStockClient(
   krxAuthKey: string | undefined,
   tiingoToken: string | undefined,
@@ -848,102 +863,187 @@ export function createStockClient(
     return response;
   };
 
+  const quoteJapan = async (input: string, signal: AbortSignal): Promise<StockQuote | null> => {
+    const searchInput = yahooSearchAliases[input] ?? input;
+    const searchResponse = await request(
+      `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(searchInput)}&quotesCount=20&newsCount=0`,
+      yahooPublicHeaders,
+      signal,
+    );
+    const searchBody = (await searchResponse.json()) as {
+      quotes?: Array<{
+        symbol?: string;
+        shortname?: string;
+        longname?: string;
+        exchange?: string;
+        quoteType?: string;
+      }>;
+    };
+    if (!Array.isArray(searchBody.quotes)) throw new Error('PROVIDER_SCHEMA');
+    const match = searchBody.quotes.find(
+      (item) =>
+        typeof item.symbol === 'string' &&
+        /\.T$/i.test(item.symbol) &&
+        ['EQUITY', 'ETF'].includes(item.quoteType ?? ''),
+    );
+    if (!match?.symbol) return null;
+    const chartResponse = await request(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(match.symbol)}?range=5d&interval=1d&events=history`,
+      yahooPublicHeaders,
+      signal,
+    );
+    const chartBody = (await chartResponse.json()) as {
+      chart?: {
+        result?: Array<{
+          meta?: {
+            regularMarketPrice?: number;
+            chartPreviousClose?: number;
+            previousClose?: number;
+            currency?: string;
+          };
+          indicators?: { quote?: Array<{ close?: Array<number | null> }> };
+          timestamp?: number[];
+        }> | null;
+      };
+    };
+    const result = chartBody.chart?.result?.[0];
+    const meta = result?.meta;
+    const closes = result?.indicators?.quote?.[0]?.close ?? [];
+    const latestClose = [...closes].reverse().find((value) => typeof value === 'number');
+    const price = meta?.regularMarketPrice ?? latestClose;
+    if (typeof price !== 'number' || !Number.isFinite(price)) throw new Error('PROVIDER_SCHEMA');
+    const previous = meta?.previousClose ?? meta?.chartPreviousClose;
+    const change =
+      typeof previous === 'number' && Number.isFinite(previous) ? price - previous : undefined;
+    return {
+      code: match.symbol,
+      name: match.longname ?? match.shortname ?? match.symbol,
+      price,
+      currency: 'JPY',
+      market: 'JP',
+      ...(change !== undefined ? { change, changeRate: (change / previous!) * 100 } : {}),
+      dataType: 'daily',
+      fetchedAt: new Date().toISOString(),
+    };
+  };
+
+  const quote = async (query: string, signal: AbortSignal): Promise<StockQuote> => {
+    const input = query.trim();
+    if (!input || input.length > 80) throw new Error('INVALID_USAGE');
+    if (/^[\d]{6}$|[가-힣]/.test(input)) {
+      if (!krxAuthKey) throw new Error('NOT_CONFIGURED');
+      const headers = { AUTH_KEY: krxAuthKey };
+      const masterResponse = await request(
+        'https://openapi.krx.co.kr/svc/apis/sto/stk_isu_base_info',
+        headers,
+        signal,
+      );
+      const masterBody = (await masterResponse.json()) as {
+        OutBlock_1?: Array<Record<string, unknown>>;
+      };
+      if (!Array.isArray(masterBody.OutBlock_1)) throw new Error('PROVIDER_SCHEMA');
+      const master = masterBody.OutBlock_1.find((item) => {
+        const code = String(item.ISU_SRT_CD ?? '').replace(/\s/g, '');
+        const name = String(item.ISU_ABBRV ?? '').trim();
+        return code === input || name === input;
+      });
+      if (!master) throw new Error('NOT_FOUND');
+      const code = String(master.ISU_SRT_CD ?? '').replace(/\s/g, '');
+      const name = String(master.ISU_ABBRV ?? '').trim();
+      if (!/^\d{6}$/.test(code) || !name) throw new Error('PROVIDER_SCHEMA');
+      const dailyResponse = await request(
+        `https://openapi.krx.co.kr/svc/apis/sto/stk_bydd_trd?basDd=${tokyoTradingDate()}`,
+        headers,
+        signal,
+      );
+      const dailyBody = (await dailyResponse.json()) as {
+        OutBlock_1?: Array<Record<string, unknown>>;
+      };
+      if (!Array.isArray(dailyBody.OutBlock_1)) throw new Error('PROVIDER_SCHEMA');
+      const daily = dailyBody.OutBlock_1.find(
+        (item) => String(item.ISU_SRT_CD ?? '').replace(/\s/g, '') === code,
+      );
+      if (!daily) throw new Error('NOT_FOUND');
+      return {
+        code,
+        name,
+        price: marketNumber(daily.TDD_CLSPRC),
+        change: marketNumber(daily.CMPPREVDD_PRC),
+        changeRate: marketNumber(daily.FLUC_RT),
+        volume: marketNumber(daily.ACC_TRDVOL),
+        currency: 'KRW',
+        market: 'KRX',
+        dataType: 'daily',
+        fetchedAt: new Date().toISOString(),
+      };
+    }
+    if (!tiingoToken) throw new Error('NOT_CONFIGURED');
+    const tiingoHeaders = { Authorization: `Token ${tiingoToken}` };
+    const searchResponse = await request(
+      `https://api.tiingo.com/tiingo/utilities/search/${encodeURIComponent(input)}`,
+      tiingoHeaders,
+      signal,
+    );
+    const matches = (await searchResponse.json()) as Array<{
+      ticker?: string;
+      name?: string;
+      assetType?: string;
+      isActive?: boolean;
+    }>;
+    if (!Array.isArray(matches)) throw new Error('PROVIDER_SCHEMA');
+    const match = matches.find(
+      (item) =>
+        typeof item.ticker === 'string' &&
+        typeof item.name === 'string' &&
+        item.isActive !== false &&
+        ['Stock', 'ETF', 'Mutual Fund'].includes(item.assetType ?? ''),
+    );
+    if (!match?.ticker || !match.name) throw new Error('NOT_FOUND');
+    const priceResponse = await request(
+      `https://api.tiingo.com/tiingo/daily/${encodeURIComponent(match.ticker)}/prices`,
+      tiingoHeaders,
+      signal,
+    );
+    const prices = (await priceResponse.json()) as Array<{
+      date?: string;
+      close?: number;
+      volume?: number;
+    }>;
+    const latest = prices.at(-1);
+    if (!latest || typeof latest.close !== 'number' || !Number.isFinite(latest.close))
+      throw new Error('PROVIDER_SCHEMA');
+    return {
+      code: match.ticker,
+      name: match.name,
+      price: latest.close,
+      ...(typeof latest.volume === 'number' ? { volume: latest.volume } : {}),
+      currency: 'USD',
+      market: 'US',
+      dataType: 'daily',
+      fetchedAt: latest.date ?? new Date().toISOString(),
+    };
+  };
+
   return {
-    async quote(query, signal) {
+    quote,
+    async quoteCandidates(query, signal) {
       const input = query.trim();
       if (!input || input.length > 80) throw new Error('INVALID_USAGE');
-      if (/^[\d]{6}$|[가-힣]/.test(input)) {
-        if (!krxAuthKey) throw new Error('NOT_CONFIGURED');
-        const headers = { AUTH_KEY: krxAuthKey };
-        const masterResponse = await request(
-          'https://openapi.krx.co.kr/svc/apis/sto/stk_isu_base_info',
-          headers,
-          signal,
-        );
-        const masterBody = (await masterResponse.json()) as {
-          OutBlock_1?: Array<Record<string, unknown>>;
-        };
-        if (!Array.isArray(masterBody.OutBlock_1)) throw new Error('PROVIDER_SCHEMA');
-        const master = masterBody.OutBlock_1.find((item) => {
-          const code = String(item.ISU_SRT_CD ?? '').replace(/\s/g, '');
-          const name = String(item.ISU_ABBRV ?? '').trim();
-          return code === input || name === input;
-        });
-        if (!master) throw new Error('NOT_FOUND');
-        const code = String(master.ISU_SRT_CD ?? '').replace(/\s/g, '');
-        const name = String(master.ISU_ABBRV ?? '').trim();
-        if (!/^\d{6}$/.test(code) || !name) throw new Error('PROVIDER_SCHEMA');
-        const dailyResponse = await request(
-          `https://openapi.krx.co.kr/svc/apis/sto/stk_bydd_trd?basDd=${tokyoTradingDate()}`,
-          headers,
-          signal,
-        );
-        const dailyBody = (await dailyResponse.json()) as {
-          OutBlock_1?: Array<Record<string, unknown>>;
-        };
-        if (!Array.isArray(dailyBody.OutBlock_1)) throw new Error('PROVIDER_SCHEMA');
-        const daily = dailyBody.OutBlock_1.find(
-          (item) => String(item.ISU_SRT_CD ?? '').replace(/\s/g, '') === code,
-        );
-        if (!daily) throw new Error('NOT_FOUND');
-        return {
-          code,
-          name,
-          price: marketNumber(daily.TDD_CLSPRC),
-          change: marketNumber(daily.CMPPREVDD_PRC),
-          changeRate: marketNumber(daily.FLUC_RT),
-          volume: marketNumber(daily.ACC_TRDVOL),
-          currency: 'KRW',
-          market: 'KRX',
-          dataType: 'daily',
-          fetchedAt: new Date().toISOString(),
-        };
+      const candidates: StockQuote[] = [];
+      let firstProviderError: unknown;
+      try {
+        candidates.push(await quote(input, signal));
+      } catch (error) {
+        firstProviderError = error;
       }
-      if (!tiingoToken) throw new Error('NOT_CONFIGURED');
-      const tiingoHeaders = { Authorization: `Token ${tiingoToken}` };
-      const searchResponse = await request(
-        `https://api.tiingo.com/tiingo/utilities/search/${encodeURIComponent(input)}`,
-        tiingoHeaders,
-        signal,
-      );
-      const matches = (await searchResponse.json()) as Array<{
-        ticker?: string;
-        name?: string;
-        assetType?: string;
-        isActive?: boolean;
-      }>;
-      if (!Array.isArray(matches)) throw new Error('PROVIDER_SCHEMA');
-      const match = matches.find(
-        (item) =>
-          typeof item.ticker === 'string' &&
-          typeof item.name === 'string' &&
-          item.isActive !== false &&
-          ['Stock', 'ETF', 'Mutual Fund'].includes(item.assetType ?? ''),
-      );
-      if (!match?.ticker || !match.name) throw new Error('NOT_FOUND');
-      const priceResponse = await request(
-        `https://api.tiingo.com/tiingo/daily/${encodeURIComponent(match.ticker)}/prices`,
-        tiingoHeaders,
-        signal,
-      );
-      const prices = (await priceResponse.json()) as Array<{
-        date?: string;
-        close?: number;
-        volume?: number;
-      }>;
-      const latest = prices.at(-1);
-      if (!latest || typeof latest.close !== 'number' || !Number.isFinite(latest.close))
-        throw new Error('PROVIDER_SCHEMA');
-      return {
-        code: match.ticker,
-        name: match.name,
-        price: latest.close,
-        ...(typeof latest.volume === 'number' ? { volume: latest.volume } : {}),
-        currency: 'USD',
-        market: 'US',
-        dataType: 'daily',
-        fetchedAt: latest.date ?? new Date().toISOString(),
-      };
+      try {
+        const japan = await quoteJapan(input, signal);
+        if (japan) candidates.push(japan);
+      } catch (error) {
+        if (!firstProviderError) firstProviderError = error;
+      }
+      if (candidates.length === 0) throw firstProviderError ?? new Error('NOT_FOUND');
+      return candidates;
     },
   };
 }

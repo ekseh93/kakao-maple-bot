@@ -142,6 +142,36 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('조회: 2026-08-26T15:30:00+09:00');
     expect(result.reply).toContain('투자 권유가 아닙니다');
   });
+  it('formats stock candidates by market', async () => {
+    const stockEnv = { ...env, ALLOWED_ROOMS: 'stock-markets-room', STOCK_ENABLED: 'true' };
+    const stock = {
+      quote: vi.fn(),
+      quoteCandidates: vi.fn().mockResolvedValue([
+        {
+          code: '3659.T',
+          name: 'NEXON Co., Ltd.',
+          price: 3000,
+          currency: 'JPY',
+          market: 'JP',
+          fetchedAt: '2026-08-27T00:00:00.000Z',
+          dataType: 'daily',
+        },
+      ]),
+    };
+    const result = await handleMessage(
+      { ...message('!주식 넥슨'), roomId: 'stock-markets-room' },
+      stockEnv,
+      { stock, now: () => new Date(Date.now() + 300_000) },
+    );
+    expect(result.reply).toContain('[일본시장]');
+    expect(result.reply).toContain('NEXON Co., Ltd. (3659.T)');
+    expect(result.reply).toContain('현재가: 3,000엔');
+    await handleMessage(
+      { ...message('!테스트정리'), roomId: 'stock-markets-room' },
+      { ...env, BOT_ENABLED: 'false' },
+      { now: () => new Date(Date.now() + 600_000) },
+    );
+  });
   it('FR-014 hides admin status from non-admin senders', async () => {
     const statusEnv = { ...env, ALLOWED_ROOMS: 'status-room', ADMIN_SENDERS: 'admin-only' };
     const result = await handleMessage(

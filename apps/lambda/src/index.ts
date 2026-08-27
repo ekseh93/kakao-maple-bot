@@ -85,6 +85,7 @@ const lunaDreamCache = new Map<
   { value: LunaCrystalSweetList; expiresAt: number }
 >();
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
+const stockCandidatesCache = new Map<string, { value: StockQuote[]; expiresAt: number }>();
 const weatherCache = new Map<string, { value: WeatherSnapshot; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -168,6 +169,8 @@ export async function handleMessage(
   for (const [name, entry] of experienceCache)
     if (entry.expiresAt <= now) experienceCache.delete(name);
   for (const [code, entry] of stockCache) if (entry.expiresAt <= now) stockCache.delete(code);
+  for (const [query, entry] of stockCandidatesCache)
+    if (entry.expiresAt <= now) stockCandidatesCache.delete(query);
   if (noticeCache && noticeCache.expiresAt <= now) noticeCache = undefined;
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
@@ -521,10 +524,22 @@ export async function handleMessage(
         const query = parsed.args.join(' ').trim();
         if (!query || parsed.args.length > 4) throw new Error('INVALID_USAGE');
         const cacheKey = query.toLocaleLowerCase();
+        const candidatesCached = stockCandidatesCache.get(cacheKey);
+        const client = deps.stock ?? createStockClient(env.KRX_AUTH_KEY, env.TIINGO_TOKEN);
+        if (client.quoteCandidates) {
+          if (candidatesCached && candidatesCached.expiresAt > now)
+            return {
+              reply: formatStockCandidates(candidatesCached.value),
+              requestId,
+              cache: 'hit',
+            };
+          const candidates = await client.quoteCandidates(query, timeoutSignal());
+          stockCandidatesCache.set(cacheKey, { value: candidates, expiresAt: now + 15_000 });
+          return { reply: formatStockCandidates(candidates), requestId, cache: 'miss' };
+        }
         const cached = stockCache.get(cacheKey);
         if (cached && cached.expiresAt > now)
           return { reply: formatStock(cached.value), requestId, cache: 'hit' };
-        const client = deps.stock ?? createStockClient(env.KRX_AUTH_KEY, env.TIINGO_TOKEN);
         const quote = await client.quote(query, timeoutSignal());
         stockCache.set(cacheKey, { value: quote, expiresAt: now + 15_000 });
         return { reply: formatStock(quote), requestId, cache: 'miss' };
@@ -753,15 +768,16 @@ function formatStock(q: StockQuote): string {
     minimumFractionDigits: q.currency === 'USD' ? 2 : 0,
     maximumFractionDigits: 2,
   });
+  const unit = q.currency === 'KRW' ? '원' : q.currency === 'JPY' ? '엔' : 'USD';
   const change =
     q.change !== undefined && q.changeRate !== undefined
-      ? `전일 대비: ${q.change >= 0 ? '+' : ''}${q.change.toLocaleString('ko-KR')}원 (${q.changeRate.toFixed(2)}%)`
+      ? `전일 대비: ${q.change >= 0 ? '+' : ''}${q.change.toLocaleString('ko-KR')}${unit} (${q.changeRate.toFixed(2)}%)`
       : '';
   return [
     `[주식 시세]`,
     `${q.name ?? '종목'} (${q.code})`,
     `시장: ${q.market}`,
-    `현재가: ${price}${q.currency === 'KRW' ? '원' : ' USD'}`,
+    `현재가: ${price}${q.currency === 'KRW' ? '원' : q.currency === 'JPY' ? '엔' : ' USD'}`,
     change,
     q.volume !== undefined ? `거래량: ${q.volume.toLocaleString('ko-KR')}` : '',
     `기준: ${q.dataType === 'daily' ? '일별 종가' : '실시간'} (제공자 시각 기준)`,
@@ -771,6 +787,15 @@ function formatStock(q: StockQuote): string {
     .filter(Boolean)
     .join('\n')
     .slice(0, 1000);
+}
+function formatStockCandidates(quotes: StockQuote[]): string {
+  const lines = ['[주식 시세 검색 결과]', `후보 ${quotes.length}개`];
+  for (const quote of quotes) {
+    const market =
+      quote.market === 'KRX' ? '한국시장(KRX)' : quote.market === 'JP' ? '일본시장' : '미국시장';
+    lines.push('', `[${market}]`, formatStock(quote));
+  }
+  return lines.join('\n').slice(0, 1000);
 }
 
 export async function httpHandler(request: Request, env: Env): Promise<Response> {

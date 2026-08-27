@@ -531,6 +531,44 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(fetcher.mock.calls[0]?.[0]).toContain('/tiingo/utilities/search/Apple');
     expect(fetcher.mock.calls[1]?.[0]).toContain('/tiingo/daily/AAPL/prices');
   });
+  it('maps a Yahoo Finance Japanese market candidate', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            quotes: [{ symbol: '3659.T', longname: 'NEXON Co., Ltd.', quoteType: 'EQUITY' }],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            chart: {
+              result: [
+                {
+                  meta: { regularMarketPrice: 3000, previousClose: 2950 },
+                  indicators: { quote: [{ close: [2950, 3000] }] },
+                },
+              ],
+            },
+          }),
+          { status: 200 },
+        ),
+      );
+    const result = await createStockClient(undefined, undefined, fetcher).quoteCandidates?.(
+      '넥슨',
+      new AbortController().signal,
+    );
+    expect(result).toMatchObject([
+      { code: '3659.T', name: 'NEXON Co., Ltd.', price: 3000, market: 'JP', currency: 'JPY' },
+    ]);
+    expect(fetcher.mock.calls[0]?.[0]).toContain(
+      'query1.finance.yahoo.com/v1/finance/search?q=NEXON',
+    );
+    expect(fetcher.mock.calls[1]?.[0]).toContain('/v8/finance/chart/3659.T');
+  });
   it('retries one Nexon 5xx but does not retry a 429', async () => {
     const retryFetcher = vi
       .fn()
