@@ -82,8 +82,6 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     const output = formatMasterpieceDraw(
       [{ name: '마스터 어밴든 세트 선택권', probability: 7.3539 }],
       [{ name: '마스터 어밴든 헤어 쿠폰', probability: 5.8135 }],
-      'https://example.com/red',
-      'https://example.com/black',
       '2026-08-27T00:00:00.000Z',
       () => 0,
     );

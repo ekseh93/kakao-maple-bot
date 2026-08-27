@@ -588,8 +588,6 @@ export function formatBoutiqueGiftDraw(
 export function formatMasterpieceDraw(
   redItems: RoyalStyleItem[],
   blackItems: RoyalStyleItem[],
-  redSourceUrl: string,
-  blackSourceUrl: string,
   fetchedAt: string,
   random = Math.random,
 ): string {
@@ -604,8 +602,6 @@ export function formatMasterpieceDraw(
     `레드: ${label(red)} (${red.probability.toFixed(4)}%)`,
     `블랙: ${label(black)} (${black.probability.toFixed(4)}%)`,
     `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
-    redSourceUrl,
-    blackSourceUrl,
     '※ 공식 확률표의 첫 번째 합성 부위(모자) 표를 기준으로 한 결과이며 실제 아이템을 지급하지 않습니다.',
   ].join('\n');
 }

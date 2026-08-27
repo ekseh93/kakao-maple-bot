@@ -487,8 +487,6 @@ export async function handleMessage(
             reply: formatMasterpieceDraw(
               masterpieceCache.value.redItems,
               masterpieceCache.value.blackItems,
-              masterpieceCache.value.redSourceUrl,
-              masterpieceCache.value.blackSourceUrl,
               masterpieceCache.value.fetchedAt,
             ),
             requestId,
@@ -502,8 +500,6 @@ export async function handleMessage(
           reply: formatMasterpieceDraw(
             masterpiece.redItems,
             masterpiece.blackItems,
-            masterpiece.redSourceUrl,
-            masterpiece.blackSourceUrl,
             masterpiece.fetchedAt,
           ),
           requestId,

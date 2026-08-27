@@ -632,6 +632,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('[마스터피스 레드·블랙 시뮬레이션]');
     expect(result.reply).toContain('레드: 레드 테스트');
     expect(result.reply).toContain('블랙: 블랙 테스트');
+    expect(result.reply).not.toContain('MasterpieceRed');
+    expect(result.reply).not.toContain('MasterpieceBlack');
     expect(nexon.findMasterpiece).toHaveBeenCalled();
   });
   it('supports a custom Wonder Berry count and hides detailed results', async () => {
