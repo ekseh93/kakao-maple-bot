@@ -1191,7 +1191,10 @@ export function formatWonderBerryDraw(
     showResults,
     random,
     false,
-    (item) => (item.category?.includes('희귀') ? `[블랙] ${item.name}` : item.name),
+    (item) =>
+      item.category?.includes('희귀') || item.probability <= 3.3
+        ? `[원더블랙] ${item.name}`
+        : item.name,
     false,
   );
 }

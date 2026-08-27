@@ -167,10 +167,21 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
       true,
       () => 0,
     );
-    expect(output).toContain('[블랙] 원더 블랙 펫');
+    expect(output).toContain('[원더블랙] 원더 블랙 펫');
     expect(output).not.toContain('https://example.com/probability');
     expect(output).not.toContain('기준: Nexon 공식 확률 페이지');
     expect(output).not.toContain('실제 구매가 아닌');
+  });
+  it('labels every 3.3% Wonder Berry result as Wonder Black', () => {
+    const output = formatWonderBerryDraw(
+      [{ name: '곰곰 사원', probability: 3.3 }],
+      'https://example.com/probability',
+      '2026-08-27T00:00:00.000Z',
+      1,
+      true,
+      () => 0,
+    );
+    expect(output).toContain('[원더블랙] 곰곰 사원');
   });
   it('formats nine normal Boutique Gift draws and one Fever Time draw', () => {
     const output = formatBoutiqueGiftDraw(
