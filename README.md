@@ -104,7 +104,7 @@ pnpm audit
 
 Lambda 로컬 검증은 비밀을 저장소에 넣지 않고 환경 변수 또는 로컬 설정으로 주입합니다. 예시는 `.env.example`을 참고하세요. 기본 허용 방은 비어 있어 명시적으로 설정하지 않으면 모든 메시지를 무시합니다.
 
-구현된 범위는 Phase 0 기반, Phase 1 순수 명령, Phase 2 인증·방 권한·kill switch·중복 이벤트 TTL·방 rate limit, Phase 3 Nexon 어댑터와 링크 전용 외부 상세보기, Phase 4 MessengerBot R 릴레이 스크립트와 운영 문서, Phase 5 읽기 전용 KIS 현재가 어댑터, Phase 6 로컬 안전성 보완입니다. 공급자 테스트는 fetch mock으로 수행하며 실제 키·계정·외부 배포는 사용하지 않았습니다.
+구현된 범위는 Phase 0 기반, Phase 1 순수 명령, Phase 2 인증·방 권한·kill switch·중복 이벤트 TTL·방 rate limit, Phase 3 Nexon 어댑터와 링크 전용 외부 상세보기, Phase 4 MessengerBot R 릴레이 스크립트와 운영 문서, Phase 5 읽기 전용 KIS 현재가 어댑터, Phase 6 로컬 안전성 보완입니다. 공급자 테스트는 fetch mock으로 수행하며, 승인된 도쿄 AWS Lambda 배포와 API smoke test만 별도로 수행했습니다.
 
 GitHub secret 등록, Nexon/KIS 키 발급, 공기계 설치·컴파일·카카오 E2E는 별도 승인과 준비가 필요한 후속 단계입니다. Maple.GG와 Maplescouter에는 링크 생성 외 HTTP 요청을 하지 않습니다.
 
@@ -131,7 +131,7 @@ GitHub secret 등록, Nexon/KIS 키 발급, 공기계 설치·컴파일·카카�
 
 배포 확인 URL: `https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com/health` (확인 결과 `200`, `{"status":"ok"}`)
 
-배포 API smoke test에서 `!도움말`과 `!공지` 응답을 확인했습니다. 공지 응답에는 공식 넥슨 링크가 포함되며, 공기계의 `sharedSecret` 입력·컴파일·카카오톡 E2E는 사용자가 별도로 수행해야 합니다.
+배포 API smoke test에서 `!도움말`, `!공지`, `!이벤트` 응답을 확인했습니다. 공지·이벤트 응답에는 공식 넥슨 링크가 포함되며, 공기계의 `sharedSecret` 입력·컴파일·카카오톡 E2E는 사용자가 별도로 수행해야 합니다.
 
 ### AWS CLI 인증 준비
 
