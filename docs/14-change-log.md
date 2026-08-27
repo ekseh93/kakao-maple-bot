@@ -28,7 +28,7 @@
 
 - IAM Identity Center의 프로젝트 전용 사용자와 `KakaoMapleDeveloper` 권한 세트를 준비했습니다.
 - 권한 세트는 `kakao-maple-bot-*` 이름의 Lambda와 IAM 역할, API Gateway 관리 범위로 제한했습니다.
-- 실제 Lambda/API Gateway 리소스 생성과 secret 등록은 이 기록 시점에 수행하지 않았습니다.
+- Lambda/API Gateway 리소스는 도쿄 리전에 생성했으며, 운영 secret 등록은 수행하지 않았습니다.
 
 ### 검증
 
@@ -36,3 +36,10 @@
 - TypeScript, ESLint, Prettier, 정책 검사 통과
 - Terraform `validate` 및 도쿄 리전 기준 `plan` 통과
 - Lambda `/health` smoke test 상태 코드 200 확인
+
+### 배포 확인
+
+- Terraform apply 결과: 4개 추가, 0개 변경, 0개 삭제
+- 기존 부분 생성분까지 포함한 최종 리소스: 9개
+- API Gateway `/health`: `200`, `{"status":"ok"}`
+- 카카오 릴레이와 운영 명령 처리는 `BOT_ENABLED=false`로 비활성 상태

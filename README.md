@@ -120,7 +120,9 @@ Lambda 로컬 검증은 비밀을 저장소에 넣지 않고 환경 변수 또�
 
 이 프로젝트를 AWS 서버리스 운영·IAM·Lambda·API Gateway 경험을 보여주는 취업 포트폴리오로 발전시키기 위해서입니다. AWS 공식 문서상 HTTP API는 Lambda와 직접 통합할 수 있고, API Gateway HTTP API에는 신규 계정 기준 월 100만 호출 Free Tier가 최대 12개월 제공되지만, Free Tier가 무조건 무비용을 보장하지는 않으므로 Budget과 사용량 감시를 전제로 합니다. [AWS HTTP API 문서](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html) · [AWS API Gateway 요금](https://aws.amazon.com/api-gateway/pricing/)
 
-현재 전환은 코드·문서·로컬 검증까지 완료했습니다. AWS IAM Identity Center에는 프로젝트 전용 사용자와 최소 권한 권한 세트를 준비했으며, Lambda/API Gateway 리소스는 도쿄 리전(`ap-northeast-1`)에 배포하도록 설정했습니다. 리소스 생성, secret 등록, 실제 배포는 아직 수행하지 않았습니다.
+현재 전환은 코드·문서·로컬 검증까지 완료했습니다. AWS IAM Identity Center에는 프로젝트 전용 사용자와 최소 권한 권한 세트를 준비했으며, Lambda/API Gateway 리소스는 도쿄 리전(`ap-northeast-1`)에 배포했습니다. `BOT_ENABLED=false`와 빈 secret으로 `/health`만 실제 확인했으며, 운영 secret 등록과 카카오 비공개 시험방 E2E는 아직 수행하지 않았습니다.
+
+배포 확인 URL: `https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com/health` (확인 결과 `200`, `{"status":"ok"}`)
 
 ### AWS CLI 인증 준비
 
