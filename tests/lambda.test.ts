@@ -1,0 +1,408 @@
+import { describe, expect, it, vi } from 'vitest';
+import {
+  createAuditLog,
+  handleMessage,
+  handler as lambdaHandler,
+  httpHandler,
+} from '../apps/lambda/src/index';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+
+const env = {
+  BOT_SHARED_SECRET: 'test',
+  BOT_ENABLED: 'true',
+  ALLOWED_ROOMS: 'room-a',
+  STOCK_ENABLED: 'false',
+};
+const message = (body: string, eventId = crypto.randomUUID()) => ({
+  eventId,
+  roomId: 'room-a',
+  senderId: 'sender',
+  message: body,
+});
+
+describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
+  it('T-002 ignores unapproved rooms without provider calls', async () => {
+    const nexon = { findCharacter: vi.fn() };
+    const result = await handleMessage({ ...message('!캐릭터 테스트'), roomId: 'other' }, env, {
+      nexon,
+    });
+    expect(result.reply).toBeNull();
+    expect(nexon.findCharacter).not.toHaveBeenCalled();
+  });
+  it('T-001 does not spend command rate budget on ordinary chat', async () => {
+    const roomEnv = { ...env, ALLOWED_ROOMS: 'chat-room' };
+    const ordinary = await handleMessage(
+      { ...message('안녕하세요'), roomId: 'chat-room' },
+      roomEnv,
+    );
+    const command = await handleMessage({ ...message('!주사위'), roomId: 'chat-room' }, roomEnv);
+    expect(ordinary.reply).toBeNull();
+    expect(command.reply).toContain('🎲');
+  });
+  it('T-005 returns bounded help for unknown commands', async () =>
+    expect((await handleMessage(message('!없는명령'), env)).reply).toContain('[봇 도움말]'));
+  it('T-004 rejects an oversized command before any provider work', async () => {
+    const nexon = { findCharacter: vi.fn() };
+    const result = await handleMessage(message(`!캐릭터 ${'가'.repeat(301)}`), env, { nexon });
+    expect(result.reply).toContain('사용법');
+    expect(nexon.findCharacter).not.toHaveBeenCalled();
+  });
+  it('T-018 creates only non-identifying structured audit fields', () => {
+    const log = createAuditLog({
+      requestId: 'request-1',
+      command: 'character',
+      outcome: 'success',
+      latencyMs: 12.4,
+      provider: 'nexon',
+      cacheStatus: 'miss',
+    });
+    expect(log).toEqual({
+      requestId: 'request-1',
+      command: 'character',
+      outcome: 'success',
+      latencyMs: 12,
+      provider: 'nexon',
+      cacheStatus: 'miss',
+      appVersion: '0.1.0',
+    });
+    expect(JSON.stringify(log)).not.toMatch(/message|room|sender|secret|token/i);
+  });
+  it('T-016 deduplicates the same event', async () => {
+    const id = crypto.randomUUID();
+    expect((await handleMessage(message('!주사위', id), env)).reply).toContain('🎲');
+    expect((await handleMessage(message('!주사위', id), env)).reply).toBeNull();
+  });
+  it('T-016 permits an event id again after the two-minute TTL', async () => {
+    const ttlEnv = { ...env, ALLOWED_ROOMS: 'ttl-room' };
+    const id = crypto.randomUUID();
+    const first = await handleMessage({ ...message('!주사위', id), roomId: 'ttl-room' }, ttlEnv, {
+      now: () => new Date(0),
+    });
+    const second = await handleMessage({ ...message('!주사위', id), roomId: 'ttl-room' }, ttlEnv, {
+      now: () => new Date(120001),
+    });
+    expect(first.reply).toContain('🎲');
+    expect(second.reply).toContain('🎲');
+  });
+  it('T-017 blocks the sixth request in a ten-second room window', async () => {
+    const rateEnv = { ...env, ALLOWED_ROOMS: 'rate-room' };
+    const results = [];
+    for (let index = 0; index < 6; index++)
+      results.push(
+        await handleMessage(
+          { ...message('!주사위', crypto.randomUUID()), roomId: 'rate-room' },
+          rateEnv,
+          { now: () => new Date(index) },
+        ),
+      );
+    expect(results[5]?.reply).toContain('요청이 많습니다');
+  });
+  it('T-017 blocks a sender after ten commands in one minute', async () => {
+    const limitEnv = { ...env, ALLOWED_ROOMS: 'sender-room' };
+    const results = [];
+    for (let index = 0; index < 11; index++)
+      results.push(
+        await handleMessage(
+          {
+            ...message('!주사위', crypto.randomUUID()),
+            roomId: 'sender-room',
+            senderId: 'limited-sender',
+          },
+          limitEnv,
+          { now: () => new Date(index * 100) },
+        ),
+      );
+    expect(results[10]?.reply).toContain('요청이 많습니다');
+  });
+  it('T-015 returns not configured for stock', async () =>
+    expect((await handleMessage(message('!주식 005930'), env)).reply).toContain('설정하지 않은'));
+  it('T-014 formats a configured stock quote with timestamp and disclaimer', async () => {
+    const stockEnv = { ...env, ALLOWED_ROOMS: 'quote-room', STOCK_ENABLED: 'true' };
+    const stock = {
+      quote: vi.fn().mockResolvedValue({
+        code: '005930',
+        name: '삼성전자',
+        price: 70000,
+        change: 100,
+        changeRate: 0.14,
+        volume: 123,
+        fetchedAt: '2026-08-26T15:30:00+09:00',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!주식 005930'), roomId: 'quote-room' },
+      stockEnv,
+      { stock },
+    );
+    expect(result.reply).toContain('삼성전자 (005930)');
+    expect(result.reply).toContain('조회: 2026-08-26T15:30:00+09:00');
+    expect(result.reply).toContain('투자 권유가 아닙니다');
+  });
+  it('FR-014 hides admin status from non-admin senders', async () => {
+    const statusEnv = { ...env, ALLOWED_ROOMS: 'status-room', ADMIN_SENDERS: 'admin-only' };
+    const result = await handleMessage(
+      { ...message('!상태'), roomId: 'status-room', senderId: 'ordinary' },
+      statusEnv,
+    );
+    expect(result.reply).toBeNull();
+  });
+  it('FR-014 exposes only boolean configuration status to admins', async () => {
+    const statusEnv = {
+      ...env,
+      ALLOWED_ROOMS: 'status-admin-room',
+      ADMIN_SENDERS: 'admin-only',
+      NEXON_API_KEY: 'configured-key',
+      BOT_SHARED_SECRET: 'super-secret-value',
+    };
+    const result = await handleMessage(
+      { ...message('!상태'), roomId: 'status-admin-room', senderId: 'admin-only' },
+      statusEnv,
+    );
+    expect(result.reply).toContain('Nexon configured: 예');
+    expect(result.reply).not.toContain('configured-key');
+    expect(result.reply).not.toContain('super-secret-value');
+    expect(result.reply).not.toContain('status-admin-room');
+  });
+  it('T-020 kill switch stops before parsing or provider calls', async () => {
+    const nexon = { findCharacter: vi.fn() };
+    const result = await handleMessage(
+      message('!캐릭터 테스트'),
+      { ...env, BOT_ENABLED: 'false' },
+      { nexon },
+    );
+    expect(result.reply).toBeNull();
+    expect(nexon.findCharacter).not.toHaveBeenCalled();
+  });
+  it('FR-013 caches successful character reads for five minutes', async () => {
+    const nexon = {
+      findCharacter: vi
+        .fn()
+        .mockResolvedValue({ name: '캐시', fetchedAt: '2026-08-26T00:00:00.000Z' }),
+    };
+    const cacheEnv = { ...env, ALLOWED_ROOMS: 'cache-room' };
+    const first = await handleMessage(
+      { ...message('!캐릭터 캐시'), roomId: 'cache-room' },
+      cacheEnv,
+      { nexon, now: () => new Date(1000) },
+    );
+    const second = await handleMessage(
+      { ...message('!캐릭터 캐시'), roomId: 'cache-room' },
+      cacheEnv,
+      { nexon, now: () => new Date(2000) },
+    );
+    expect(first.cache).toBe('miss');
+    expect(second.cache).toBe('hit');
+    expect(nexon.findCharacter).toHaveBeenCalledTimes(1);
+  });
+  it('FR-013 caches stock reads for fifteen seconds', async () => {
+    const stock = {
+      quote: vi.fn().mockResolvedValue({
+        code: '123456',
+        price: 70000,
+        change: 100,
+        changeRate: 0.14,
+        fetchedAt: '2026-08-26T00:00:00.000Z',
+      }),
+    };
+    const stockEnv = { ...env, ALLOWED_ROOMS: 'stock-cache-room', STOCK_ENABLED: 'true' };
+    const first = await handleMessage(
+      { ...message('!주식 123456'), roomId: 'stock-cache-room' },
+      stockEnv,
+      { stock, now: () => new Date(3000) },
+    );
+    const second = await handleMessage(
+      { ...message('!주식 123456'), roomId: 'stock-cache-room' },
+      stockEnv,
+      { stock, now: () => new Date(4000) },
+    );
+    expect(first.cache).toBe('miss');
+    expect(second.cache).toBe('hit');
+    expect(stock.quote).toHaveBeenCalledTimes(1);
+  });
+  it('T-006/T-007 handles character success and not found', async () => {
+    const nexon = {
+      findCharacter: vi
+        .fn()
+        .mockResolvedValueOnce({
+          name: '테스트',
+          world: '스카니아',
+          level: 280,
+          job: '비숍',
+          fetchedAt: '2026-08-26T00:00:00.000Z',
+        })
+        .mockResolvedValueOnce(null),
+    };
+    const characterEnv = { ...env, ALLOWED_ROOMS: 'character-room' };
+    const success = await handleMessage(
+      { ...message('!캐릭터 정상'), roomId: 'character-room' },
+      characterEnv,
+      { nexon },
+    );
+    expect(success.reply).toContain('Lv. 280');
+    expect(success.reply).toContain('https://maple.gg/u/%ED%85%8C%EC%8A%A4%ED%8A%B8');
+    expect(
+      (
+        await handleMessage(
+          { ...message('!캐릭터 없음'), roomId: 'character-room' },
+          characterEnv,
+          { nexon },
+        )
+      ).reply,
+    ).toContain('찾지 못했습니다');
+  });
+  it('T-008 maps provider failures without leaking details', async () => {
+    const nexon = {
+      findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),
+    };
+    const reply = (
+      await handleMessage(
+        { ...message('!캐릭터 장애'), roomId: 'failure-room' },
+        { ...env, ALLOWED_ROOMS: 'failure-room' },
+        { nexon },
+      )
+    ).reply;
+    expect(reply).toContain('외부 서비스 오류');
+    expect(reply).not.toContain('secret-key');
+  });
+  it('T-008 maps an AbortError to a timeout response', async () => {
+    const nexon = {
+      findCharacter: vi
+        .fn()
+        .mockRejectedValue(Object.assign(new Error('aborted'), { name: 'AbortError' })),
+    };
+    const reply = (
+      await handleMessage(
+        { ...message('!캐릭터 지연'), roomId: 'timeout-room' },
+        { ...env, ALLOWED_ROOMS: 'timeout-room' },
+        { nexon },
+      )
+    ).reply;
+    expect(reply).toContain('지연되고 있습니다');
+  });
+  it('NFR-PERF-003 caps provider-derived replies at 1000 characters', async () => {
+    const nexon = {
+      findCharacter: vi.fn().mockResolvedValue({
+        name: '가'.repeat(500),
+        world: '나'.repeat(500),
+        fetchedAt: '2026-08-26T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!캐릭터 길이'), roomId: 'length-room' },
+      { ...env, ALLOWED_ROOMS: 'length-room' },
+      { nexon },
+    );
+    expect(result.reply?.length).toBeLessThanOrEqual(1000);
+  });
+});
+
+describe('HTTP boundary', () => {
+  it('T-003/T-004 protects and validates the endpoint', async () => {
+    const handler = { fetch: httpHandler };
+    expect(
+      (
+        await handler.fetch(
+          new Request('https://example.test/v1/messages', {
+            method: 'POST',
+            body: '{}',
+            headers: { authorization: 'Bearer bad' },
+          }),
+          env,
+        )
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await handler.fetch(
+          new Request('https://example.test/v1/messages', {
+            method: 'POST',
+            body: '{',
+            headers: { authorization: 'Bearer test' },
+          }),
+          env,
+        )
+      ).status,
+    ).toBe(400);
+  });
+  it('rejects missing or malformed JSON fields after authentication', async () => {
+    const handler = { fetch: httpHandler };
+    const response = await handler.fetch(
+      new Request('https://example.test/v1/messages', {
+        method: 'POST',
+        body: JSON.stringify({ message: '!주사위' }),
+        headers: { authorization: 'Bearer test' },
+      }),
+      env,
+    );
+    expect(response.status).toBe(400);
+  });
+  it('health is secret-free', async () => {
+    const handler = { fetch: httpHandler };
+    const response = await handler.fetch(new Request('https://example.test/health'), env);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: 'ok' });
+  });
+  it('adapts an API Gateway v2 health event to the Lambda handler', async () => {
+    const result = await lambdaHandler({
+      version: '2.0',
+      routeKey: 'GET /health',
+      rawPath: '/health',
+      rawQueryString: '',
+      headers: {},
+      requestContext: {
+        http: {
+          method: 'GET',
+          path: '/health',
+          protocol: 'HTTP/1.1',
+          sourceIp: '127.0.0.1',
+          userAgent: 'test',
+        },
+        accountId: 'local',
+        domainName: 'local',
+        domainPrefix: 'local',
+        requestId: 'request-1',
+        routeKey: 'GET /health',
+        stage: '$default',
+        time: '26/Aug/2026:00:00:00 +0000',
+        timeEpoch: 0,
+      },
+      isBase64Encoded: false,
+      stageVariables: undefined,
+      body: undefined,
+      cookies: undefined,
+      queryStringParameters: undefined,
+      pathParameters: undefined,
+    } as unknown as APIGatewayProxyEventV2);
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toEqual({ status: 'ok' });
+  });
+  it('rejects oversized HTTP payloads with 413', async () => {
+    const handler = { fetch: httpHandler };
+    const response = await handler.fetch(
+      new Request('https://example.test/v1/messages', {
+        method: 'POST',
+        body: '{}',
+        headers: { authorization: 'Bearer test', 'content-length': '20000' },
+      }),
+      env,
+    );
+    expect(response.status).toBe(413);
+  });
+  it('rejects oversized HTTP payloads even without a content-length header', async () => {
+    const handler = { fetch: httpHandler };
+    const response = await handler.fetch(
+      new Request('https://example.test/v1/messages', {
+        method: 'POST',
+        body: JSON.stringify({
+          eventId: 'large',
+          roomId: 'room-a',
+          senderId: 'sender',
+          message: '가'.repeat(10000),
+        }),
+        headers: { authorization: 'Bearer test' },
+      }),
+      env,
+    );
+    expect(response.status).toBe(413);
+  });
+});

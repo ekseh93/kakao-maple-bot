@@ -6,13 +6,21 @@
 .dev.vars.*
 !*.example
 local-config.js
+apps/phone-relay/local-config.js
 
 # Dependencies and build
 node_modules/
 dist/
-coverage/
+*.tsbuildinfo
 .wrangler/
 .turbo/
+coverage/
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/*.tfplan
+infra/terraform/terraform.tfvars
+infra/terraform/crash.log
 
 # Editors and OS
 .idea/
@@ -22,4 +30,3 @@ Thumbs.db
 
 # Logs
 *.log
-

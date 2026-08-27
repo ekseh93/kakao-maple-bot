@@ -6,7 +6,7 @@
 
 ## 1. 임무
 
-이 저장소의 상류 문서를 계약으로 삼아 Kakao Maple Bot MVP를 구현합니다. Android 공기계의 MessengerBot R v40 릴레이와 TypeScript Cloudflare Worker 백엔드를 만들고, 자동 테스트와 로컬 검증까지 완료합니다.
+이 저장소의 상류 문서를 계약으로 삼아 Kakao Maple Bot MVP를 구현합니다. Android 공기계의 MessengerBot R v40 릴레이와 TypeScript AWS Lambda + API Gateway HTTP API 백엔드를 만들고, 자동 테스트와 로컬 검증까지 완료합니다.
 
 ## 2. 시작 전 필독
 
@@ -37,7 +37,7 @@
 
 - Phase 0 저장소 기반
 - Phase 1 순수 명령
-- Phase 2 Worker 경계
+- Phase 2 Lambda HTTP 경계
 - Phase 3 Nexon 연동
 - Phase 4 phone-relay 스크립트
 - Phase 5 선택형 KIS 주식 어댑터와 mock 테스트
@@ -46,7 +46,7 @@
 
 ### 구현하지 않음
 
-- Cloudflare 실제 배포
+- AWS 실제 배포
 - GitHub Actions의 배포 권한·secret 등록
 - 실제 Nexon/KIS 키 생성 또는 추측
 - 공기계·Kakao 계정 직접 설정
@@ -59,11 +59,11 @@
 
 - TypeScript strict
 - pnpm
-- Cloudflare Workers modules syntax
-- Wrangler JSONC
+- AWS Lambda Node.js handler
+- 순수 AWS CloudFormation template
 - Vitest
 - ESLint + Prettier
-- 런타임 응답 스키마 검증 라이브러리는 작고 Worker 호환인 것을 선택
+- 런타임 응답 스키마 검증 라이브러리는 작고 Lambda Node.js 호환인 것을 선택
 - 런타임 의존성은 필요 최소한
 - phone-relay는 MessengerBot R v40에서 컴파일 가능한 단일 파일
 
@@ -72,7 +72,7 @@
 ## 5. 권장 디렉터리
 
     apps/
-      worker/
+      lambda/
       phone-relay/
     packages/
       core/
@@ -88,7 +88,7 @@
 1. git status와 문서 계약 확인
 2. Phase 0 구성과 CI 검사
 3. core 명령과 계산 fixture
-4. Worker 인증·권한·오류 경계
+4. Lambda 인증·권한·오류 경계
 5. Nexon adapter와 contract fixtures
 6. phone relay
 7. KIS optional adapter
@@ -105,7 +105,7 @@
 - 심볼 계산은 근거 확인 전 추정식을 코드에 넣지 않습니다. 공식 자료와 level table fixture를 먼저 확정합니다.
 - 주식은 읽기 전용 현재가만 허용합니다.
 - 메시지 원문·방 이름·보낸이 이름을 로그에 남기지 않습니다.
-- 실제 배포·키 등록·공기계 설정은 사용자의 별도 승인이 없으면 중단 지점입니다.
+- 실제 AWS 배포·키 등록·공기계 설정은 사용자의 별도 승인이 없으면 중단 지점입니다.
 
 ## 8. 예상 환경 변수
 
@@ -139,4 +139,3 @@
 상류 요구사항과 설계 문서가 구현 시작에 충분한 상태입니다.
 
 LUNA HANDOFF: READY
-

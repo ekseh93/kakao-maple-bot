@@ -1,0 +1,9 @@
+{
+  "name": "@kakao-maple-bot/lambda",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@kakao-maple-bot/core": "workspace:*",
+    "@kakao-maple-bot/providers": "workspace:*"
+  }
+}

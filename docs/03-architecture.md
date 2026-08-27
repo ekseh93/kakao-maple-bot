@@ -15,7 +15,10 @@
           |
           | HTTPS POST /v1/messages
           v
-    [Cloudflare Worker]
+    [API Gateway HTTP API]
+          |
+          v
+    [AWS Lambda]
        |        |        |
        v        v        v
     Nexon API  KIS API  프로젝트 자체 데이터/계산
@@ -105,14 +108,14 @@ KisStockAdapter:
 ## 3. 배포 단위
 
     repository
-    ├─ apps/worker          TypeScript Cloudflare Worker
+    ├─ apps/lambda          TypeScript AWS Lambda handler
     ├─ apps/phone-relay     MessengerBot R compatible JavaScript
     ├─ packages/core        command/domain/calculation logic
     ├─ packages/providers   external API adapters
     ├─ tests                contract and integration fixtures
     └─ docs                 architecture and operations
 
-MVP에서 과도한 모노레포 도구는 피하되 도메인 로직이 Worker 런타임과 분리되도록 구성합니다.
+MVP에서 과도한 모노레포 도구는 피하되 도메인 로직이 Lambda 런타임과 분리되도록 구성합니다.
 
 ## 4. 캐시와 상태
 

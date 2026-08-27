@@ -1,0 +1,10 @@
+{
+  "name": "@kakao-maple-bot/providers",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@kakao-maple-bot/core": "workspace:*"
+  }
+}

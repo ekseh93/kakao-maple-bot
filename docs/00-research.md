@@ -62,7 +62,7 @@
 | Kakao OpenBuilder | 공식, 템플릿 카드 | 일반 계정 공기계 봇과 목적이 다름 | 미채택 |
 | MessengerBot R v40 | 공기계·알림 기반, 시작이 단순 | 비공식, Android/Kakao 변경 영향 | MVP 채택 |
 | Iris | 확장성과 서버 연동 사례 | 더 높은 침투성·운영 복잡도 | 보류 |
-| Cloudflare Workers | TypeScript, HTTPS, 무료 범위 시작 | 콜드스타트·플랫폼 제한 | 백엔드 기본안 |
+| AWS Lambda + API Gateway HTTP API | AWS 서버리스·IAM·관측성 포트폴리오 | Free Tier 초과 과금·구성 복잡도 | 백엔드 기본안 |
 | Nexon Open API | 공식 메이플 데이터 | 키·호출 제한·지연 | 채택 |
 | 한국투자 Open API | 국내 주식 공식 API | 별도 앱키와 토큰 관리 | 선택 기능 |
 

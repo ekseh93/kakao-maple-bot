@@ -14,7 +14,7 @@
 
 주요 위협:
 
-- 외부인이 공개 Worker URL을 호출
+- 외부인이 공개 API Gateway URL을 호출
 - Git·로그·오류 메시지로 비밀 유출
 - 재전송으로 중복 답장
 - 긴 메시지·명령 반복으로 무료 한도 소진
@@ -26,9 +26,9 @@
 ## 2. 신뢰 경계
 
 1. KakaoTalk ↔ 공기계: 비공식 자동화 경계
-2. 공기계 ↔ Worker: 공개 인터넷 경계
-3. Worker ↔ 외부 API: 제3자 공급자 경계
-4. GitHub ↔ CI/Cloudflare: 배포·비밀 경계
+2. 공기계 ↔ API Gateway: 공개 인터넷 경계
+3. Lambda ↔ 외부 API: 제3자 공급자 경계
+4. GitHub ↔ CI/AWS: 배포·비밀 경계
 
 각 경계에서 입력을 신뢰하지 않고 별도 검증합니다.
 
@@ -38,7 +38,7 @@ MVP 최소안:
 
 - Authorization: Bearer <BOT_SHARED_SECRET>
 - 32바이트 이상 무작위 secret
-- Worker secret과 공기계 로컬 설정에만 저장
+- Lambda 환경 변수 또는 AWS secret 경로와 공기계 로컬 설정에만 저장
 - 문자열 비교는 일정 시간 비교를 권장
 
 권장 강화안:
@@ -94,7 +94,7 @@ MVP 최소안:
 
 ### 시작
 
-1. Worker health 확인
+1. API Gateway/Lambda health 확인
 2. 공기계 네트워크·충전·알림 권한 확인
 3. 비공개 시험방에서 !상태
 4. !주사위, !심볼, !캐릭터 순으로 검증
@@ -105,7 +105,7 @@ MVP 최소안:
 1. 공기계 화면 잠금·네트워크 확인
 2. Kakao 알림 수신 여부 확인
 3. MessengerBot R 활성·컴파일 상태 확인
-4. Worker health 확인
+4. API Gateway/Lambda health 확인
 5. 식별 정보 없는 requestId 기준 로그 확인
 6. 외부 공급자 상태 확인
 
@@ -126,7 +126,7 @@ MVP 최소안:
 
 ### 비밀 유출
 
-1. Worker KILL_SWITCH
+1. Lambda KILL_SWITCH
 2. BOT_SHARED_SECRET 회전
 3. Nexon/KIS 키 폐기·재발급
 4. GitHub history와 로그 노출 범위 확인
