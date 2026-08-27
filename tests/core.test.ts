@@ -70,13 +70,13 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     const output = formatBoutiqueGiftDraw(
       [{ name: '부티크 티켓 1개', probability: 100 }],
       [{ name: '부티크 티켓 10개', probability: 100 }],
-      'https://example.com/boutique',
       '2026-08-27T00:00:00.000Z',
       () => 0,
     );
     expect(output).toContain('[부티크 기프트 10개 열기]');
     expect(output).toContain('9. 부티크 티켓 1개');
     expect(output).toContain('10. [피버 타임] 부티크 티켓 10개');
+    expect(output).not.toContain('https://example.com/boutique');
   });
   it('formats one official Red and Black Masterpiece result', () => {
     const output = formatMasterpieceDraw(

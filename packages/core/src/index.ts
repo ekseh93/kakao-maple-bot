@@ -572,7 +572,6 @@ export function formatWonderBerryDraw(
 export function formatBoutiqueGiftDraw(
   normalItems: RoyalStyleItem[],
   feverItems: RoyalStyleItem[],
-  sourceUrl: string,
   fetchedAt: string,
   random = Math.random,
 ): string {
@@ -585,7 +584,6 @@ export function formatBoutiqueGiftDraw(
     ),
     `10. [피버 타임] ${feverDraw.name} (${feverDraw.probability.toFixed(2)}%)`,
     `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
-    sourceUrl,
     '※ 실제 아이템을 지급하지 않는 확률 기반 미니게임입니다.',
   ].join('\n');
 }

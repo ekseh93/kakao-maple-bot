@@ -612,6 +612,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('[부티크 기프트 10개 열기]');
     expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
     expect(result.reply).toContain('10. [피버 타임] 티켓 10개');
+    expect(result.reply).not.toContain(
+      'https://maplestory.nexon.com/Guide/CashShop/Probability/BoutiqueGift',
+    );
   });
   it('handles the Red and Black Masterpiece command', async () => {
     const nexon = {

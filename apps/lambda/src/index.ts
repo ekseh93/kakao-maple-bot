@@ -459,7 +459,6 @@ export async function handleMessage(
             reply: formatBoutiqueGiftDraw(
               boutiqueGiftCache.value.normalItems,
               boutiqueGiftCache.value.feverItems,
-              boutiqueGiftCache.value.sourceUrl,
               boutiqueGiftCache.value.fetchedAt,
             ),
             requestId,
@@ -473,7 +472,6 @@ export async function handleMessage(
           reply: formatBoutiqueGiftDraw(
             boutiqueGift.normalItems,
             boutiqueGift.feverItems,
-            boutiqueGift.sourceUrl,
             boutiqueGift.fetchedAt,
           ),
           requestId,
