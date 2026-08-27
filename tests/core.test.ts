@@ -81,13 +81,19 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   it('formats one official Red and Black Masterpiece result', () => {
     const output = formatMasterpieceDraw(
       [{ name: '마스터 어밴든 세트 선택권', probability: 7.3539 }],
-      [{ name: '마스터 어밴든 헤어 쿠폰', probability: 5.8135 }],
+      [
+        { name: '마스터 어밴든 헤어 쿠폰', probability: 5.8135 },
+        { name: '마스터 어밴든 헤어 쿠폰 2', probability: 5.8135 },
+        { name: '일반 아이템', probability: 80 },
+      ],
       '2026-08-27T00:00:00.000Z',
-      () => 0,
     );
-    expect(output).toContain('[마스터피스 레드·블랙 시뮬레이션]');
-    expect(output).toContain('레드: [마라벨] 마스터 어밴든 세트 선택권 (7.3539%)');
-    expect(output).toContain('블랙: [마라벨] 마스터 어밴든 헤어 쿠폰 (5.8135%)');
+    expect(output).toContain('[마스터피스 레드·블랙 확률 그룹]');
+    expect(output).toContain('레드:');
+    expect(output).toContain('[마스터라벨] 1종 / 합산 확률 7.3539%');
+    expect(output).toContain('[마스터라벨 헤어] 2종 / 합산 확률 11.6270%');
+    expect(output).toContain('[나머지] 1종 / 합산 확률 80.0000%');
+    expect(output).not.toContain('마스터 어밴든 세트 선택권');
   });
   it('labels only Royal special-label items and Luna petit pets', () => {
     const royal = formatRoyalDraw(

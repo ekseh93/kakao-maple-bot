@@ -592,18 +592,35 @@ export function formatMasterpieceDraw(
   redItems: RoyalStyleItem[],
   blackItems: RoyalStyleItem[],
   fetchedAt: string,
-  random = Math.random,
 ): string {
-  const red = drawRoyalStyles(redItems, 1, random)[0]!;
-  const black = drawRoyalStyles(blackItems, 1, random)[0]!;
-  const label = (item: RoyalStyleItem) =>
-    item.name.includes('마스터') || item.name.includes('마스터라벨')
-      ? `[마라벨] ${item.name}`
-      : item.name;
+  const summarize = (items: RoyalStyleItem[]) => {
+    const groups = new Map<string, { count: number; probability: number }>();
+    for (const item of items) {
+      const isMasterLabel = item.name.includes('마스터') || item.name.includes('마스터라벨');
+      const category =
+        isMasterLabel && item.name.includes('헤어')
+          ? '마스터라벨 헤어'
+          : isMasterLabel
+            ? '마스터라벨'
+            : '나머지';
+      const group = groups.get(category) ?? { count: 0, probability: 0 };
+      group.count += 1;
+      group.probability += item.probability;
+      groups.set(category, group);
+    }
+    return ['마스터라벨', '마스터라벨 헤어', '나머지']
+      .filter((category) => groups.has(category))
+      .map((category) => {
+        const group = groups.get(category)!;
+        return `  [${category}] ${group.count}종 / 합산 확률 ${group.probability.toFixed(4)}%`;
+      });
+  };
   return [
-    '[마스터피스 레드·블랙 시뮬레이션]',
-    `레드: ${label(red)} (${red.probability.toFixed(4)}%)`,
-    `블랙: ${label(black)} (${black.probability.toFixed(4)}%)`,
+    '[마스터피스 레드·블랙 확률 그룹]',
+    '레드:',
+    ...summarize(redItems),
+    '블랙:',
+    ...summarize(blackItems),
     `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
     '※ 공식 확률표의 첫 번째 합성 부위(모자) 표를 기준으로 한 결과이며 실제 아이템을 지급하지 않습니다.',
   ].join('\n');
