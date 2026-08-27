@@ -334,6 +334,28 @@ const menus: Record<string, string[]> = {
     '샌드위치',
     '포케',
     '죽',
+    '감자튀김',
+    '치즈볼',
+    '콘치즈',
+    '계란찜',
+    '김치전',
+    '해물파전',
+    '오징어튀김',
+    '붕어빵',
+    '호떡',
+    '아이스크림',
+    '케이크',
+    '마카롱',
+    '팥빙수',
+    '떡',
+    '과일',
+    '오돌뼈',
+    '막창',
+    '닭똥집',
+    '두부김치',
+    '골뱅이무침',
+    '오징어숙회',
+    '육회',
   ],
   한식: ['김치찌개', '비빔밥', '삼겹살', '제육볶음', '불고기', '닭갈비', '국밥', '냉면'],
   중식: ['짜장면', '짬뽕', '탕수육', '마라탕', '볶음밥'],
@@ -342,9 +364,12 @@ const menus: Record<string, string[]> = {
   분식: ['떡볶이', '김밥', '순대', '어묵', '라볶이'],
   야식: ['치킨', '족발', '보쌈', '곱창', '닭발'],
   가벼운: ['샐러드', '샌드위치', '포케', '죽'],
+  사이드: ['감자튀김', '치즈볼', '콘치즈', '계란찜', '김치전', '해물파전', '오징어튀김'],
+  디저트: ['붕어빵', '호떡', '아이스크림', '케이크', '마카롱', '팥빙수', '떡', '과일'],
+  술안주: ['오돌뼈', '막창', '닭똥집', '두부김치', '골뱅이무침', '오징어숙회', '육회'],
 };
 
-const foodBoostWeight = 1.5;
+const foodBoostWeight = 11;
 
 export type FoodProbability = { name: string; probability: number; weight: number };
 
@@ -371,13 +396,7 @@ export function formatFoodRecommendation(args: string[] = [], random = Math.rand
       cursor -= item.weight;
       return cursor < 0;
     }) ?? probabilities[probabilities.length - 1]!;
-  return [
-    '[오늘 뭐먹지]',
-    `추천: ${selected.name}`,
-    '전체 요리 확률:',
-    ...probabilities.map((item) => `- ${item.name}: ${item.probability.toFixed(2)}%`),
-    '※ 재획은 다른 음식보다 50% 높은 가중치로 계산했습니다.',
-  ].join('\n');
+  return ['[오늘 뭐먹지]', `추천: ${selected.name}`].join('\n');
 }
 
 const japanTravelPlaces = [

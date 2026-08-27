@@ -202,13 +202,19 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(chooseItems(' A, A, B')).toMatch(/^(A|B)$/);
     expect(chooseItems(' A A B')).toMatch(/^(A|B)$/);
   });
-  it('T-013 recommends the complete food list with a boosted farming option', () => {
+  it('T-013 recommends one item with expanded food categories and a boosted farming option', () => {
     const probabilities = foodProbabilities();
     const normal = probabilities.find((item) => item.name === '김치찌개')!;
     const farming = probabilities.find((item) => item.name === '재획')!;
-    expect(formatFoodRecommendation([], () => 0)).toContain('전체 요리 확률');
-    expect(formatFoodRecommendation([], () => 0)).toContain('재획:');
-    expect(farming.weight / normal.weight).toBeCloseTo(1.5, 3);
+    const output = formatFoodRecommendation([], () => 0);
+    expect(output).toContain('[오늘 뭐먹지]');
+    expect(output).toContain('추천:');
+    expect(output).not.toContain('전체 요리 확률');
+    expect(output.split('\n')).toHaveLength(2);
+    expect(farming.weight / normal.weight).toBeCloseTo(11, 3);
+    expect(probabilities.map((item) => item.name)).toEqual(
+      expect.arrayContaining(['감자튀김', '마카롱', '두부김치']),
+    );
   });
   it('recommends a Japan prefecture and city without external calls', () => {
     expect(formatJapanTravelRecommendation([], () => 0)).toContain('현/도: 도쿄도');
