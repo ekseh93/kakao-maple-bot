@@ -368,12 +368,15 @@ export async function handleMessage(
         };
       }
       case 'wonderBerry': {
+        const options = parseRoyalOptions(parsed.args);
         if (wonderBerryCache && wonderBerryCache.expiresAt > now)
           return {
             reply: formatWonderBerryDraw(
               wonderBerryCache.value.items,
               wonderBerryCache.value.sourceUrl,
               wonderBerryCache.value.fetchedAt,
+              options.count,
+              options.showResults,
             ),
             requestId,
             cache: 'hit',
@@ -387,6 +390,8 @@ export async function handleMessage(
             wonderBerry.items,
             wonderBerry.sourceUrl,
             wonderBerry.fetchedAt,
+            options.count,
+            options.showResults,
           ),
           requestId,
           cache: 'miss',

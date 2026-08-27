@@ -24,6 +24,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('!조각')).toEqual({ name: 'fragment', args: [] }));
   it('parses the Wonder Berry command', () =>
     expect(parseCommand('!원더베리')).toEqual({ name: 'wonderBerry', args: [] }));
+  it('uses the shared count and result options for Wonder Berry', () =>
+    expect(parseRoyalOptions(['25', 'false'])).toEqual({ count: 25, showResults: false }));
   it('draws ten royal items using weighted probabilities', () => {
     const draws = drawRoyalStyles(
       [

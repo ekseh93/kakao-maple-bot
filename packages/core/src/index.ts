@@ -343,15 +343,17 @@ export function formatWonderBerryDraw(
   items: RoyalStyleItem[],
   sourceUrl: string,
   fetchedAt: string,
+  count = 10,
+  showResults = true,
   random = Math.random,
 ): string {
   return formatWeightedDraw(
-    '[위습의 원더베리 10회 뽑기]',
+    `[위습의 원더베리 ${count}회 뽑기]`,
     items,
     sourceUrl,
     fetchedAt,
-    10,
-    true,
+    count,
+    showResults,
     random,
   );
 }
