@@ -29,6 +29,7 @@ export type NexonClient = {
     kind: '일반' | '스페셜',
     signal: AbortSignal,
   ): Promise<LunaCrystalSweetList>;
+  findWeather?(region: string, signal: AbortSignal): Promise<WeatherSnapshot | null>;
 };
 export type ExperienceSnapshot = {
   date: string;
@@ -83,6 +84,17 @@ export type LunaCrystalSweetList = {
   kind: '일반' | '스페셜';
   items: RoyalStyleItem[];
   sourceUrl: string;
+  fetchedAt: string;
+};
+export type WeatherSnapshot = {
+  query: string;
+  location: string;
+  country?: string;
+  temperatureC: number;
+  humidityPercent: number;
+  weatherCode: number;
+  pm25?: number;
+  pm10?: number;
   fetchedAt: string;
 };
 export type StockQuote = {
@@ -590,6 +602,89 @@ export function createNexonClient(
       return {
         kind,
         ...parseProbabilityPage(await response.text(), sourceUrl),
+      };
+    },
+    async findWeather(region, signal) {
+      const geocodeUrl = new URL('https://geocoding-api.open-meteo.com/v1/search');
+      geocodeUrl.search = new URLSearchParams({
+        name: region,
+        count: '1',
+        language: 'ko',
+        format: 'json',
+      }).toString();
+      const geocodeResponse = await fetchWithRetry(fetcher, geocodeUrl.toString(), { signal });
+      if (!geocodeResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      const geocodeBody = (await geocodeResponse.json()) as {
+        results?: Array<{
+          name?: string;
+          latitude?: number;
+          longitude?: number;
+          country?: string;
+        }> | null;
+      };
+      if (!Array.isArray(geocodeBody.results)) throw new Error('PROVIDER_SCHEMA');
+      const place = geocodeBody.results[0];
+      if (!place) return null;
+      if (
+        typeof place.name !== 'string' ||
+        typeof place.latitude !== 'number' ||
+        !Number.isFinite(place.latitude) ||
+        typeof place.longitude !== 'number' ||
+        !Number.isFinite(place.longitude)
+      )
+        throw new Error('PROVIDER_SCHEMA');
+      const query = new URLSearchParams({
+        latitude: String(place.latitude),
+        longitude: String(place.longitude),
+        current: 'temperature_2m,relative_humidity_2m,weather_code',
+        timezone: 'auto',
+      });
+      const airQuery = new URLSearchParams({
+        latitude: String(place.latitude),
+        longitude: String(place.longitude),
+        current: 'pm2_5,pm10',
+        timezone: 'auto',
+      });
+      const [weatherResponse, airResponse] = await Promise.all([
+        fetchWithRetry(fetcher, `https://api.open-meteo.com/v1/forecast?${query}`, { signal }),
+        fetchWithRetry(fetcher, `https://air-quality-api.open-meteo.com/v1/air-quality?${airQuery}`, {
+          signal,
+        }),
+      ]);
+      if (!weatherResponse.ok || !airResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      const weatherBody = (await weatherResponse.json()) as {
+        current?: {
+          temperature_2m?: number;
+          relative_humidity_2m?: number;
+          weather_code?: number;
+        };
+      };
+      const airBody = (await airResponse.json()) as {
+        current?: { pm2_5?: number | null; pm10?: number | null };
+      };
+      const current = weatherBody.current;
+      if (
+        !current ||
+        typeof current.temperature_2m !== 'number' ||
+        !Number.isFinite(current.temperature_2m) ||
+        typeof current.relative_humidity_2m !== 'number' ||
+        !Number.isFinite(current.relative_humidity_2m) ||
+        typeof current.weather_code !== 'number' ||
+        !Number.isInteger(current.weather_code)
+      )
+        throw new Error('PROVIDER_SCHEMA');
+      const pm25 = optionalNumber(airBody.current?.pm2_5);
+      const pm10 = optionalNumber(airBody.current?.pm10);
+      return {
+        query: region,
+        location: place.name,
+        ...(place.country ? { country: place.country } : {}),
+        temperatureC: current.temperature_2m,
+        humidityPercent: current.relative_humidity_2m,
+        weatherCode: current.weather_code,
+        ...(pm25 !== undefined ? { pm25 } : {}),
+        ...(pm10 !== undefined ? { pm10 } : {}),
+        fetchedAt: new Date().toISOString(),
       };
     },
   };

@@ -5,6 +5,7 @@ import {
   chooseItems,
   drawRoyalStyles,
   parseRoyalOptions,
+  validateRegion,
   parseCommand,
   playRps,
   recommendFood,
@@ -35,7 +36,11 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('/루나드림 스페셜 5 false')).toEqual({
       name: 'lunaDream',
       args: ['스페셜', '5', 'false'],
-    }));
+  }));
+  it('validates global weather region input', () => {
+    expect(validateRegion('New York')).toBe('New York');
+    expect(() => validateRegion('')).toThrow('INVALID_USAGE');
+  });
   it('draws ten royal items using weighted probabilities', () => {
     const draws = drawRoyalStyles(
       [

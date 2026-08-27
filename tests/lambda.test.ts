@@ -568,6 +568,31 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(25);
     expect(nexon.findLunaCrystalDream).toHaveBeenCalledWith('일반', expect.anything());
   });
+  it('handles global weather lookup', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findWeather: vi.fn().mockResolvedValue({
+        query: '도쿄',
+        location: '도쿄',
+        country: '일본',
+        temperatureC: 28.4,
+        humidityPercent: 72,
+        weatherCode: 1,
+        pm25: 8.2,
+        pm10: 14.6,
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!날씨 도쿄'), roomId: 'weather-room', senderId: 'weather-sender' },
+      { ...env, ALLOWED_ROOMS: 'weather-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[현재 날씨] 도쿄, 일본');
+    expect(result.reply).toContain('기온: 28.4°C');
+    expect(result.reply).toContain('습도: 72%');
+    expect(result.reply).toContain('PM2.5: 8.2');
+  });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {
       findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),

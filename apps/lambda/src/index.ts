@@ -11,6 +11,7 @@ import {
   playRps,
   recommendFood,
   validateCharacterName,
+  validateRegion,
 } from '@kakao-maple-bot/core';
 import {
   createNexonClient,
@@ -28,6 +29,7 @@ import {
   type NoticeList,
   type RoyalStyleList,
   type WonderBerryList,
+  type WeatherSnapshot,
   type LunaCrystalSweetList,
 } from '@kakao-maple-bot/providers';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
@@ -75,6 +77,7 @@ let wonderBerryCache: { value: WonderBerryList; expiresAt: number } | undefined;
 const lunaSweetCache = new Map<'일반' | '스페셜', { value: LunaCrystalSweetList; expiresAt: number }>();
 const lunaDreamCache = new Map<'일반' | '스페셜', { value: LunaCrystalSweetList; expiresAt: number }>();
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
+const weatherCache = new Map<string, { value: WeatherSnapshot; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
   INVALID_USAGE: '사용법을 확인해 주세요.',
@@ -161,6 +164,7 @@ export async function handleMessage(
   if (wonderBerryCache && wonderBerryCache.expiresAt <= now) wonderBerryCache = undefined;
   for (const [kind, entry] of lunaSweetCache) if (entry.expiresAt <= now) lunaSweetCache.delete(kind);
   for (const [kind, entry] of lunaDreamCache) if (entry.expiresAt <= now) lunaDreamCache.delete(kind);
+  for (const [region, entry] of weatherCache) if (entry.expiresAt <= now) weatherCache.delete(region);
   if (!message.eventId || seen.has(message.eventId))
     return { reply: null, requestId, cache: 'bypass' };
   seen.set(message.eventId, now);
@@ -474,6 +478,20 @@ export async function handleMessage(
           cache: 'miss',
         };
       }
+      case 'weather': {
+        if (parsed.args.length === 0) throw new Error('INVALID_USAGE');
+        const region = validateRegion(parsed.args.join(' '));
+        const cacheKey = region.toLocaleLowerCase();
+        const cached = weatherCache.get(cacheKey);
+        if (cached && cached.expiresAt > now)
+          return { reply: formatWeather(cached.value), requestId, cache: 'hit' };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findWeather) throw new Error('NOT_CONFIGURED');
+        const weather = await client.findWeather(region, timeoutSignal());
+        if (!weather) throw new Error('NOT_FOUND');
+        weatherCache.set(cacheKey, { value: weather, expiresAt: now + 5 * 60_000 });
+        return { reply: formatWeather(weather), requestId, cache: 'miss' };
+      }
       case 'experience': {
         const name = validateCharacterName(parsed.args[0]);
         const cached = experienceCache.get(name);
@@ -679,6 +697,29 @@ function parsePositiveInteger(value: string | undefined): number | null {
   if (!value || !/^\d+$/.test(value.trim())) return null;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+function weatherDescription(code: number): string {
+  if (code === 0) return '맑음';
+  if ([1, 2].includes(code)) return '구름 조금';
+  if (code === 3) return '흐림';
+  if ([45, 48].includes(code)) return '안개';
+  if ([51, 53, 55, 56, 57].includes(code)) return '이슬비';
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return '비';
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return '눈';
+  if ([95, 96, 99].includes(code)) return '뇌우';
+  return '현재 상태 확인 필요';
+}
+function formatWeather(weather: WeatherSnapshot): string {
+  return [
+    `[현재 날씨] ${weather.location}${weather.country ? `, ${weather.country}` : ''}`,
+    `상태: ${weatherDescription(weather.weatherCode)}`,
+    `기온: ${weather.temperatureC.toFixed(1)}°C`,
+    `습도: ${weather.humidityPercent.toFixed(0)}%`,
+    `미세먼지 PM10: ${weather.pm10 !== undefined ? `${weather.pm10.toFixed(1)} μg/m³` : '정보 없음'}`,
+    `초미세먼지 PM2.5: ${weather.pm25 !== undefined ? `${weather.pm25.toFixed(1)} μg/m³` : '정보 없음'}`,
+    `조회: ${weather.fetchedAt}`,
+    '※ 전 세계 지역 검색 및 Open-Meteo 모델 기반 참고 정보입니다.',
+  ].join('\n');
 }
 function formatStock(q: StockQuote): string {
   return [

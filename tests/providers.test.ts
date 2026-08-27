@@ -286,6 +286,38 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result).toMatchObject({ kind: '스페셜', items: [{ name: '테스트 드림 펫', probability: 8.4 }] });
     expect(fetcher.mock.calls[0]?.[0]).toContain('SpecialLunaCrystalDream');
   });
+  it('maps global weather, geocoding, and air quality fixtures', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ results: [{ name: '도쿄', latitude: 35.68, longitude: 139.69, country: '일본' }] }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ current: { temperature_2m: 28.4, relative_humidity_2m: 72, weather_code: 1 } }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ current: { pm2_5: 8.2, pm10: 14.6 } }), { status: 200 }),
+      );
+    const result = await createNexonClient(undefined, fetcher).findWeather?.(
+      '도쿄',
+      new AbortController().signal,
+    );
+    expect(result).toMatchObject({
+      location: '도쿄',
+      country: '일본',
+      temperatureC: 28.4,
+      humidityPercent: 72,
+      pm25: 8.2,
+      pm10: 14.6,
+    });
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
   it('maps eight official experience history snapshots', async () => {
     const fetcher = vi
       .fn()
