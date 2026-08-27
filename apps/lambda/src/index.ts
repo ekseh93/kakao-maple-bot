@@ -2,6 +2,7 @@ import {
   chooseItems,
   formatRoyalDraw,
   formatWonderBerryDraw,
+  formatLunaCrystalSweetDraw,
   formatSymbol,
   HELP,
   parseCommand,
@@ -26,6 +27,7 @@ import {
   type NoticeList,
   type RoyalStyleList,
   type WonderBerryList,
+  type LunaCrystalSweetList,
 } from '@kakao-maple-bot/providers';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
@@ -69,6 +71,7 @@ let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 let wonderBerryCache: { value: WonderBerryList; expiresAt: number } | undefined;
+const lunaSweetCache = new Map<'일반' | '스페셜', { value: LunaCrystalSweetList; expiresAt: number }>();
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -154,6 +157,7 @@ export async function handleMessage(
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
   if (wonderBerryCache && wonderBerryCache.expiresAt <= now) wonderBerryCache = undefined;
+  for (const [kind, entry] of lunaSweetCache) if (entry.expiresAt <= now) lunaSweetCache.delete(kind);
   if (!message.eventId || seen.has(message.eventId))
     return { reply: null, requestId, cache: 'bypass' };
   seen.set(message.eventId, now);
@@ -390,6 +394,41 @@ export async function handleMessage(
             wonderBerry.items,
             wonderBerry.sourceUrl,
             wonderBerry.fetchedAt,
+            options.count,
+            options.showResults,
+          ),
+          requestId,
+          cache: 'miss',
+        };
+      }
+      case 'lunaSweet': {
+        const kind = parsed.args[0] as '일반' | '스페셜' | undefined;
+        if (kind !== '일반' && kind !== '스페셜') throw new Error('INVALID_USAGE');
+        const options = parseRoyalOptions(parsed.args.slice(1));
+        const cached = lunaSweetCache.get(kind);
+        if (cached && cached.expiresAt > now)
+          return {
+            reply: formatLunaCrystalSweetDraw(
+              kind,
+              cached.value.items,
+              cached.value.sourceUrl,
+              cached.value.fetchedAt,
+              options.count,
+              options.showResults,
+            ),
+            requestId,
+            cache: 'hit',
+          };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findLunaCrystalSweet) throw new Error('NOT_CONFIGURED');
+        const luna = await client.findLunaCrystalSweet(kind, timeoutSignal());
+        lunaSweetCache.set(kind, { value: luna, expiresAt: now + 5 * 60_000 });
+        return {
+          reply: formatLunaCrystalSweetDraw(
+            kind,
+            luna.items,
+            luna.sourceUrl,
+            luna.fetchedAt,
             options.count,
             options.showResults,
           ),

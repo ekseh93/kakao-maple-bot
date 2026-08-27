@@ -21,6 +21,10 @@ export type NexonClient = {
   findEvents?(signal: AbortSignal): Promise<EventList>;
   findRoyalStyles?(signal: AbortSignal): Promise<RoyalStyleList>;
   findWonderBerry?(signal: AbortSignal): Promise<WonderBerryList>;
+  findLunaCrystalSweet?(
+    kind: '일반' | '스페셜',
+    signal: AbortSignal,
+  ): Promise<LunaCrystalSweetList>;
 };
 export type ExperienceSnapshot = {
   date: string;
@@ -71,6 +75,12 @@ export type EventList = { events: EventItem[]; fetchedAt: string };
 export type RoyalStyleItem = { name: string; probability: number };
 export type RoyalStyleList = { items: RoyalStyleItem[]; sourceUrl: string; fetchedAt: string };
 export type WonderBerryList = { items: RoyalStyleItem[]; sourceUrl: string; fetchedAt: string };
+export type LunaCrystalSweetList = {
+  kind: '일반' | '스페셜';
+  items: RoyalStyleItem[];
+  sourceUrl: string;
+  fetchedAt: string;
+};
 export type StockQuote = {
   code: string;
   name?: string;
@@ -553,6 +563,18 @@ export function createNexonClient(
       const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
       return parseProbabilityPage(await response.text(), sourceUrl, 'last');
+    },
+    async findLunaCrystalSweet(kind, signal) {
+      const sourceUrl =
+        kind === '스페셜'
+          ? 'https://maplestory.nexon.com/Guide/CashShop/Probability/SpecialLunaCrystalSweet'
+          : 'https://maplestory.nexon.com/Guide/CashShop/Probability/LunaCrystalSweet';
+      const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return {
+        kind,
+        ...parseProbabilityPage(await response.text(), sourceUrl),
+      };
     },
   };
 }

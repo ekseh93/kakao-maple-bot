@@ -26,6 +26,11 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('!원더베리')).toEqual({ name: 'wonderBerry', args: [] }));
   it('uses the shared count and result options for Wonder Berry', () =>
     expect(parseRoyalOptions(['25', 'false'])).toEqual({ count: 25, showResults: false }));
+  it('parses the Luna Crystal Sweet command', () =>
+    expect(parseCommand('/루나스윗 일반 10 true')).toEqual({
+      name: 'lunaSweet',
+      args: ['일반', '10', 'true'],
+    }));
   it('draws ten royal items using weighted probabilities', () => {
     const draws = drawRoyalStyles(
       [
