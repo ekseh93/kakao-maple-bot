@@ -228,7 +228,9 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(first).toContain('[오늘의 운세]');
     expect(first).toContain('출생연도: 2000년생');
     expect(first).toBe(formatFortune(['00년생'], now));
-    expect(() => formatFortune(['2000'])).toThrow('INVALID_USAGE');
+    expect(formatFortune(['93'], now)).toContain('출생연도: 1993년생');
+    expect(formatFortune(['93년생'], now)).toContain('출생연도: 1993년생');
+    expect(formatFortune(['2000'], now)).toContain('출생연도: 2000년생');
   });
   it('rejects the retired food category argument', () =>
     expect(() => formatFoodRecommendation(['한식'])).toThrow('INVALID_USAGE'));

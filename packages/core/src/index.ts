@@ -484,10 +484,15 @@ function fortuneIndex(seed: string, length: number): number {
 }
 
 export function formatFortune(args: string[] = [], now = new Date()): string {
-  if (args.length !== 1 || !/^(?:\d{2}|\d{4})년생$/.test(args[0]!))
+  if (args.length !== 1 || !/^(?:\d{2}|\d{4})(?:년생)?$/.test(args[0]!))
     throw new Error('INVALID_USAGE');
-  const birthText = args[0]!.slice(0, -2);
-  const birthYear = Number(birthText.length === 2 ? `20${birthText}` : birthText);
+  const birthText = args[0]!.replace(/년생$/, '');
+  const birthYear =
+    birthText.length === 2
+      ? Number(birthText) <= 26
+        ? 2000 + Number(birthText)
+        : 1900 + Number(birthText)
+      : Number(birthText);
   const currentYear = Number(
     new Intl.DateTimeFormat('en', { timeZone: 'Asia/Seoul', year: 'numeric' }).format(now),
   );
