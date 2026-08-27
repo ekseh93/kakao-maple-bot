@@ -6,6 +6,7 @@ export type CommandName =
   | 'japanTravel'
   | 'boss'
   | 'bossRewards'
+  | 'bossLevelBoost'
   | 'mekaBerry'
   | 'netflix'
   | 'anime'
@@ -52,6 +53,7 @@ const aliases: Record<string, CommandName> = {
   심볼계산: 'symbol',
   보스: 'boss',
   보스보상: 'bossRewards',
+  보스렙뻥: 'bossLevelBoost',
   메카베리: 'mekaBerry',
   무릉: 'dojang',
   유니온: 'union',
@@ -783,6 +785,64 @@ export function formatBossRewardSummaries(args: string[] = []): string {
     '└──────────────────┴────────────────────────────────────────────────────────────┘',
     '※ 일부 보상은 원문 표의 난이도 조건(노멀 이상·하드 이상·익스트림)을 함께 표시했습니다.',
     '출처: https://matsu1207.tistory.com/937',
+  ].join('\n');
+}
+
+type BossLevelRow = { boss: string; levels: string };
+
+const bossLevelRows: BossLevelRow[] = [
+  { boss: '검은 마법사(하드)', levels: '1·4페이즈 265 / 2·3페이즈 275' },
+  { boss: '검은 마법사(익스트림)', levels: '1페이즈 275 / 2·3·4페이즈 280' },
+  { boss: '세렌 1페이즈', levels: '노멀 270 / 하드 275 / 익스트림 275' },
+  { boss: '세렌 2페이즈', levels: '노멀 270 / 하드 275 / 익스트림 280' },
+  { boss: '칼로스 1페이즈', levels: '이지 270 / 노멀 275 / 하드 285 / 익스트림 285' },
+  { boss: '칼로스 2페이즈', levels: '이지 270 / 노멀 280 / 하드 285 / 익스트림 285' },
+  { boss: '카링', levels: '이지 275 / 노멀 285 / 하드 285 / 익스트림 285' },
+  { boss: '림보', levels: '노멀 285 / 하드 285' },
+  { boss: '발드릭스', levels: '노멀 290 / 하드 290' },
+  { boss: '최초의 대적자', levels: '이지 270 / 노멀 280 / 하드 285 / 익스트림 290' },
+  { boss: '찬란한 흉성', levels: '노멀 280 / 하드 280' },
+  { boss: '유피테르', levels: '노멀 295 / 하드 295' },
+  { boss: '벨로나', levels: '이지 280 / 노멀 280 / 하드 280' },
+];
+
+const bossLevelDamageRows = [
+  ['캐릭터-보스 레벨 차이', '보스에게 주는 데미지'],
+  ['+5 이상', '120%'],
+  ['+4', '118%'],
+  ['+3', '116%'],
+  ['+2', '114%'],
+  ['+1', '112%'],
+  ['0', '110%'],
+  ['-1', '105.3%'],
+  ['-2', '100.7%'],
+  ['-3', '96.2%'],
+  ['-4', '91.8%'],
+  ['-5 ~ -40', '87.5% ~ 0%'],
+] as const;
+
+export function formatBossLevelBoost(args: string[] = []): string {
+  if (args.length > 0) throw new Error('INVALID_USAGE');
+  return [
+    '[보스 레벨 및 레벨 차이 보정]',
+    '범위: 검은 마법사(하드)부터 벨로나까지',
+    '┌────────────────────────┬────────────────────────────────────────────────────────────┐',
+    '│ 보스                   │ 난이도별 보스 레벨                                          │',
+    '├────────────────────────┼────────────────────────────────────────────────────────────┤',
+    ...bossLevelRows.map((row) => `│ ${row.boss.padEnd(20, ' ')} │ ${row.levels}`),
+    '└────────────────────────┴────────────────────────────────────────────────────────────┘',
+    '',
+    '[레벨 차이에 따른 보스 데미지 보정]',
+    '┌──────────────────────┬────────────────────┐',
+    '│ 캐릭터-보스 레벨 차이 │ 보스에게 주는 데미지 │',
+    '├──────────────────────┼────────────────────┤',
+    ...bossLevelDamageRows
+      .slice(1)
+      .map(
+        ([difference, damage]) => `│ ${difference.padEnd(20, ' ')} │ ${damage.padStart(18, ' ')} │`,
+      ),
+    '└──────────────────────┴────────────────────┘',
+    '출처: https://matsu1207.tistory.com/772',
   ].join('\n');
 }
 

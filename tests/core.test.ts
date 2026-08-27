@@ -16,6 +16,7 @@ import {
   formatAnimeRecommendation,
   formatBossRewards,
   formatBossRewardSummaries,
+  formatBossLevelBoost,
   formatMekaBerry,
   formatMepoEfficiency,
   formatMaxLevelSymbolEffects,
@@ -82,6 +83,18 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('앱솔랩스 방어구/무기 상자');
     expect(output).toContain('출처: https://matsu1207.tistory.com/937');
     expect(() => formatBossRewardSummaries(['스우'])).toThrow('INVALID_USAGE');
+  });
+  it('parses and formats boss levels and level-difference damage', () => {
+    expect(parseCommand('!보스렙뻥')).toEqual({ name: 'bossLevelBoost', args: [] });
+    const output = formatBossLevelBoost();
+    expect(output).toContain('[보스 레벨 및 레벨 차이 보정]');
+    expect(output).toContain('검은 마법사(하드)');
+    expect(output).toContain('1·4페이즈 265 / 2·3페이즈 275');
+    expect(output).toContain('벨로나');
+    expect(output).toContain('+5 이상');
+    expect(output).toContain('105.3%');
+    expect(output).toContain('출처: https://matsu1207.tistory.com/772');
+    expect(() => formatBossLevelBoost(['하드'])).toThrow('INVALID_USAGE');
   });
   it('parses and formats Meka Berry rates for levels 280 through 299', () => {
     expect(parseCommand('!메카베리 280')).toEqual({ name: 'mekaBerry', args: ['280'] });
