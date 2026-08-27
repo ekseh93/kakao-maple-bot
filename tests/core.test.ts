@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculateSymbol,
+  calculateSymbolCost,
   chooseItems,
   parseCommand,
   playRps,
@@ -17,8 +18,13 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('!도움말')).toBeTruthy());
   it('T-009/T-010 calculates named arcane/authentic regions and progress', () => {
     expect(calculateSymbol('여로', 1, 20)).toBe(2679);
-    expect(calculateSymbol('기어드락', 1, 11)).toBe(1806);
+    expect(calculateSymbol('기어드락', 1, 11)).toBe(4565);
     expect(calculateSymbol('츄츄', 1, 2, 3)).toBe(9);
+  });
+  it('includes region-specific symbol upgrade meso costs', () => {
+    expect(calculateSymbolCost('여로', 1, 2)).toBe(970000);
+    expect(calculateSymbolCost('세르니움', 1, 2)).toBe(36500000);
+    expect(calculateSymbolCost('기어드락', 1, 2)).toBe(139700000);
   });
   it('rejects invalid symbol ranges', () =>
     expect(() => calculateSymbol('arcane', 0, 2)).toThrow('INVALID_USAGE'));
