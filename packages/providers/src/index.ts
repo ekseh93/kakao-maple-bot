@@ -374,8 +374,10 @@ export function createNexonClient(
           `${base}/character/basic?ocid=${encodeURIComponent(ocid)}&date=${date}`,
           { headers: { 'x-nxopen-api-key': apiKey }, signal },
         );
-        if (!response.ok)
+        if (!response.ok) {
+          if ([400, 404].includes(response.status)) continue;
           throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+        }
         const body = (await response.json()) as {
           character_level?: number;
           character_exp?: number;

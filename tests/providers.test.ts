@@ -517,6 +517,34 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result?.snapshots[0]).toMatchObject({ level: 280, experienceRate: 50.25 });
     expect(fetcher.mock.calls[1]?.[0]).toContain('character/basic?ocid=ocid-fixture&date=');
   });
+  it('skips a not-yet-published current-day experience snapshot', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ocid: 'ocid-fixture' }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: { name: 'OPENAPI00004' } }), { status: 400 }),
+      );
+    for (let index = 0; index < 7; index += 1) {
+      fetcher.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            character_level: 280,
+            character_exp: 1000 + index,
+            character_exp_rate: `${50 - index}.25`,
+          }),
+          { status: 200 },
+        ),
+      );
+    }
+    const result = await createNexonClient('fixture-key', fetcher).findExperienceHistory?.(
+      '테스트',
+      new AbortController().signal,
+    );
+    expect(result?.snapshots).toHaveLength(7);
+    expect(fetcher).toHaveBeenCalledTimes(9);
+  });
   it('maps a Yahoo Finance Korean name lookup and daily quote fixture', async () => {
     const fetcher = vi
       .fn()
