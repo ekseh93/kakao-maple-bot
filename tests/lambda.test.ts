@@ -60,6 +60,31 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('1. 첫 글');
     expect(result.reply).toContain('10추 게시판: https://www.inven.co.kr/board/maple/5974?my=chu');
   });
+  it('recommends a random current Naver webtoon', async () => {
+    const webtoon = {
+      findCurrentWebtoons: vi.fn().mockResolvedValue({
+        items: [
+          {
+            titleId: 1,
+            title: '연재 작품',
+            author: '작가',
+            weekday: '월',
+            url: 'https://comic.naver.com/webtoon/list?titleId=1',
+          },
+        ],
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!웹툰'), roomId: 'webtoon-room' },
+      { ...env, ALLOWED_ROOMS: 'webtoon-room' },
+      { webtoon },
+    );
+    expect(result.reply).toContain('[네이버 웹툰 랜덤 추천]');
+    expect(result.reply).toContain('작품: 연재 작품');
+    expect(result.reply).toContain('연재 요일: 월요일');
+    expect(result.reply).toContain('https://comic.naver.com/webtoon/list?titleId=1');
+  });
   it('T-001 does not spend command rate budget on ordinary chat', async () => {
     const roomEnv = { ...env, ALLOWED_ROOMS: 'chat-room' };
     const ordinary = await handleMessage(
