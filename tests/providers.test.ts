@@ -3,6 +3,7 @@ import {
   createInvenClient,
   createNaverWebtoonClient,
   createNexonClient,
+  createNaverBlogClient,
   createStockClient,
 } from '@kakao-maple-bot/providers';
 
@@ -32,6 +33,21 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       url: 'https://comic.naver.com/webtoon/list?titleId=1',
     });
     expect(fetcher).toHaveBeenCalledTimes(7);
+  });
+  it('finds the newest weekly new product post from the Naver Blog RSS feed', async () => {
+    const xml = `
+      <item><title><![CDATA[일반 글]]></title><link><![CDATA[https://blog.naver.com/don_jjin/1]]></link></item>
+      <item><title><![CDATA[[금주의 신상] 최신 신제품 정보]]></title><link><![CDATA[https://blog.naver.com/don_jjin/2]]></link><pubDate>Thu, 27 Aug 2026 22:00:00 +0900</pubDate></item>
+      <item><title><![CDATA[[금주의 신상] 오래된 신제품 정보]]></title><link><![CDATA[https://blog.naver.com/don_jjin/3]]></link></item>`;
+    const fetcher = vi.fn().mockResolvedValue(new Response(xml, { status: 200 }));
+    const result = await createNaverBlogClient(fetcher).findLatestWeeklyNewProduct(
+      new AbortController().signal,
+    );
+    expect(result).toEqual({
+      title: '[금주의 신상] 최신 신제품 정보',
+      url: 'https://blog.naver.com/don_jjin/2',
+      publishedAt: 'Thu, 27 Aug 2026 22:00:00 +0900',
+    });
   });
 
   it('maps the first five Inven 10-recommendation post titles', async () => {

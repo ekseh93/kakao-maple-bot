@@ -100,6 +100,10 @@ export type WebtoonList = { items: WebtoonItem[]; fetchedAt: string };
 export type WebtoonClient = {
   findCurrentWebtoons(signal: AbortSignal): Promise<WebtoonList>;
 };
+export type NaverBlogPost = { title: string; url: string; publishedAt?: string };
+export type NaverBlogClient = {
+  findLatestWeeklyNewProduct(signal: AbortSignal): Promise<NaverBlogPost | null>;
+};
 export type EventItem = {
   title: string;
   url: string;
@@ -243,6 +247,25 @@ function parseInvenTopPosts(html: string, boardUrl: string, limit = 5): InvenTop
   }
   if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
   return { posts, boardUrl, fetchedAt: new Date().toISOString() };
+}
+
+function parseLatestWeeklyNewProduct(xml: string): NaverBlogPost | null {
+  const itemPattern = /<item\b[\s\S]*?<\/item>/gi;
+  for (const match of xml.matchAll(itemPattern)) {
+    const item = match[0];
+    const titleMatch = item.match(
+      /<title>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([\s\S]*?))\s*<\/title>/i,
+    );
+    const linkMatch = item.match(/<link>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([\s\S]*?))\s*<\/link>/i);
+    const dateMatch = item.match(/<pubDate>\s*([^<]+?)\s*<\/pubDate>/i);
+    const title = decodeHtml(titleMatch?.[1] ?? titleMatch?.[2] ?? '');
+    const url = decodeHtml(linkMatch?.[1] ?? linkMatch?.[2] ?? '');
+    if (!title.includes('[금주의 신상]')) continue;
+    if (!url || !/^https:\/\/blog\.naver\.com\/don_jjin\/\d+/.test(url))
+      throw new Error('PROVIDER_SCHEMA');
+    return { title, url, ...(dateMatch?.[1] ? { publishedAt: dateMatch[1].trim() } : {}) };
+  }
+  return null;
 }
 
 function parseProbabilityPage(
@@ -1177,6 +1200,23 @@ export function createNaverWebtoonClient(fetcher: typeof fetch = fetch): Webtoon
       const items = lists.flat();
       if (items.length === 0) throw new Error('NOT_FOUND');
       return { items, fetchedAt: new Date().toISOString() };
+    },
+  };
+}
+
+export function createNaverBlogClient(fetcher: typeof fetch = fetch): NaverBlogClient {
+  const rssUrl = 'https://rss.blog.naver.com/don_jjin.xml';
+  return {
+    async findLatestWeeklyNewProduct(signal) {
+      const response = await fetchWithRetry(fetcher, rssUrl, {
+        headers: {
+          Accept: 'application/rss+xml, application/xml, text/xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return parseLatestWeeklyNewProduct(await response.text());
     },
   };
 }

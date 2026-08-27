@@ -106,6 +106,26 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('연재 요일: 월요일');
     expect(result.reply).toContain('https://comic.naver.com/webtoon/list?titleId=1');
   });
+  it('formats the latest weekly new product post', async () => {
+    const naverBlog = {
+      findLatestWeeklyNewProduct: vi.fn().mockResolvedValue({
+        title: '[금주의 신상] 최신 신제품 정보',
+        url: 'https://blog.naver.com/don_jjin/2',
+      }),
+    };
+    const result = await handleMessage(
+      {
+        ...message('!금주의신상'),
+        roomId: 'weekly-new-product-room',
+        senderId: 'weekly-new-product-sender',
+      },
+      { ...env, ALLOWED_ROOMS: 'weekly-new-product-room' },
+      { naverBlog },
+    );
+    expect(result.reply).toContain('[금주의 신상]');
+    expect(result.reply).toContain('제목: [금주의 신상] 최신 신제품 정보');
+    expect(result.reply).toContain('https://blog.naver.com/don_jjin/2');
+  });
   it('T-001 does not spend command rate budget on ordinary chat', async () => {
     const roomEnv = { ...env, ALLOWED_ROOMS: 'chat-room' };
     const ordinary = await handleMessage(

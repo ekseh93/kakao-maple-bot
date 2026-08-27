@@ -26,6 +26,7 @@ import {
   createNexonClient,
   createInvenClient,
   createNaverWebtoonClient,
+  createNaverBlogClient,
   createStockClient,
   type Character,
   type DojangCharacter,
@@ -42,6 +43,8 @@ import {
   type InvenClient,
   type WebtoonClient,
   type WebtoonList,
+  type NaverBlogClient,
+  type NaverBlogPost,
   type RoyalStyleList,
   type WonderBerryList,
   type BoutiqueGiftList,
@@ -74,6 +77,7 @@ type Dependencies = {
   nexon?: NexonClient;
   inven?: InvenClient;
   webtoon?: WebtoonClient;
+  naverBlog?: NaverBlogClient;
   stock?: StockClient;
   now?: () => Date;
   seen?: Set<string>;
@@ -92,9 +96,10 @@ let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
 let invenCache: { value: InvenTopPostList; expiresAt: number } | undefined;
 let mabbakDorosiCache: { value: InvenTopPostList; expiresAt: number } | undefined;
 let webtoonCache: { value: WebtoonList; expiresAt: number } | undefined;
+let weeklyNewProductCache: { value: NaverBlogPost | null; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
-let wonderBerryCache: { value: WonderBerryList; expiresAt: number } | undefined;
+let wonderBerryCache: { value: WonderBerryList; expiresAt: number; provider?: object } | undefined;
 let boutiqueGiftCache: { value: BoutiqueGiftList; expiresAt: number } | undefined;
 const lunaSweetCache = new Map<
   '일반' | '스페셜',
@@ -195,6 +200,8 @@ export async function handleMessage(
   if (invenCache && invenCache.expiresAt <= now) invenCache = undefined;
   if (mabbakDorosiCache && mabbakDorosiCache.expiresAt <= now) mabbakDorosiCache = undefined;
   if (webtoonCache && webtoonCache.expiresAt <= now) webtoonCache = undefined;
+  if (weeklyNewProductCache && weeklyNewProductCache.expiresAt <= now)
+    weeklyNewProductCache = undefined;
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
   if (wonderBerryCache && wonderBerryCache.expiresAt <= now) wonderBerryCache = undefined;
@@ -234,7 +241,7 @@ export async function handleMessage(
     switch (parsed.name) {
       case 'help':
         return {
-          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개\n!메포효율 — 메포 대비 경험치 효율`,
+          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개\n!메포효율 — 메포 대비 경험치 효율\n!금주의신상 — 금주의 신상 최신 글`,
           requestId,
           cache: 'bypass',
         };
@@ -409,6 +416,19 @@ export async function handleMessage(
         webtoonCache = { value: webtoons, expiresAt: now + 10 * 60_000 };
         return { reply: formatWebtoon(webtoons, Math.random), requestId, cache: 'miss' };
       }
+      case 'weeklyNewProduct': {
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        if (weeklyNewProductCache && weeklyNewProductCache.expiresAt > now)
+          return {
+            reply: formatWeeklyNewProduct(weeklyNewProductCache.value),
+            requestId,
+            cache: 'hit',
+          };
+        const client = deps.naverBlog ?? createNaverBlogClient();
+        const post = await client.findLatestWeeklyNewProduct(timeoutSignal());
+        weeklyNewProductCache = { value: post, expiresAt: now + 10 * 60_000 };
+        return { reply: formatWeeklyNewProduct(post), requestId, cache: 'miss' };
+      }
       case 'event': {
         if (eventCache && eventCache.expiresAt > now)
           return { reply: formatEvents(eventCache.value), requestId, cache: 'hit' };
@@ -473,7 +493,11 @@ export async function handleMessage(
       }
       case 'wonderBerry': {
         const options = parseRoyalOptions(parsed.args);
-        if (wonderBerryCache && wonderBerryCache.expiresAt > now)
+        if (
+          wonderBerryCache &&
+          wonderBerryCache.expiresAt > now &&
+          (!deps.nexon || wonderBerryCache.provider === deps.nexon)
+        )
           return {
             reply: formatWonderBerryDraw(
               wonderBerryCache.value.items,
@@ -488,7 +512,11 @@ export async function handleMessage(
         const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
         if (!client.findWonderBerry) throw new Error('NOT_CONFIGURED');
         const wonderBerry = await client.findWonderBerry(timeoutSignal());
-        wonderBerryCache = { value: wonderBerry, expiresAt: now + 5 * 60_000 };
+        wonderBerryCache = {
+          value: wonderBerry,
+          expiresAt: now + 5 * 60_000,
+          ...(deps.nexon ? { provider: deps.nexon } : {}),
+        };
         return {
           reply: formatWonderBerryDraw(
             wonderBerry.items,
@@ -816,6 +844,10 @@ function formatWebtoon(c: WebtoonList, random: () => number): string {
     `연재 요일: ${item.weekday}요일`,
     item.url,
   ].join('\n');
+}
+function formatWeeklyNewProduct(post: NaverBlogPost | null): string {
+  if (!post) throw new Error('NOT_FOUND');
+  return ['[금주의 신상]', `제목: ${post.title}`, `게시글: ${post.url}`].join('\n');
 }
 function formatExperience(c: ExperienceHistory): string {
   const lines = ['[경험치 히스토리]', `캐릭터: ${c.name}`, '최근 8일 (당일 포함)', '────────────'];

@@ -55,6 +55,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('!인벤')).toEqual({ name: 'inven', args: [] }));
   it('parses the Mabbak Dorosi author-search command', () =>
     expect(parseCommand('!마빡도로시')).toEqual({ name: 'mabbakDorosi', args: [] }));
+  it('parses the weekly new product command', () =>
+    expect(parseCommand('!금주의신상')).toEqual({ name: 'weeklyNewProduct', args: [] }));
   it('parses and formats the Grandis and Black Mage boss table', () => {
     expect(parseCommand('!보스')).toEqual({ name: 'boss', args: [] });
     const output = formatBossRewards();
