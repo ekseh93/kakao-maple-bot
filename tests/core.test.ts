@@ -29,6 +29,13 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('removes the retired maple link command', () =>
     expect(parseCommand('!메이플링크 닉네임')?.name).toBe('help'));
+  it('supports article-inspired aliases without adding a new provider call', () => {
+    expect(parseCommand('!정보 닉네임')).toEqual({ name: 'character', args: ['닉네임'] });
+    expect(parseCommand('!심볼계산 기어드락 1 11')).toEqual({
+      name: 'symbol',
+      args: ['기어드락', '1', '11'],
+    });
+  });
   it('T-012 trims and deduplicates choices', () =>
     expect(chooseItems(' A, A, B')).toMatch(/^(A|B)$/));
   it('T-013 recommends supported menus', () =>
