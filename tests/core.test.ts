@@ -49,6 +49,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   it('parses aliases and unknown commands as help', () => {
     expect(parseCommand(' !도움말 ')?.name).toBe('help');
     expect(parseCommand('!unknown')?.name).toBe('help');
+    expect(parseCommand('!정보 테스트')).toEqual({ name: 'character', args: ['테스트'] });
     expect(parseCommand('!유챔 테스트')).toEqual({ name: 'unionChampion', args: ['테스트'] });
   });
   it('parses the Wonder Berry command', () =>

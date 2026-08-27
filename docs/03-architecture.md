@@ -56,7 +56,7 @@
       "eventId": "phone-generated-id",
       "roomId": "configured-room-alias",
       "senderId": "configured-sender-alias",
-      "message": "!캐릭터 캐릭터명",
+      "message": "!정보 캐릭터명",
       "sentAt": "ISO-8601"
     }
 
