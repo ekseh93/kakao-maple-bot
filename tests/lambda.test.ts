@@ -483,8 +483,11 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('[경험치 히스토리]');
     expect(result.reply).toContain('2026-08-27');
+    expect(result.reply).toContain('Lv.280 / 12.50% / 전날 대비 +1.00%');
+    expect(result.reply).not.toContain('2,000 EXP');
     expect(result.reply).toContain('7일 변화: +7.00%');
     expect(result.reply).toContain('일평균: 1.00%');
+    expect(result.reply).toContain('1업(100%)까지 예상: 87.50일');
   });
   it('handles notice lookup with official links and a bounded list', async () => {
     const nexon = {

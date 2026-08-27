@@ -813,20 +813,29 @@ function formatWebtoon(c: WebtoonList, random: () => number): string {
 }
 function formatExperience(c: ExperienceHistory): string {
   const lines = ['[경험치 히스토리]', `캐릭터: ${c.name}`, '최근 8일 (당일 포함)', '────────────'];
-  for (const snapshot of c.snapshots) {
+  for (const [index, snapshot] of c.snapshots.entries()) {
+    const previous = c.snapshots[index + 1];
+    const dailyChange =
+      previous && previous.level === snapshot.level
+        ? ` / 전날 대비 ${formatSignedPercent(snapshot.experienceRate - previous.experienceRate)}`
+        : '';
     lines.push(
       `▸ ${snapshot.date}`,
-      `  Lv.${snapshot.level} / ${snapshot.experienceRate.toFixed(2)}% (${snapshot.experience.toLocaleString('ko-KR')} EXP)`,
+      `  Lv.${snapshot.level} / ${snapshot.experienceRate.toFixed(2)}%${dailyChange}`,
     );
   }
   const oldest = c.snapshots.at(-1);
   const current = c.snapshots[0];
   if (oldest && current && oldest.level === current.level) {
     const weekly = current.experienceRate - oldest.experienceRate;
+    const dailyAverage = weekly / 7;
+    const remaining = Math.max(0, 100 - current.experienceRate);
+    const daysToLevelUp = dailyAverage > 0 ? remaining / dailyAverage : null;
     lines.push(
       '────────────',
-      `7일 변화: ${weekly >= 0 ? '+' : ''}${weekly.toFixed(2)}%`,
-      `일평균: ${(weekly / 7).toFixed(2)}%`,
+      `7일 변화: ${formatSignedPercent(weekly)}`,
+      `일평균: ${dailyAverage.toFixed(2)}%`,
+      `1업(100%)까지 예상: ${daysToLevelUp === null ? '계산 불가' : `${daysToLevelUp.toFixed(2)}일`}`,
     );
   } else {
     lines.push('────────────', '7일 변화: 레벨업 포함으로 비율 단순 비교 불가');
@@ -835,6 +844,9 @@ function formatExperience(c: ExperienceHistory): string {
   const full = lines.join('\n');
   if (full.length <= 1000) return full;
   return full.slice(0, 980).trimEnd() + '\n… 응답 제한';
+}
+function formatSignedPercent(value: number): string {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 }
 function formatEvents(c: EventList): string {
   const lines = c.events.map((event) => {
