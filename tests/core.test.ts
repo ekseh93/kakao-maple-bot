@@ -17,6 +17,7 @@ import {
   formatBossRewards,
   formatMekaBerry,
   formatMepoEfficiency,
+  formatMaxLevelSymbolEffects,
   formatFortune,
   formatBoutiqueGiftDraw,
   formatRoyalDraw,
@@ -87,6 +88,18 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('17.8070');
     expect(output).toContain('출처: https://www.inven.co.kr/board/maple/2304/48140');
     expect(() => formatMepoEfficiency(['284'])).toThrow('INVALID_USAGE');
+  });
+  it('parses and formats max-level Authentic Symbol effects', () => {
+    expect(parseCommand('!심볼만렙')).toEqual({ name: 'symbolMax', args: [] });
+    const output = formatMaxLevelSymbolEffects();
+    expect(output).toContain('[어센틱 심볼 만렙 효과]');
+    expect(output).toContain('세르니움');
+    expect(output).toContain('선택받은 세렌 공격 시 데미지 +20%');
+    expect(output).toContain('아르테리아');
+    expect(output).toContain('벨로나 공격 시 데미지 +20%');
+    expect(output).toContain('기어드락');
+    expect(output).toContain('출처: https://matsu1207.tistory.com/1052');
+    expect(() => formatMaxLevelSymbolEffects(['11'])).toThrow('INVALID_USAGE');
   });
   it('parses aliases and unknown commands as help', () => {
     expect(parseCommand(' !도움말 ')?.name).toBe('help');

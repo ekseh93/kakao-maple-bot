@@ -17,6 +17,7 @@ import {
   formatBossRewards,
   formatMekaBerry,
   formatMepoEfficiency,
+  formatMaxLevelSymbolEffects,
   formatFortune,
   formatLotto,
   validateCharacterName,
@@ -241,7 +242,7 @@ export async function handleMessage(
     switch (parsed.name) {
       case 'help':
         return {
-          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개\n!메포효율 — 메포 대비 경험치 효율\n!금주의신상 — 금주의 신상 최신 글\n!디코 — 디스코드 링크`,
+          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개\n!메포효율 — 메포 대비 경험치 효율\n!금주의신상 — 금주의 신상 최신 글\n!디코 — 디스코드 링크\n!심볼만렙 — 어센틱 심볼 만렙 효과`,
           requestId,
           cache: 'bypass',
         };
@@ -285,6 +286,12 @@ export async function handleMessage(
         return { reply: formatMekaBerry(parsed.args), requestId, cache: 'bypass' };
       case 'mepoEfficiency':
         return { reply: formatMepoEfficiency(parsed.args), requestId, cache: 'bypass' };
+      case 'symbolMax':
+        return {
+          reply: formatMaxLevelSymbolEffects(parsed.args),
+          requestId,
+          cache: 'bypass',
+        };
       case 'netflix':
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
         return { reply: formatNetflixRecommendation(), requestId, cache: 'bypass' };

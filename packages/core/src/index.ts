@@ -21,6 +21,7 @@ export type CommandName =
   | 'mepoEfficiency'
   | 'weeklyNewProduct'
   | 'discord'
+  | 'symbolMax'
   | 'webtoon'
   | 'boutiqueGift'
   | 'event'
@@ -60,6 +61,7 @@ const aliases: Record<string, CommandName> = {
   메포효율: 'mepoEfficiency',
   금주의신상: 'weeklyNewProduct',
   디코: 'discord',
+  심볼만렙: 'symbolMax',
   웹툰: 'webtoon',
   부티크: 'boutiqueGift',
   이벤트: 'event',
@@ -549,6 +551,43 @@ export function formatMekaBerry(args: string[] = []): string {
     '※ 메카베리 농장 경험치 표 기준의 정적 계산값입니다.',
     '출처: https://matsu1207.tistory.com/1095',
     '출처: https://matsu1207.tistory.com/1308',
+  ].join('\n');
+}
+
+const maxLevelSymbolEffects = [
+  { symbol: '세르니움', effects: ['선택받은 세렌 공격 시 데미지 +20%', '추가 경험치 획득 +10%'] },
+  { symbol: '아르크스', effects: ['감시자 칼로스 공격 시 데미지 +20%', '추가 경험치 획득 +10%'] },
+  { symbol: '오디움', effects: ['최초의 대적자 공격 시 데미지 +20%', '추가 경험치 획득 +10%'] },
+  { symbol: '도원경', effects: ['카링 공격 시 데미지 +20%', '추가 경험치 획득 +10%'] },
+  {
+    symbol: '아르테리아',
+    effects: [
+      '찬란한 흉성 공격 시 데미지 +20%',
+      '벨로나 공격 시 데미지 +20%',
+      '추가 경험치 획득 +10%',
+    ],
+  },
+  { symbol: '카르시온', effects: ['림보 공격 시 데미지 +20%', '추가 경험치 획득 +10%'] },
+  { symbol: '탈라하트', effects: ['발드릭스 공격 시 데미지 +20%'] },
+  { symbol: '기어드락', effects: ['유피테르 공격 시 데미지 +20%'] },
+] as const;
+
+export function formatMaxLevelSymbolEffects(args: string[] = []): string {
+  if (args.length > 0) throw new Error('INVALID_USAGE');
+  return [
+    '[어센틱 심볼 만렙 효과]',
+    '기준: 심볼 11레벨',
+    '┌──────────┬────────────────────────────────┐',
+    '│ 심볼     │ 만렙 시 추가 능력치              │',
+    '├──────────┼────────────────────────────────┤',
+    ...maxLevelSymbolEffects.flatMap((item) =>
+      item.effects.map(
+        (effect, index) =>
+          `│ ${index === 0 ? item.symbol.padEnd(8, ' ') : '        '} │ ${effect.padEnd(30, ' ')} │`,
+      ),
+    ),
+    '└──────────┴────────────────────────────────┘',
+    '출처: https://matsu1207.tistory.com/1052',
   ].join('\n');
 }
 
