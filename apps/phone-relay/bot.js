@@ -10,30 +10,38 @@ var CONFIG = {
 function response(room, message, sender, isGroupChat, replier, imageDB, packageName) {
   if (typeof message !== 'string' || message.trim().charAt(0) !== '!') return;
   if (!CONFIG.endpoint || !CONFIG.sharedSecret) return;
+
   var eventId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+
   try {
-    var result = org.jsoup.Jsoup.connect(CONFIG.endpoint + '/v1/messages')
-      .header('Authorization', 'Bearer ' + CONFIG.sharedSecret)
-      .header('Content-Type', 'application/json')
-      .requestBody(
-        JSON.stringify({
-          eventId: eventId,
-          roomId: room,
-          senderId: sender,
-          message: message,
-          sentAt: new Date().toISOString()
-        })
-      )
-      .ignoreContentType(true)
-      .ignoreHttpErrors(true)
-      .timeout(4500)
-      .method(org.jsoup.Connection.Method.POST)
-      .execute();
+    var payload = JSON.stringify({
+      eventId: eventId,
+      roomId: room,
+      senderId: sender,
+      message: message,
+      sentAt: new Date().toISOString()
+    });
+
+    var connection = org.jsoup.Jsoup.connect(CONFIG.endpoint + '/v1/messages');
+    connection.header('Authorization', 'Bearer ' + CONFIG.sharedSecret);
+    connection.header('Content-Type', 'application/json');
+    connection.requestBody(payload);
+    connection.ignoreContentType(true);
+    connection.ignoreHttpErrors(true);
+    connection.timeout(4500);
+    connection.method(org.jsoup.Connection.Method.POST);
+
+    var result = connection.execute();
+
     if (result.statusCode() !== 200) return;
+
     var body = JSON.parse(result.body());
-    if (body.reply) replier.reply(body.reply);
+
+    if (body.reply) {
+      replier.reply(body.reply);
+    }
   } catch (error) {
     void error;
-    return; /* Network failures are intentionally silent to avoid duplicate replies. */
+    return;
   }
 }
