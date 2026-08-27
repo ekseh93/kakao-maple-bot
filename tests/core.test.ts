@@ -10,6 +10,8 @@ import {
 
 describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   it('T-001 ignores ordinary chat', () => expect(parseCommand('안녕하세요')).toBeNull());
+  it('accepts slash experience history commands', () =>
+    expect(parseCommand('/경험치 테스트')).toEqual({ name: 'experience', args: ['테스트'] }));
   it('parses aliases and unknown commands as help', () => {
     expect(parseCommand(' !도움말 ')?.name).toBe('help');
     expect(parseCommand('!unknown')?.name).toBe('help');

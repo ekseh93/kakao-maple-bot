@@ -12,6 +12,7 @@ export type Character = {
 };
 export type NexonClient = {
   findCharacter(name: string, signal: AbortSignal): Promise<Character | null>;
+  findExperienceHistory?(name: string, signal: AbortSignal): Promise<ExperienceHistory | null>;
   findHexa?(name: string, signal: AbortSignal): Promise<HexaCharacter | null>;
   findDojang?(name: string, signal: AbortSignal): Promise<DojangCharacter | null>;
   findUnion?(name: string, signal: AbortSignal): Promise<UnionCharacter | null>;
@@ -19,6 +20,13 @@ export type NexonClient = {
   findNotice?(signal: AbortSignal): Promise<NoticeList>;
   findEvents?(signal: AbortSignal): Promise<EventList>;
 };
+export type ExperienceSnapshot = {
+  date: string;
+  level: number;
+  experience: number;
+  experienceRate: number;
+};
+export type ExperienceHistory = { name: string; snapshots: ExperienceSnapshot[] };
 export type HexaCore = {
   name: string;
   level: number;
@@ -85,6 +93,20 @@ function optionalNumber(value: unknown): number | undefined {
   if (value === undefined || value === null) return undefined;
   if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('PROVIDER_SCHEMA');
   return value;
+}
+function tokyoDateDaysAgo(daysAgo: number): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const date = new Date(
+    Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day)),
+  );
+  date.setUTCDate(date.getUTCDate() - daysAgo);
+  return date.toISOString().slice(0, 10);
 }
 
 async function fetchWithRetry(
@@ -202,6 +224,47 @@ export function createNexonClient(
         })),
         fetchedAt: new Date().toISOString(),
       };
+    },
+    async findExperienceHistory(name, signal) {
+      if (!apiKey) throw new Error('NOT_CONFIGURED');
+      const ocid = await findOcid(name, signal);
+      if (!ocid) return null;
+      const base = 'https://open.api.nexon.com/maplestory/v1';
+      const snapshots: ExperienceSnapshot[] = [];
+      for (let daysAgo = 0; daysAgo <= 7; daysAgo += 1) {
+        const date = tokyoDateDaysAgo(daysAgo);
+        const response = await fetchWithRetry(
+          fetcher,
+          `${base}/character/basic?ocid=${encodeURIComponent(ocid)}&date=${date}`,
+          { headers: { 'x-nxopen-api-key': apiKey }, signal },
+        );
+        if (!response.ok)
+          throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+        const body = (await response.json()) as {
+          character_level?: number;
+          character_exp?: number;
+          character_exp_rate?: string;
+        };
+        if (
+          typeof body.character_level !== 'number' ||
+          !Number.isInteger(body.character_level) ||
+          typeof body.character_exp !== 'number' ||
+          !Number.isInteger(body.character_exp) ||
+          typeof body.character_exp_rate !== 'string'
+        )
+          throw new Error('PROVIDER_SCHEMA');
+        const level = body.character_level;
+        const experience = body.character_exp;
+        const experienceRate = finiteNumber(body.character_exp_rate);
+        if (experienceRate < 0 || experienceRate > 100) throw new Error('PROVIDER_SCHEMA');
+        snapshots.push({
+          date,
+          level,
+          experience,
+          experienceRate,
+        });
+      }
+      return { name, snapshots };
     },
     async findHexa(name, signal) {
       if (!apiKey) throw new Error('NOT_CONFIGURED');

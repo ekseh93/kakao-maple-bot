@@ -222,6 +222,32 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       'https://open.api.nexon.com/maplestory/v1/notice-event',
     );
   });
+  it('maps eight official experience history snapshots', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ocid: 'ocid-fixture' }), { status: 200 }),
+      );
+    for (let index = 0; index < 8; index += 1) {
+      fetcher.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            character_level: 280,
+            character_exp: 1000 + index,
+            character_exp_rate: `${50 - index}.25`,
+          }),
+          { status: 200 },
+        ),
+      );
+    }
+    const result = await createNexonClient('fixture-key', fetcher).findExperienceHistory?.(
+      '테스트',
+      new AbortController().signal,
+    );
+    expect(result?.snapshots).toHaveLength(8);
+    expect(result?.snapshots[0]).toMatchObject({ level: 280, experienceRate: 50.25 });
+    expect(fetcher.mock.calls[1]?.[0]).toContain('character/basic?ocid=ocid-fixture&date=');
+  });
   it('maps KIS quote fixture without order or account endpoints', async () => {
     const fetcher = vi
       .fn()

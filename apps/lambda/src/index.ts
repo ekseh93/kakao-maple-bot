@@ -14,6 +14,7 @@ import {
   type DojangCharacter,
   type EquipmentCharacter,
   type EventList,
+  type ExperienceHistory,
   type HexaCharacter,
   type NexonClient,
   type StockClient,
@@ -56,6 +57,7 @@ const hexaCache = new Map<string, { value: HexaCharacter; expiresAt: number }>()
 const dojangCache = new Map<string, { value: DojangCharacter; expiresAt: number }>();
 const unionCache = new Map<string, { value: UnionCharacter; expiresAt: number }>();
 const equipmentCache = new Map<string, { value: EquipmentCharacter; expiresAt: number }>();
+const experienceCache = new Map<string, { value: ExperienceHistory; expiresAt: number }>();
 let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
@@ -136,6 +138,8 @@ export async function handleMessage(
   }
   for (const [name, entry] of characterCache)
     if (entry.expiresAt <= now) characterCache.delete(name);
+  for (const [name, entry] of experienceCache)
+    if (entry.expiresAt <= now) experienceCache.delete(name);
   for (const [code, entry] of stockCache) if (entry.expiresAt <= now) stockCache.delete(code);
   if (noticeCache && noticeCache.expiresAt <= now) noticeCache = undefined;
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
@@ -286,6 +290,18 @@ export async function handleMessage(
         eventCache = { value: events, expiresAt: now + 5 * 60_000 };
         return { reply: formatEvents(events), requestId, cache: 'miss' };
       }
+      case 'experience': {
+        const name = validateCharacterName(parsed.args[0]);
+        const cached = experienceCache.get(name);
+        if (cached && cached.expiresAt > now)
+          return { reply: formatExperience(cached.value), requestId, cache: 'hit' };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findExperienceHistory) throw new Error('NOT_CONFIGURED');
+        const history = await client.findExperienceHistory(name, timeoutSignal());
+        if (!history) throw new Error('NOT_FOUND');
+        experienceCache.set(name, { value: history, expiresAt: now + 5 * 60_000 });
+        return { reply: formatExperience(history), requestId, cache: 'miss' };
+      }
       case 'stock': {
         if (env.STOCK_ENABLED !== 'true') throw new Error('NOT_CONFIGURED');
         const code = parsed.args[0] ?? '';
@@ -414,6 +430,31 @@ function formatNotice(c: NoticeList): string {
   ]
     .join('\n')
     .slice(0, 1000);
+}
+function formatExperience(c: ExperienceHistory): string {
+  const lines = ['[경험치 히스토리]', `캐릭터: ${c.name}`, '최근 8일 (당일 포함)', '────────────'];
+  for (const snapshot of c.snapshots) {
+    lines.push(
+      `▸ ${snapshot.date}`,
+      `  Lv.${snapshot.level} / ${snapshot.experienceRate.toFixed(2)}% (${snapshot.experience.toLocaleString('ko-KR')} EXP)`,
+    );
+  }
+  const oldest = c.snapshots.at(-1);
+  const current = c.snapshots[0];
+  if (oldest && current && oldest.level === current.level) {
+    const weekly = current.experienceRate - oldest.experienceRate;
+    lines.push(
+      '────────────',
+      `7일 변화: ${weekly >= 0 ? '+' : ''}${weekly.toFixed(2)}%`,
+      `일평균: ${(weekly / 7).toFixed(2)}%`,
+    );
+  } else {
+    lines.push('────────────', '7일 변화: 레벨업 포함으로 비율 단순 비교 불가');
+  }
+  lines.push('기준: Nexon Open API');
+  const full = lines.join('\n');
+  if (full.length <= 1000) return full;
+  return full.slice(0, 980).trimEnd() + '\n… 응답 제한';
 }
 function formatEvents(c: EventList): string {
   const lines = c.events.map((event) => {

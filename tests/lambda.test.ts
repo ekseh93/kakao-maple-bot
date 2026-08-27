@@ -341,6 +341,33 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('⭐ 스타포스 22');
     expect(result.reply).toContain('잠재 레전드리 | 에디 에픽');
   });
+  it('handles slash experience history with daily change', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findExperienceHistory: vi.fn().mockResolvedValue({
+        name: '경험치캐릭터',
+        snapshots: [
+          { date: '2026-08-27', level: 280, experience: 2000, experienceRate: 12.5 },
+          { date: '2026-08-26', level: 280, experience: 1900, experienceRate: 11.5 },
+          { date: '2026-08-25', level: 280, experience: 1800, experienceRate: 10.5 },
+          { date: '2026-08-24', level: 280, experience: 1700, experienceRate: 9.5 },
+          { date: '2026-08-23', level: 280, experience: 1600, experienceRate: 8.5 },
+          { date: '2026-08-22', level: 280, experience: 1500, experienceRate: 7.5 },
+          { date: '2026-08-21', level: 280, experience: 1400, experienceRate: 6.5 },
+          { date: '2026-08-20', level: 280, experience: 1300, experienceRate: 5.5 },
+        ],
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('/경험치 경험치캐릭터'), roomId: 'experience-room' },
+      { ...env, ALLOWED_ROOMS: 'experience-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[경험치 히스토리]');
+    expect(result.reply).toContain('2026-08-27');
+    expect(result.reply).toContain('7일 변화: +7.00%');
+    expect(result.reply).toContain('일평균: 1.00%');
+  });
   it('handles notice lookup with official links and a bounded list', async () => {
     const nexon = {
       findCharacter: vi.fn(),
