@@ -9,5 +9,7 @@ stock_enabled    = false
 # environment-driven tfvars, or a CI secret manager.
 bot_shared_secret = ""
 nexon_api_key     = ""
+sol_erda_fragment_price = ""
+sol_erda_fragment_price_updated_at = ""
 kis_app_key       = ""
 kis_app_secret    = ""

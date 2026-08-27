@@ -45,6 +45,8 @@ resource "aws_lambda_function" "bot" {
       ALLOWED_ROOMS     = var.allowed_rooms
       STOCK_ENABLED     = tostring(var.stock_enabled)
       NEXON_API_KEY     = var.nexon_api_key
+      SOL_ERDA_FRAGMENT_PRICE = var.sol_erda_fragment_price
+      SOL_ERDA_FRAGMENT_PRICE_UPDATED_AT = var.sol_erda_fragment_price_updated_at
       KIS_APP_KEY       = var.kis_app_key
       KIS_APP_SECRET    = var.kis_app_secret
     }

@@ -30,6 +30,8 @@ export interface Env {
   ALLOWED_ROOMS?: string;
   ADMIN_SENDERS?: string;
   NEXON_API_KEY?: string;
+  SOL_ERDA_FRAGMENT_PRICE?: string;
+  SOL_ERDA_FRAGMENT_PRICE_UPDATED_AT?: string;
   KIS_APP_KEY?: string;
   KIS_APP_SECRET?: string;
   KIS_BASE_URL?: string;
@@ -304,6 +306,28 @@ export async function handleMessage(
         if (!reply) throw new Error('NOT_FOUND');
         return { reply, requestId, cache: 'miss' };
       }
+      case 'fragment': {
+        const price = parsePositiveInteger(env.SOL_ERDA_FRAGMENT_PRICE);
+        if (price === null)
+          return {
+            reply:
+              '[솔 에르다 조각 시세]\n엘리시움 경매장 기준 시세가 아직 설정되지 않았습니다.\n운영자가 SOL_ERDA_FRAGMENT_PRICE에 수동 입력해 주세요.\n※ Nexon Open API에는 경매장 실시간 시세 API가 없습니다.',
+            requestId,
+            cache: 'bypass',
+          };
+        return {
+          reply: [
+            '[솔 에르다 조각 시세]',
+            `엘리시움 기준: ${price.toLocaleString('ko-KR')}메소/개`,
+            env.SOL_ERDA_FRAGMENT_PRICE_UPDATED_AT
+              ? `갱신일: ${env.SOL_ERDA_FRAGMENT_PRICE_UPDATED_AT}`
+              : '갱신일: 미입력',
+            '※ 경매장 자동 조회가 아닌 운영자 수동 입력값입니다.',
+          ].join('\n'),
+          requestId,
+          cache: 'bypass',
+        };
+      }
       case 'experience': {
         const name = validateCharacterName(parsed.args[0]);
         const cached = experienceCache.get(name);
@@ -504,6 +528,11 @@ function formatSunday(c: EventList): string | null {
   ]
     .filter(Boolean)
     .join('\n');
+}
+function parsePositiveInteger(value: string | undefined): number | null {
+  if (!value || !/^\d+$/.test(value.trim())) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 function formatStock(q: StockQuote): string {
   return [

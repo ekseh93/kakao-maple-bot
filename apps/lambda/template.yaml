@@ -27,6 +27,12 @@ Parameters:
     Type: String
     NoEcho: true
     Default: ''
+  SolErdaFragmentPrice:
+    Type: String
+    Default: ''
+  SolErdaFragmentPriceUpdatedAt:
+    Type: String
+    Default: ''
   KisAppKey:
     Type: String
     NoEcho: true
@@ -68,6 +74,8 @@ Resources:
           ALLOWED_ROOMS: !Ref AllowedRooms
           STOCK_ENABLED: !Ref StockEnabled
           NEXON_API_KEY: !Ref NexonApiKey
+          SOL_ERDA_FRAGMENT_PRICE: !Ref SolErdaFragmentPrice
+          SOL_ERDA_FRAGMENT_PRICE_UPDATED_AT: !Ref SolErdaFragmentPriceUpdatedAt
           KIS_APP_KEY: !Ref KisAppKey
           KIS_APP_SECRET: !Ref KisAppSecret
 

@@ -47,6 +47,19 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('사용법');
     expect(nexon.findCharacter).not.toHaveBeenCalled();
   });
+  it('returns the configured manual Elysium fragment price', async () => {
+    const result = await handleMessage(
+      { ...message('!조각'), roomId: 'fragment-room', senderId: 'fragment-sender' },
+      {
+        ...env,
+        ALLOWED_ROOMS: 'fragment-room',
+        SOL_ERDA_FRAGMENT_PRICE: '850000',
+        SOL_ERDA_FRAGMENT_PRICE_UPDATED_AT: '2026-08-27',
+      },
+    );
+    expect(result.reply).toContain('850,000메소/개');
+    expect(result.reply).toContain('수동 입력값');
+  });
   it('T-018 creates only non-identifying structured audit fields', () => {
     const log = createAuditLog({
       requestId: 'request-1',

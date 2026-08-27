@@ -18,6 +18,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand(' !도움말 ')?.name).toBe('help');
     expect(parseCommand('!unknown')?.name).toBe('help');
   });
+  it('parses the fragment price command', () =>
+    expect(parseCommand('!조각')).toEqual({ name: 'fragment', args: [] }));
   it('keeps help examples aligned with registered commands', () =>
     expect(parseCommand('!도움말')).toBeTruthy());
   it('T-009/T-010 calculates named arcane/authentic regions and progress', () => {
