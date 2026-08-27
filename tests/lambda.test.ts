@@ -615,8 +615,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { ...env, ALLOWED_ROOMS: 'boutique-room' },
       { nexon },
     );
-    expect(result.reply).toContain('[부티크 기프트 11개 열기]');
-    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(11);
+    expect(result.reply).toContain('[부티크 기프트 10개 열기]');
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
     expect(result.reply).toContain('10. [피버 타임] 티켓 10개');
   });
   it('supports a custom Wonder Berry count and hides detailed results', async () => {
