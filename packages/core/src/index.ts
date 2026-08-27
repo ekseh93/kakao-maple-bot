@@ -7,6 +7,7 @@ export type CommandName =
   | 'boss'
   | 'bossRewards'
   | 'bossLevelBoost'
+  | 'bossForceBoost'
   | 'mekaBerry'
   | 'netflix'
   | 'anime'
@@ -54,6 +55,7 @@ const aliases: Record<string, CommandName> = {
   보스: 'boss',
   보스보상: 'bossRewards',
   보스렙뻥: 'bossLevelBoost',
+  보스포뻥: 'bossForceBoost',
   메카베리: 'mekaBerry',
   무릉: 'dojang',
   유니온: 'union',
@@ -843,6 +845,47 @@ export function formatBossLevelBoost(args: string[] = []): string {
       ),
     '└──────────────────────┴────────────────────┘',
     '출처: https://matsu1207.tistory.com/772',
+  ].join('\n');
+}
+
+type BossForceRow = { boss: string; phaseOrDifficulty: string; normal: number; bonus: number };
+
+const authenticBossForceRows: BossForceRow[] = [
+  { boss: '세렌', phaseOrDifficulty: '1페이즈', normal: 150, bonus: 200 },
+  { boss: '세렌', phaseOrDifficulty: '2페이즈', normal: 200, bonus: 250 },
+  { boss: '칼로스', phaseOrDifficulty: '이지', normal: 200, bonus: 250 },
+  { boss: '칼로스', phaseOrDifficulty: '노멀(2페이즈)', normal: 250, bonus: 300 },
+  { boss: '칼로스', phaseOrDifficulty: '하드', normal: 330, bonus: 380 },
+  { boss: '칼로스', phaseOrDifficulty: '익스트림', normal: 440, bonus: 490 },
+  { boss: '카링', phaseOrDifficulty: '이지', normal: 230, bonus: 280 },
+  { boss: '카링', phaseOrDifficulty: '노멀', normal: 330, bonus: 380 },
+  { boss: '카링', phaseOrDifficulty: '하드', normal: 350, bonus: 400 },
+  { boss: '카링', phaseOrDifficulty: '익스트림', normal: 480, bonus: 530 },
+  { boss: '최초의 대적자', phaseOrDifficulty: '이지', normal: 220, bonus: 270 },
+  { boss: '최초의 대적자', phaseOrDifficulty: '노멀', normal: 320, bonus: 370 },
+  { boss: '최초의 대적자', phaseOrDifficulty: '하드', normal: 340, bonus: 390 },
+  { boss: '최초의 대적자', phaseOrDifficulty: '익스트림', normal: 460, bonus: 510 },
+  { boss: '찬란한 흉성', phaseOrDifficulty: '노멀', normal: 400, bonus: 450 },
+  { boss: '찬란한 흉성', phaseOrDifficulty: '하드', normal: 550, bonus: 600 },
+  { boss: '림보', phaseOrDifficulty: '노멀·하드', normal: 500, bonus: 550 },
+  { boss: '발드릭스', phaseOrDifficulty: '노멀·하드', normal: 700, bonus: 750 },
+  { boss: '유피테르', phaseOrDifficulty: '노멀·하드', normal: 810, bonus: 860 },
+];
+
+export function formatBossForceBoost(args: string[] = []): string {
+  if (args.length > 0) throw new Error('INVALID_USAGE');
+  return [
+    '[어센틱 보스 포스 보정]',
+    '┌──────────────┬──────────────────┬──────────┬────────────┐',
+    '│ 보스         │ 난이도·페이즈     │ 100%     │ 125%       │',
+    '├──────────────┼──────────────────┼──────────┼────────────┤',
+    ...authenticBossForceRows.map(
+      (row) =>
+        `│ ${row.boss.padEnd(10, ' ')} │ ${row.phaseOrDifficulty.padEnd(16, ' ')} │ ${String(row.normal).padStart(8, ' ')} │ ${String(row.bonus).padStart(10, ' ')} │`,
+    ),
+    '└──────────────┴──────────────────┴──────────┴────────────┘',
+    '※ 어센틱 포스 +50 달성 시 125% 피해가 적용됩니다.',
+    '출처: https://matsu1207.tistory.com/771?category=1218857',
   ].join('\n');
 }
 

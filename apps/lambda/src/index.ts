@@ -17,6 +17,7 @@ import {
   formatBossRewards,
   formatBossRewardSummaries,
   formatBossLevelBoost,
+  formatBossForceBoost,
   formatMekaBerry,
   formatMepoEfficiency,
   formatMaxLevelSymbolEffects,
@@ -244,7 +245,7 @@ export async function handleMessage(
     switch (parsed.name) {
       case 'help':
         return {
-          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!보스보상 — 스우~벨로나 주요 보상표\n!보스렙뻥 — 검은 마법사(하드)~벨로나 레벨 보정\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개\n!메포효율 — 메포 대비 경험치 효율\n!금주의신상 — 금주의 신상 최신 글\n!디코 — 디스코드 링크\n!심볼만렙 — 어센틱 심볼 만렙 효과`,
+          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!보스보상 — 스우~벨로나 주요 보상표\n!보스렙뻥 — 검은 마법사(하드)~벨로나 레벨 보정\n!보스포뻥 — 어센틱 보스 포스 보정표\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개\n!메포효율 — 메포 대비 경험치 효율\n!금주의신상 — 금주의 신상 최신 글\n!디코 — 디스코드 링크\n!심볼만렙 — 어센틱 심볼 만렙 효과`,
           requestId,
           cache: 'bypass',
         };
@@ -288,6 +289,8 @@ export async function handleMessage(
         return { reply: formatBossRewardSummaries(parsed.args), requestId, cache: 'bypass' };
       case 'bossLevelBoost':
         return { reply: formatBossLevelBoost(parsed.args), requestId, cache: 'bypass' };
+      case 'bossForceBoost':
+        return { reply: formatBossForceBoost(parsed.args), requestId, cache: 'bypass' };
       case 'mekaBerry':
         return { reply: formatMekaBerry(parsed.args), requestId, cache: 'bypass' };
       case 'mepoEfficiency':

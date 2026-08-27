@@ -17,6 +17,7 @@ import {
   formatBossRewards,
   formatBossRewardSummaries,
   formatBossLevelBoost,
+  formatBossForceBoost,
   formatMekaBerry,
   formatMepoEfficiency,
   formatMaxLevelSymbolEffects,
@@ -95,6 +96,19 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('105.3%');
     expect(output).toContain('출처: https://matsu1207.tistory.com/772');
     expect(() => formatBossLevelBoost(['하드'])).toThrow('INVALID_USAGE');
+  });
+  it('parses and formats authentic boss force requirements', () => {
+    expect(parseCommand('!보스포뻥')).toEqual({ name: 'bossForceBoost', args: [] });
+    const output = formatBossForceBoost();
+    expect(output).toContain('[어센틱 보스 포스 보정]');
+    expect(output).toContain('세렌');
+    expect(output).toContain('최초의 대적자');
+    expect(output).toContain('유피테르');
+    expect(output).toContain('810');
+    expect(output).toContain('860');
+    expect(output).toContain('어센틱 포스 +50');
+    expect(output).toContain('출처: https://matsu1207.tistory.com/771?category=1218857');
+    expect(() => formatBossForceBoost(['세렌'])).toThrow('INVALID_USAGE');
   });
   it('parses and formats Meka Berry rates for levels 280 through 299', () => {
     expect(parseCommand('!메카베리 280')).toEqual({ name: 'mekaBerry', args: ['280'] });
