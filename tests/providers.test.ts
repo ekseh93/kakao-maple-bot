@@ -596,9 +596,48 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       dataType: 'daily',
     });
     expect(fetcher.mock.calls[0]?.[0]).toContain(
-      'query1.finance.yahoo.com/v1/finance/search?q=SK%ED%95%98%EC%9D%B4%EB%8B%89%EC%8A%A4',
+      'query1.finance.yahoo.com/v1/finance/search?q=SK%20hynix',
     );
     expect(fetcher.mock.calls[1]?.[0]).toContain('/v8/finance/chart/000660.KS');
+  });
+  it('uses the Yahoo Korean route for a Samsung Electronics name', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            quotes: [
+              {
+                symbol: '005930.KS',
+                longname: 'Samsung Electronics Co., Ltd.',
+                quoteType: 'EQUITY',
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            chart: {
+              result: [
+                {
+                  meta: { regularMarketPrice: 70000, previousClose: 69000 },
+                  indicators: { quote: [{ close: [69000, 70000] }] },
+                },
+              ],
+            },
+          }),
+          { status: 200 },
+        ),
+      );
+    const result = await createStockClient(undefined, undefined, fetcher).quote(
+      '삼성전자',
+      new AbortController().signal,
+    );
+    expect(result).toMatchObject({ code: '005930.KS', market: 'KRX', currency: 'KRW' });
+    expect(fetcher.mock.calls[0]?.[0]).toContain('q=Samsung%20Electronics');
   });
   it('maps a Tiingo name search and daily price fixture', async () => {
     const fetcher = vi

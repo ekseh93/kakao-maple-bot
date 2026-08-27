@@ -850,11 +850,16 @@ export function createNexonClient(
 }
 
 const yahooSearchAliases: Record<string, string> = {
+  삼성전자: 'Samsung Electronics',
+  SK하이닉스: 'SK hynix',
+  네이버: 'NAVER',
+  카카오: 'Kakao',
   넥슨: 'NEXON',
   닌텐도: 'Nintendo',
   소니: 'Sony',
   도요타: 'Toyota',
 };
+const yahooKoreanAliases = new Set(['삼성전자', 'SK하이닉스', '네이버', '카카오']);
 
 const yahooPublicHeaders = {
   Accept: 'application/json',
@@ -1022,7 +1027,7 @@ export function createStockClient(
   const quote = async (query: string, signal: AbortSignal): Promise<StockQuote> => {
     const input = query.trim();
     if (!input || input.length > 80) throw new Error('INVALID_USAGE');
-    if (!yahooSearchAliases[input] && /^[\d]{6}$|[가-힣]/.test(input)) {
+    if (/^[\d]{6}$/.test(input) || yahooKoreanAliases.has(input)) {
       const korean = await quoteYahooMarket(input, 'KRX', signal);
       if (!korean) throw new Error('NOT_FOUND');
       return korean;
