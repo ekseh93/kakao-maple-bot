@@ -75,6 +75,14 @@
 
 Nexon Open API의 `character/hexamatrix`에서 장착 중인 HEXA 코어명, 레벨, 종류, 연결 스킬을 조회합니다. 응답은 1,000자 이내로 제한합니다. HEXA 성장 계산은 공식 성장표 fixture가 확정된 후 별도 명령으로 추가합니다.
 
+### !무릉
+
+형식:
+
+    !무릉 <캐릭터명>
+
+Nexon Open API의 `character/dojang`에서 무릉도장 역대 최고 층수, 기록 시간, 기록일을 조회합니다.
+
 ### !심볼
 
 형식:

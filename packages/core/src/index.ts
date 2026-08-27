@@ -1,8 +1,17 @@
 export type CommandName =
-  'help' | 'rps' | 'choice' | 'food' | 'symbol' | 'hexa' | 'character' | 'stock' | 'status';
+  | 'help'
+  | 'rps'
+  | 'choice'
+  | 'food'
+  | 'symbol'
+  | 'hexa'
+  | 'dojang'
+  | 'character'
+  | 'stock'
+  | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
-export const HELP = `[봇 도움말]\n!캐릭터 닉네임 (또는 !정보 닉네임)\n!헥사 닉네임\n!심볼 여로 1 20 (또는 !심볼계산)\n!심볼 기어드락 1 11\n!가위 / !바위 / !보\n!골라 짜장,짬뽕\n!뭐먹지 한식\n!주식 005930\n!상태 (관리자 전용)`;
+export const HELP = `[봇 도움말]\n!캐릭터 닉네임 (또는 !정보 닉네임)\n!헥사 닉네임\n!무릉 닉네임\n!심볼 여로 1 20 (또는 !심볼계산)\n!심볼 기어드락 1 11\n!가위 / !바위 / !보\n!골라 짜장,짬뽕\n!뭐먹지 한식\n!주식 005930\n!상태 (관리자 전용)`;
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
@@ -15,6 +24,7 @@ const aliases: Record<string, CommandName> = {
   심볼: 'symbol',
   심볼계산: 'symbol',
   헥사: 'hexa',
+  무릉: 'dojang',
   가위: 'rps',
   바위: 'rps',
   보: 'rps',

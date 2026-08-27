@@ -60,3 +60,8 @@
 - `!헥사 <닉네임>`으로 Nexon Open API `character/hexamatrix`의 장착 HEXA 코어 요약을 제공합니다.
 - 코어명·레벨·종류·연결 스킬만 반환하며, 응답은 1,000자로 제한합니다.
 - API fixture를 이용한 provider·Lambda 테스트를 추가했습니다.
+
+## 2026-08-27 무릉 최고 기록 조회 추가
+
+- `!무릉 <닉네임>`으로 Nexon Open API `character/dojang`의 최고 층수·기록 시간·기록일을 제공합니다.
+- 공식 응답 필드 타입을 검증하는 provider fixture와 Lambda 포맷 테스트를 추가했습니다.

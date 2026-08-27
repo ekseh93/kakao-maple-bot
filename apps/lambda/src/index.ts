@@ -11,6 +11,7 @@ import {
   createNexonClient,
   createStockClient,
   type Character,
+  type DojangCharacter,
   type HexaCharacter,
   type NexonClient,
   type StockClient,
@@ -48,6 +49,7 @@ const senderRequests = new Map<string, number[]>();
 let globalRequests: number[] = [];
 const characterCache = new Map<string, { value: Character; expiresAt: number }>();
 const hexaCache = new Map<string, { value: HexaCharacter; expiresAt: number }>();
+const dojangCache = new Map<string, { value: DojangCharacter; expiresAt: number }>();
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -220,6 +222,18 @@ export async function handleMessage(
         hexaCache.set(name, { value: hexa, expiresAt: now + 5 * 60_000 });
         return { reply: formatHexa(hexa), requestId, cache: 'miss' };
       }
+      case 'dojang': {
+        const name = validateCharacterName(parsed.args[0]);
+        const cached = dojangCache.get(name);
+        if (cached && cached.expiresAt > now)
+          return { reply: formatDojang(cached.value), requestId, cache: 'hit' };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findDojang) throw new Error('NOT_CONFIGURED');
+        const dojang = await client.findDojang(name, timeoutSignal());
+        if (!dojang) throw new Error('NOT_FOUND');
+        dojangCache.set(name, { value: dojang, expiresAt: now + 5 * 60_000 });
+        return { reply: formatDojang(dojang), requestId, cache: 'miss' };
+      }
       case 'stock': {
         if (env.STOCK_ENABLED !== 'true') throw new Error('NOT_CONFIGURED');
         const code = parsed.args[0] ?? '';
@@ -273,6 +287,18 @@ function formatHexa(c: HexaCharacter): string {
   ]
     .join('\n')
     .slice(0, 1000);
+}
+function formatDojang(c: DojangCharacter): string {
+  const minutes = Math.floor(c.timeSeconds / 60);
+  const seconds = c.timeSeconds % 60;
+  return [
+    '[무릉도장 최고 기록]',
+    `${c.name}: ${c.floor}층 / ${minutes}분 ${seconds}초`,
+    c.recordDate ? `기록일: ${c.recordDate.slice(0, 10)}` : '',
+    `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 function formatStock(q: StockQuote): string {
   return [

@@ -260,11 +260,29 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       }),
     };
     const result = await handleMessage(
-      { ...message('!헥사 헥사캐릭터'), roomId: 'hexa-room' },
+      { ...message('!헥사 헥사캐릭터'), roomId: 'hexa-room', senderId: 'hexa-sender' },
       { ...env, ALLOWED_ROOMS: 'hexa-room' },
       { nexon },
     );
     expect(result.reply).toContain('마스터리 Lv.30');
+  });
+  it('handles Dojang lookup with formatted time', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findDojang: vi.fn().mockResolvedValue({
+        name: '무릉캐릭터',
+        floor: 80,
+        timeSeconds: 1234,
+        recordDate: '2026-08-26T00:00:00.000Z',
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!무릉 무릉캐릭터'), roomId: 'dojang-room', senderId: 'dojang-sender' },
+      { ...env, ALLOWED_ROOMS: 'dojang-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('80층 / 20분 34초');
   });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {

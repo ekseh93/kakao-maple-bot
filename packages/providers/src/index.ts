@@ -10,6 +10,7 @@ export type Character = {
 export type NexonClient = {
   findCharacter(name: string, signal: AbortSignal): Promise<Character | null>;
   findHexa?(name: string, signal: AbortSignal): Promise<HexaCharacter | null>;
+  findDojang?(name: string, signal: AbortSignal): Promise<DojangCharacter | null>;
 };
 export type HexaCore = {
   name: string;
@@ -18,6 +19,13 @@ export type HexaCore = {
   linkedSkills: string[];
 };
 export type HexaCharacter = { name: string; cores: HexaCore[]; fetchedAt: string };
+export type DojangCharacter = {
+  name: string;
+  floor: number;
+  timeSeconds: number;
+  recordDate?: string;
+  fetchedAt: string;
+};
 export type StockQuote = {
   code: string;
   name?: string;
@@ -158,6 +166,45 @@ export function createNexonClient(
         };
       });
       return { name, cores, fetchedAt: body.date ?? new Date().toISOString() };
+    },
+    async findDojang(name, signal) {
+      if (!apiKey) throw new Error('NOT_CONFIGURED');
+      const ocid = await findOcid(name, signal);
+      if (!ocid) return null;
+      const base = 'https://open.api.nexon.com/maplestory/v1';
+      const response = await fetchWithRetry(
+        fetcher,
+        `${base}/character/dojang?ocid=${encodeURIComponent(ocid)}`,
+        { headers: { 'x-nxopen-api-key': apiKey }, signal },
+      );
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = (await response.json()) as {
+        date?: string | null;
+        dojang_best_floor?: number | null;
+        dojang_best_time?: number | null;
+        date_dojang_record?: string | null;
+      };
+      if (
+        typeof body.dojang_best_floor !== 'number' ||
+        !Number.isInteger(body.dojang_best_floor) ||
+        typeof body.dojang_best_time !== 'number' ||
+        !Number.isInteger(body.dojang_best_time)
+      )
+        throw new Error('PROVIDER_SCHEMA');
+      if (
+        body.date_dojang_record !== undefined &&
+        body.date_dojang_record !== null &&
+        typeof body.date_dojang_record !== 'string'
+      )
+        throw new Error('PROVIDER_SCHEMA');
+      return {
+        name,
+        floor: body.dojang_best_floor,
+        timeSeconds: body.dojang_best_time,
+        recordDate: body.date_dojang_record ?? undefined,
+        fetchedAt: body.date ?? new Date().toISOString(),
+      };
     },
   };
 }

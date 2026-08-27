@@ -60,6 +60,29 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       cores: [{ name: '테스트 마스터리', level: 30 }],
     });
   });
+  it('maps the official Dojang record response', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ocid: 'ocid-fixture' }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            date: '2026-08-27T00:00:00+09:00',
+            dojang_best_floor: 80,
+            dojang_best_time: 1234,
+            date_dojang_record: '2026-08-26T00:00:00+09:00',
+          }),
+          { status: 200 },
+        ),
+      );
+    const result = await createNexonClient('fixture-key', fetcher).findDojang?.(
+      '테스트',
+      new AbortController().signal,
+    );
+    expect(result).toMatchObject({ name: '테스트', floor: 80, timeSeconds: 1234 });
+  });
   it('maps KIS quote fixture without order or account endpoints', async () => {
     const fetcher = vi
       .fn()
