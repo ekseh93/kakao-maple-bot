@@ -643,16 +643,12 @@ export function formatMaxLevelSymbolEffects(args: string[] = []): string {
   return [
     '[어센틱 심볼 만렙 효과]',
     '기준: 심볼 11레벨',
-    '┌──────────┬────────────────────────────────┐',
-    '│ 심볼     │ 만렙 시 추가 능력치              │',
-    '├──────────┼────────────────────────────────┤',
-    ...maxLevelSymbolEffects.flatMap((item) =>
-      item.effects.map(
-        (effect, index) =>
-          `│ ${index === 0 ? item.symbol.padEnd(8, ' ') : '        '} │ ${effect.padEnd(30, ' ')} │`,
-      ),
-    ),
-    '└──────────┴────────────────────────────────┘',
+    '────────────',
+    ...maxLevelSymbolEffects.flatMap((item) => [
+      `• ${item.symbol}`,
+      ...item.effects.map((effect) => `  └ ${effect}`),
+      '',
+    ]),
     '출처: https://matsu1207.tistory.com/1052',
   ].join('\n');
 }
