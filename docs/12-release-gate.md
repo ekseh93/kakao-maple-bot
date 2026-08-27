@@ -6,7 +6,7 @@
 
 - [ ] 사용자가 AWS Lambda/API Gateway 배포를 명시적으로 승인
 - [ ] 사용자가 GitHub secret·CI 배포 권한 등록을 명시적으로 승인
-- [ ] Nexon/KIS API 키가 운영자 계정에서 발급·보관됨
+- [ ] Nexon/KRX/Tiingo API 키가 운영자 계정에서 발급·보관됨
 - [ ] 실제 사용 약관과 무료 한도·요금 정책을 재확인
 - [ ] 제한된 동의 기반 카카오 시험방과 공기계가 준비됨
 

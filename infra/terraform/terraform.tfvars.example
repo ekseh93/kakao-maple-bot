@@ -4,6 +4,8 @@ lambda_zip_path  = "../../apps/lambda/dist/lambda.zip"
 bot_enabled      = false
 allowed_rooms    = ""
 stock_enabled    = false
+notice_alert_enabled  = false
+notice_alert_keywords = "채널 점검,마이너버전,클라이언트"
 
 # Keep secrets out of Git. Supply them through an ignored terraform.tfvars,
 # environment-driven tfvars, or a CI secret manager.
@@ -11,5 +13,5 @@ bot_shared_secret = ""
 nexon_api_key     = ""
 sol_erda_fragment_price = ""
 sol_erda_fragment_price_updated_at = ""
-kis_app_key       = ""
-kis_app_secret    = ""
+krx_auth_key      = ""
+tiingo_token      = ""

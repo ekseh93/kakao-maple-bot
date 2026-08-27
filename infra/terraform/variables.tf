@@ -41,9 +41,21 @@ variable "allowed_rooms" {
 }
 
 variable "stock_enabled" {
-  description = "Enable read-only KIS stock lookup."
+  description = "Enable read-only KRX and Tiingo stock lookup."
   type        = bool
   default     = false
+}
+
+variable "notice_alert_enabled" {
+  description = "Enable proactive Nexon notice keyword alerts through the phone relay."
+  type        = bool
+  default     = false
+}
+
+variable "notice_alert_keywords" {
+  description = "Comma-separated Nexon notice title keywords for proactive alerts."
+  type        = string
+  default     = "채널 점검,마이너버전,클라이언트"
 }
 
 variable "nexon_api_key" {
@@ -65,15 +77,15 @@ variable "sol_erda_fragment_price_updated_at" {
   default     = ""
 }
 
-variable "kis_app_key" {
-  description = "KIS app key. Keep this outside Git."
+variable "krx_auth_key" {
+  description = "KRX Open API auth key. Keep this outside Git."
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "kis_app_secret" {
-  description = "KIS app secret. Keep this outside Git."
+variable "tiingo_token" {
+  description = "Tiingo API token. Keep this outside Git."
   type        = string
   sensitive   = true
   default     = ""

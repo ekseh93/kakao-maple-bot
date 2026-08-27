@@ -23,6 +23,13 @@ Parameters:
     Type: String
     Default: 'false'
     AllowedValues: ['true', 'false']
+  NoticeAlertEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  NoticeAlertKeywords:
+    Type: String
+    Default: '채널 점검,마이너버전,클라이언트'
   NexonApiKey:
     Type: String
     NoEcho: true
@@ -33,11 +40,11 @@ Parameters:
   SolErdaFragmentPriceUpdatedAt:
     Type: String
     Default: ''
-  KisAppKey:
+  KrxAuthKey:
     Type: String
     NoEcho: true
     Default: ''
-  KisAppSecret:
+  TiingoToken:
     Type: String
     NoEcho: true
     Default: ''
@@ -73,11 +80,13 @@ Resources:
           BOT_ENABLED: !Ref BotEnabled
           ALLOWED_ROOMS: !Ref AllowedRooms
           STOCK_ENABLED: !Ref StockEnabled
+          NOTICE_ALERT_ENABLED: !Ref NoticeAlertEnabled
+          NOTICE_ALERT_KEYWORDS: !Ref NoticeAlertKeywords
           NEXON_API_KEY: !Ref NexonApiKey
           SOL_ERDA_FRAGMENT_PRICE: !Ref SolErdaFragmentPrice
           SOL_ERDA_FRAGMENT_PRICE_UPDATED_AT: !Ref SolErdaFragmentPriceUpdatedAt
-          KIS_APP_KEY: !Ref KisAppKey
-          KIS_APP_SECRET: !Ref KisAppSecret
+          KRX_AUTH_KEY: !Ref KrxAuthKey
+          TIINGO_TOKEN: !Ref TiingoToken
 
   KakaoMapleBotApi:
     Type: AWS::ApiGatewayV2::Api

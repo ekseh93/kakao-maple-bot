@@ -11,7 +11,7 @@
 | FR-003~FR-004 | `packages/providers`, Lambda formatter | T-006~T-008, T-019        | mock 통과 |
 | FR-005        | `packages/core` symbol calculator      | T-009~T-010               | 로컬 통과 |
 | FR-006~FR-008 | `packages/core`, Lambda router         | T-011~T-013               | 로컬 통과 |
-| FR-009        | KIS adapter                            | T-014~T-015               | mock 통과 |
+| FR-009        | KRX/Tiingo adapter                     | T-014~T-015               | mock 통과 |
 | FR-010~FR-012 | Lambda HTTP boundary                   | T-002, T-016~T-017, T-020 | 로컬 통과 |
 | FR-013        | Lambda/provider cache                  | cache contract tests      | 로컬 통과 |
 | FR-014        | Lambda `!상태`                         | admin authorization test  | 로컬 통과 |

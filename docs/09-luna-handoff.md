@@ -40,7 +40,7 @@
 - Phase 2 Lambda HTTP 경계
 - Phase 3 Nexon 연동
 - Phase 4 phone-relay 스크립트
-- Phase 5 선택형 KIS 주식 어댑터와 mock 테스트
+- Phase 5 선택형 KRX/Tiingo 주식 어댑터와 mock 테스트
 - README의 로컬 개발 절차 갱신
 - 테스트 전략의 구성 가능한 T-001~T-020
 
@@ -48,7 +48,7 @@
 
 - AWS 실제 배포
 - GitHub Actions의 배포 권한·secret 등록
-- 실제 Nexon/KIS 키 생성 또는 추측
+- 실제 Nexon/KRX/Tiingo 키 생성 또는 추측
 - 공기계·Kakao 계정 직접 설정
 - Maple.GG·Maplescouter HTTP 호출
 - 실제 주문·계좌 API
@@ -91,7 +91,7 @@
 4. Lambda 인증·권한·오류 경계
 5. Nexon adapter와 contract fixtures
 6. phone relay
-7. KIS optional adapter
+7. KRX/Tiingo optional adapter
 8. 전체 검사와 README 갱신
 9. 변경 요약, 테스트 증거, 남은 수동 단계 보고
 
@@ -116,9 +116,8 @@
 - ALLOWED_ROOMS
 - ADMIN_SENDERS
 - NEXON_API_KEY
-- KIS_APP_KEY
-- KIS_APP_SECRET
-- KIS_BASE_URL
+- KRX_AUTH_KEY
+- TIINGO_TOKEN
 - STOCK_ENABLED
 
 방·관리자 식별자의 실제 값은 사용자에게 받기 전 임의로 만들지 않습니다.

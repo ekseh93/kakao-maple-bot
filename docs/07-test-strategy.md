@@ -32,7 +32,7 @@
 대상:
 
 - Nexon OCID·basic·stat·symbol fixture
-- 한국투자 token·현재가 fixture
+- KRX 종목·일별매매 및 Tiingo 검색·가격 fixture
 - 필드 누락, 타입 변경, 오류 코드
 
 실제 사용자 응답을 그대로 커밋하지 않고 최소 익명 fixture를 작성합니다. 런타임 스키마가 예상 밖 응답을 거부해야 합니다.
@@ -84,8 +84,8 @@ MessengerBot R 호환 JavaScript 문법을 실제 앱 컴파일로 확인합니�
 | T-011 | 가위바위보 입력       | 승패와 멘트 형식                   |
 | T-012 | 항목 1개·21개         | 입력 오류                          |
 | T-013 | 메뉴 미지원 카테고리  | 지원 목록 안내                     |
-| T-014 | 주식 코드 정상        | 조회 시각·면책 포함                |
-| T-015 | KIS 미설정            | NOT_CONFIGURED                     |
+| T-014 | 주식 이름/코드 정상   | 시장·통화·조회 기준·면책 포함      |
+| T-015 | KRX/Tiingo 미설정    | NOT_CONFIGURED                     |
 | T-016 | 동일 eventId 2회      | 답장 1회                           |
 | T-017 | rate limit 초과       | 외부 호출 차단                     |
 | T-018 | 로그 캡처             | 원문·키·표시명 없음                |

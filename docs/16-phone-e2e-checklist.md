@@ -18,6 +18,8 @@ endpoint: 'https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com';
 sharedSecret: '여기에만 직접 입력';
 ```
 
+자동 공지 알림을 사용할 경우 `noticeRoom`을 실제 허용 방 이름과 동일하게 입력합니다. 릴레이는 약 60초마다 알림 피드를 확인하며, `NOTICE_ALERT_ENABLED=true`가 아니면 메시지를 보내지 않습니다.
+
 secret은 GitHub에 커밋하지 말고, 다른 사람에게 전송하지 않습니다.
 
 ## 2. 컴파일

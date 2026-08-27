@@ -8,7 +8,7 @@
 
 - Kakao 봇 계정
 - 백엔드 공유 비밀
-- Nexon·한국투자 API 키
+- Nexon·KRX·Tiingo API 키
 - 허용 채팅방과 관리자 설정
 - 참여자의 대화와 표시명
 
@@ -128,7 +128,7 @@ MVP 최소안:
 
 1. Lambda KILL_SWITCH
 2. BOT_SHARED_SECRET 회전
-3. Nexon/KIS 키 폐기·재발급
+3. Nexon/KRX/Tiingo 키 폐기·재발급
 4. GitHub history와 로그 노출 범위 확인
 5. 원인 수정·secret scan 통과 후 재개
 

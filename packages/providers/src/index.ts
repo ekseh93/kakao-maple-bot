@@ -16,9 +16,12 @@ export type NexonClient = {
   findHexa?(name: string, signal: AbortSignal): Promise<HexaCharacter | null>;
   findDojang?(name: string, signal: AbortSignal): Promise<DojangCharacter | null>;
   findUnion?(name: string, signal: AbortSignal): Promise<UnionCharacter | null>;
+  findUnionChampion?(name: string, signal: AbortSignal): Promise<UnionChampion | null>;
   findEquipment?(name: string, signal: AbortSignal): Promise<EquipmentCharacter | null>;
   findNotice?(signal: AbortSignal): Promise<NoticeList>;
+  findNoticeAlerts?(keywords: string[], signal: AbortSignal): Promise<NoticeList>;
   findEvents?(signal: AbortSignal): Promise<EventList>;
+  findSunday?(signal: AbortSignal): Promise<EventItem | null>;
   findRoyalStyles?(signal: AbortSignal): Promise<RoyalStyleList>;
   findWonderBerry?(signal: AbortSignal): Promise<WonderBerryList>;
   findLunaCrystalSweet?(
@@ -58,6 +61,19 @@ export type UnionCharacter = {
   grade?: string;
   artifactLevel?: number;
   artifactPoint?: number;
+  fetchedAt: string;
+};
+export type UnionChampionAbility = { name: string; value: string };
+export type UnionChampionEntry = {
+  name: string;
+  grade?: string;
+  level?: number;
+  slot?: number;
+  abilities: UnionChampionAbility[];
+};
+export type UnionChampion = {
+  name: string;
+  champions: UnionChampionEntry[];
   fetchedAt: string;
 };
 export type EquipmentItem = {
@@ -101,14 +117,15 @@ export type StockQuote = {
   code: string;
   name?: string;
   price: number;
-  change: number;
-  changeRate: number;
+  currency: 'KRW' | 'USD';
+  market: 'KRX' | 'US';
+  change?: number;
+  changeRate?: number;
   volume?: number;
   fetchedAt: string;
-  marketClosed?: boolean;
+  dataType: 'daily' | 'realtime';
 };
-export type StockClient = { quote(code: string, signal: AbortSignal): Promise<StockQuote> };
-const tokenCache = new Map<string, { token: string; expiresAt: number }>();
+export type StockClient = { quote(query: string, signal: AbortSignal): Promise<StockQuote> };
 
 function finiteNumber(value: string | undefined): number {
   const parsed = Number(value);
@@ -467,6 +484,66 @@ export function createNexonClient(
         fetchedAt: body.date ?? new Date().toISOString(),
       };
     },
+    async findUnionChampion(name, signal) {
+      if (!apiKey) throw new Error('NOT_CONFIGURED');
+      const ocid = await findOcid(name, signal);
+      if (!ocid) return null;
+      const base = 'https://open.api.nexon.com/maplestory/v1';
+      const response = await fetchWithRetry(
+        fetcher,
+        `${base}/user/union-champion?ocid=${encodeURIComponent(ocid)}`,
+        { headers: { 'x-nxopen-api-key': apiKey }, signal },
+      );
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = (await response.json()) as {
+        date?: string | null;
+        union_champion?: Array<{
+          champion_name?: string | null;
+          champion_grade?: string | null;
+          champion_level?: number | null;
+          champion_slot?: number | null;
+          champion_ability?: Array<{
+            ability_name?: string | null;
+            ability_value?: string | null;
+          }> | null;
+        }> | null;
+      };
+      if (!Array.isArray(body.union_champion)) throw new Error('PROVIDER_SCHEMA');
+      const champions = body.union_champion.map((champion) => {
+        if (typeof champion.champion_name !== 'string' || !Array.isArray(champion.champion_ability))
+          throw new Error('PROVIDER_SCHEMA');
+        if (
+          (champion.champion_grade !== undefined &&
+            champion.champion_grade !== null &&
+            typeof champion.champion_grade !== 'string') ||
+          (champion.champion_level !== undefined &&
+            champion.champion_level !== null &&
+            (!Number.isInteger(champion.champion_level) || champion.champion_level < 0)) ||
+          (champion.champion_slot !== undefined &&
+            champion.champion_slot !== null &&
+            (!Number.isInteger(champion.champion_slot) || champion.champion_slot < 0))
+        )
+          throw new Error('PROVIDER_SCHEMA');
+        const abilities = champion.champion_ability.map((ability) => {
+          if (typeof ability.ability_name !== 'string' || typeof ability.ability_value !== 'string')
+            throw new Error('PROVIDER_SCHEMA');
+          return { name: ability.ability_name, value: ability.ability_value };
+        });
+        return {
+          name: champion.champion_name,
+          ...(champion.champion_grade ? { grade: champion.champion_grade } : {}),
+          ...(champion.champion_level !== undefined && champion.champion_level !== null
+            ? { level: champion.champion_level }
+            : {}),
+          ...(champion.champion_slot !== undefined && champion.champion_slot !== null
+            ? { slot: champion.champion_slot }
+            : {}),
+          abilities,
+        };
+      });
+      return { name, champions, fetchedAt: body.date ?? new Date().toISOString() };
+    },
     async findEquipment(name, signal) {
       if (!apiKey) throw new Error('NOT_CONFIGURED');
       const ocid = await findOcid(name, signal);
@@ -533,6 +610,32 @@ export function createNexonClient(
       });
       return { notices, fetchedAt: new Date().toISOString() };
     },
+    async findNoticeAlerts(keywords, signal) {
+      if (!apiKey) throw new Error('NOT_CONFIGURED');
+      const normalizedKeywords = keywords.map((keyword) => keyword.trim()).filter(Boolean);
+      if (normalizedKeywords.length === 0) throw new Error('INVALID_USAGE');
+      const response = await fetchWithRetry(
+        fetcher,
+        'https://open.api.nexon.com/maplestory/v1/notice',
+        { headers: { 'x-nxopen-api-key': apiKey }, signal },
+      );
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = (await response.json()) as {
+        notice?: Array<{ title?: string; url?: string; date?: string }> | null;
+      };
+      if (!Array.isArray(body.notice)) throw new Error('PROVIDER_SCHEMA');
+      const notices = body.notice
+        .filter((notice) => typeof notice.title === 'string' && typeof notice.url === 'string')
+        .filter((notice) => normalizedKeywords.some((keyword) => notice.title!.includes(keyword)))
+        .map((notice) => {
+          if (!/^https:\/\/(www\.)?maplestory\.nexon\.com\//.test(notice.url!))
+            throw new Error('PROVIDER_SCHEMA');
+          const date = optionalString(notice.date);
+          return { title: notice.title!, url: notice.url!, ...(date ? { date } : {}) };
+        });
+      return { notices, fetchedAt: new Date().toISOString() };
+    },
     async findEvents(signal) {
       if (!apiKey) throw new Error('NOT_CONFIGURED');
       const response = await fetchWithRetry(
@@ -567,6 +670,35 @@ export function createNexonClient(
       });
       return { events, fetchedAt: new Date().toISOString() };
     },
+    async findSunday(signal) {
+      if (!apiKey) throw new Error('NOT_CONFIGURED');
+      const response = await fetchWithRetry(
+        fetcher,
+        'https://open.api.nexon.com/maplestory/v1/notice',
+        { headers: { 'x-nxopen-api-key': apiKey }, signal },
+      );
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = (await response.json()) as {
+        notice?: Array<{ title?: string; url?: string; date?: string }> | null;
+      };
+      if (!Array.isArray(body.notice)) throw new Error('PROVIDER_SCHEMA');
+      for (const notice of body.notice) {
+        if (typeof notice.title !== 'string' || typeof notice.url !== 'string')
+          throw new Error('PROVIDER_SCHEMA');
+        if (!/^https:\/\/(www\.)?maplestory\.nexon\.com\//.test(notice.url))
+          throw new Error('PROVIDER_SCHEMA');
+        if (notice.title.includes('썬데이') || notice.title.includes('선데이')) {
+          const date = optionalString(notice.date);
+          return {
+            title: notice.title,
+            url: notice.url,
+            ...(date ? { startDate: date } : {}),
+          };
+        }
+      }
+      return null;
+    },
     async findRoyalStyles(signal) {
       const sourceUrl = 'https://maplestory.nexon.com/Guide/CashShop/Probability';
       const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
@@ -574,8 +706,7 @@ export function createNexonClient(
       return parseProbabilityPage(await response.text(), sourceUrl);
     },
     async findWonderBerry(signal) {
-      const sourceUrl =
-        'https://maplestory.nexon.com/Guide/CashShop/Probability/WispsWonderBerry';
+      const sourceUrl = 'https://maplestory.nexon.com/Guide/CashShop/Probability/WispsWonderBerry';
       const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
       return parseProbabilityPage(await response.text(), sourceUrl, 'last');
@@ -647,9 +778,13 @@ export function createNexonClient(
       });
       const [weatherResponse, airResponse] = await Promise.all([
         fetchWithRetry(fetcher, `https://api.open-meteo.com/v1/forecast?${query}`, { signal }),
-        fetchWithRetry(fetcher, `https://air-quality-api.open-meteo.com/v1/air-quality?${airQuery}`, {
-          signal,
-        }),
+        fetchWithRetry(
+          fetcher,
+          `https://air-quality-api.open-meteo.com/v1/air-quality?${airQuery}`,
+          {
+            signal,
+          },
+        ),
       ]);
       if (!weatherResponse.ok || !airResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
       const weatherBody = (await weatherResponse.json()) as {
@@ -690,69 +825,127 @@ export function createNexonClient(
   };
 }
 
+function marketNumber(value: unknown): number {
+  if (typeof value !== 'string' && typeof value !== 'number') throw new Error('PROVIDER_SCHEMA');
+  const normalized = String(value).replace(/,/g, '').trim();
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) throw new Error('PROVIDER_SCHEMA');
+  return parsed;
+}
+
+function tokyoTradingDate(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' })
+    .format(new Date())
+    .replaceAll('-', '');
+}
+
 export function createStockClient(
-  appKey: string | undefined,
-  appSecret: string | undefined,
-  baseUrl = 'https://openapi.koreainvestment.com:9443',
+  krxAuthKey: string | undefined,
+  tiingoToken: string | undefined,
   fetcher: typeof fetch = fetch,
 ): StockClient {
+  const request = async (url: string, headers: Record<string, string>, signal: AbortSignal) => {
+    const response = await fetchWithRetry(fetcher, url, { headers, signal });
+    if (!response.ok)
+      throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+    return response;
+  };
+
   return {
-    async quote(code, signal) {
-      if (!appKey || !appSecret) throw new Error('NOT_CONFIGURED');
-      const tokenKey = `${baseUrl}:${appKey}`;
-      const cachedToken = tokenCache.get(tokenKey);
-      let accessToken =
-        cachedToken && cachedToken.expiresAt > Date.now() + 300_000 ? cachedToken.token : undefined;
-      if (!accessToken) {
-        const token = await fetchWithRetry(fetcher, `${baseUrl}/oauth2/tokenP`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            grant_type: 'client_credentials',
-            appkey: appKey,
-            appsecret: appSecret,
-          }),
+    async quote(query, signal) {
+      const input = query.trim();
+      if (!input || input.length > 80) throw new Error('INVALID_USAGE');
+      if (/^[\d]{6}$|[가-힣]/.test(input)) {
+        if (!krxAuthKey) throw new Error('NOT_CONFIGURED');
+        const headers = { AUTH_KEY: krxAuthKey };
+        const masterResponse = await request(
+          'https://openapi.krx.co.kr/svc/apis/sto/stk_isu_base_info',
+          headers,
           signal,
+        );
+        const masterBody = (await masterResponse.json()) as {
+          OutBlock_1?: Array<Record<string, unknown>>;
+        };
+        if (!Array.isArray(masterBody.OutBlock_1)) throw new Error('PROVIDER_SCHEMA');
+        const master = masterBody.OutBlock_1.find((item) => {
+          const code = String(item.ISU_SRT_CD ?? '').replace(/\s/g, '');
+          const name = String(item.ISU_ABBRV ?? '').trim();
+          return code === input || name === input;
         });
-        if (!token.ok) throw new Error('PROVIDER_UNAVAILABLE');
-        const tokenData = (await token.json()) as { access_token?: string; expires_in?: number };
-        if (!tokenData.access_token) throw new Error('PROVIDER_SCHEMA');
-        const lifetime =
-          Number.isFinite(tokenData.expires_in) && tokenData.expires_in !== undefined
-            ? tokenData.expires_in
-            : 900;
-        accessToken = tokenData.access_token;
-        tokenCache.set(tokenKey, { token: accessToken, expiresAt: Date.now() + lifetime * 1000 });
-      }
-      const response = await fetchWithRetry(
-        fetcher,
-        `${baseUrl}/uapi/domestic-stock/v1/quotations/inquire-price?FID_COND_MRKT_DIV_CODE=J&FID_INPUT_ISCD=${code}`,
-        {
-          headers: {
-            authorization: `Bearer ${accessToken}`,
-            appkey: appKey,
-            appsecret: appSecret,
-            tr_id: 'FHKST01010100',
-          },
+        if (!master) throw new Error('NOT_FOUND');
+        const code = String(master.ISU_SRT_CD ?? '').replace(/\s/g, '');
+        const name = String(master.ISU_ABBRV ?? '').trim();
+        if (!/^\d{6}$/.test(code) || !name) throw new Error('PROVIDER_SCHEMA');
+        const dailyResponse = await request(
+          `https://openapi.krx.co.kr/svc/apis/sto/stk_bydd_trd?basDd=${tokyoTradingDate()}`,
+          headers,
           signal,
-        },
+        );
+        const dailyBody = (await dailyResponse.json()) as {
+          OutBlock_1?: Array<Record<string, unknown>>;
+        };
+        if (!Array.isArray(dailyBody.OutBlock_1)) throw new Error('PROVIDER_SCHEMA');
+        const daily = dailyBody.OutBlock_1.find(
+          (item) => String(item.ISU_SRT_CD ?? '').replace(/\s/g, '') === code,
+        );
+        if (!daily) throw new Error('NOT_FOUND');
+        return {
+          code,
+          name,
+          price: marketNumber(daily.TDD_CLSPRC),
+          change: marketNumber(daily.CMPPREVDD_PRC),
+          changeRate: marketNumber(daily.FLUC_RT),
+          volume: marketNumber(daily.ACC_TRDVOL),
+          currency: 'KRW',
+          market: 'KRX',
+          dataType: 'daily',
+          fetchedAt: new Date().toISOString(),
+        };
+      }
+      if (!tiingoToken) throw new Error('NOT_CONFIGURED');
+      const tiingoHeaders = { Authorization: `Token ${tiingoToken}` };
+      const searchResponse = await request(
+        `https://api.tiingo.com/tiingo/utilities/search/${encodeURIComponent(input)}`,
+        tiingoHeaders,
+        signal,
       );
-      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
-      const body = (await response.json()) as { output?: Record<string, string> };
-      const output = body.output;
-      if (!output?.stck_prpr) throw new Error('PROVIDER_SCHEMA');
-      const price = finiteNumber(output.stck_prpr);
-      const change = finiteNumber(output.prdy_vrss);
-      const changeRate = finiteNumber(output.prdy_ctrt);
-      const volume = finiteNumber(output.acml_vol);
+      const matches = (await searchResponse.json()) as Array<{
+        ticker?: string;
+        name?: string;
+        assetType?: string;
+        isActive?: boolean;
+      }>;
+      if (!Array.isArray(matches)) throw new Error('PROVIDER_SCHEMA');
+      const match = matches.find(
+        (item) =>
+          typeof item.ticker === 'string' &&
+          typeof item.name === 'string' &&
+          item.isActive !== false &&
+          ['Stock', 'ETF', 'Mutual Fund'].includes(item.assetType ?? ''),
+      );
+      if (!match?.ticker || !match.name) throw new Error('NOT_FOUND');
+      const priceResponse = await request(
+        `https://api.tiingo.com/tiingo/daily/${encodeURIComponent(match.ticker)}/prices`,
+        tiingoHeaders,
+        signal,
+      );
+      const prices = (await priceResponse.json()) as Array<{
+        date?: string;
+        close?: number;
+        volume?: number;
+      }>;
+      const latest = prices.at(-1);
+      if (!latest || typeof latest.close !== 'number' || !Number.isFinite(latest.close))
+        throw new Error('PROVIDER_SCHEMA');
       return {
-        code,
-        name: output.hts_kor_isnm,
-        price,
-        change,
-        changeRate,
-        volume,
-        fetchedAt: new Date().toISOString(),
+        code: match.ticker,
+        name: match.name,
+        price: latest.close,
+        ...(typeof latest.volume === 'number' ? { volume: latest.volume } : {}),
+        currency: 'USD',
+        market: 'US',
+        dataType: 'daily',
+        fetchedAt: latest.date ?? new Date().toISOString(),
       };
     },
   };

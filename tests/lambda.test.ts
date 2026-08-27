@@ -136,10 +136,13 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
         code: '005930',
         name: '삼성전자',
         price: 70000,
+        currency: 'KRW',
+        market: 'KRX',
         change: 100,
         changeRate: 0.14,
         volume: 123,
         fetchedAt: '2026-08-26T15:30:00+09:00',
+        dataType: 'daily',
       }),
     };
     const result = await handleMessage(
@@ -148,6 +151,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { stock },
     );
     expect(result.reply).toContain('삼성전자 (005930)');
+    expect(stock.quote).toHaveBeenCalledWith('005930', expect.any(AbortSignal));
     expect(result.reply).toContain('조회: 2026-08-26T15:30:00+09:00');
     expect(result.reply).toContain('투자 권유가 아닙니다');
   });
@@ -212,9 +216,12 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       quote: vi.fn().mockResolvedValue({
         code: '123456',
         price: 70000,
+        currency: 'KRW',
+        market: 'KRX',
         change: 100,
         changeRate: 0.14,
         fetchedAt: '2026-08-26T00:00:00.000Z',
+        dataType: 'daily',
       }),
     };
     const stockEnv = { ...env, ALLOWED_ROOMS: 'stock-cache-room', STOCK_ENABLED: 'true' };
@@ -326,6 +333,37 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('유니온 레벨: 8,500');
     expect(result.reply).toContain('아티팩트 포인트: 1,200');
+  });
+  it('handles Union Champion lookup with abilities', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findUnionChampion: vi.fn().mockResolvedValue({
+        name: '유챔캐릭터',
+        champions: [
+          {
+            name: '메르세데스',
+            grade: 'S',
+            level: 250,
+            slot: 1,
+            abilities: [{ name: '경험치 획득량', value: '+15%' }],
+          },
+        ],
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      {
+        ...message('!유챔 유챔캐릭터'),
+        roomId: 'union-champion-room',
+        senderId: 'union-champion-sender',
+      },
+      { ...env, ALLOWED_ROOMS: 'union-champion-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[유니온 챔피언 능력치]');
+    expect(result.reply).toContain('메르세데스 (S Lv.250)');
+    expect(result.reply).toContain('경험치 획득량: +15%');
+    expect(nexon.findUnionChampion).toHaveBeenCalledWith('유챔캐릭터', expect.anything());
   });
   it('handles equipment lookup with a readable template', async () => {
     const nexon = {
@@ -470,8 +508,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply).toContain('[로얄스타일 10회 뽑기]');
-    expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(10);
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
     expect(result.reply).toContain('실제 구매가 아닌');
+    expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');
   });
   it('supports a custom Royal Style count and hides detailed results', async () => {
     const nexon = {
@@ -489,7 +528,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('[로얄스타일 25회 뽑기]');
     expect(result.reply).toContain('상세 결과: 숨김');
-    expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(0);
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(0);
   });
   it('handles ten weighted Wonder Berry draws', async () => {
     const nexon = {
@@ -509,8 +548,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply).toContain('[위습의 원더베리 10회 뽑기]');
-    expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(10);
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
     expect(result.reply).toContain('실제 구매가 아닌');
+    expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');
   });
   it('supports a custom Wonder Berry count and hides detailed results', async () => {
     const nexon = {
@@ -522,34 +562,40 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       }),
     };
     const result = await handleMessage(
-      { ...message('/원더베리 25 false'), roomId: 'wonder-count-room', senderId: 'wonder-count-sender' },
+      {
+        ...message('/원더베리 25 false'),
+        roomId: 'wonder-count-room',
+        senderId: 'wonder-count-sender',
+      },
       { ...env, ALLOWED_ROOMS: 'wonder-count-room' },
       { nexon },
     );
     expect(result.reply).toContain('[위습의 원더베리 25회 뽑기]');
     expect(result.reply).toContain('상세 결과: 숨김');
-    expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(0);
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(0);
   });
-  it('handles normal and special Luna Crystal Sweet draws', async () => {
+  it('handles a default Luna Crystal Sweet draw', async () => {
     const nexon = {
       findCharacter: vi.fn(),
       findLunaCrystalSweet: vi.fn().mockResolvedValue({
         kind: '스페셜',
         items: [{ name: '테스트 루나 펫', probability: 100 }],
-        sourceUrl: 'https://maplestory.nexon.com/Guide/CashShop/Probability/SpecialLunaCrystalSweet',
+        sourceUrl:
+          'https://maplestory.nexon.com/Guide/CashShop/Probability/SpecialLunaCrystalSweet',
         fetchedAt: '2026-08-27T00:00:00.000Z',
       }),
     };
     const result = await handleMessage(
-      { ...message('/루나스윗 스페셜 25 true'), roomId: 'luna-room', senderId: 'luna-sender' },
+      { ...message('!루나스윗'), roomId: 'luna-room', senderId: 'luna-sender' },
       { ...env, ALLOWED_ROOMS: 'luna-room' },
       { nexon },
     );
-    expect(result.reply).toContain('[스페셜 루나 크리스탈 스윗 25회 뽑기]');
-    expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(25);
+    expect(result.reply).toContain('[루나 크리스탈 스윗 10회 뽑기]');
+    expect(result.reply).toContain('조합: 원더 블랙 + 원더 블랙');
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
     expect(nexon.findLunaCrystalSweet).toHaveBeenCalledWith('스페셜', expect.anything());
   });
-  it('handles normal and special Luna Crystal Dream draws', async () => {
+  it('handles a default Luna Crystal Dream draw', async () => {
     const nexon = {
       findCharacter: vi.fn(),
       findLunaCrystalDream: vi.fn().mockResolvedValue({
@@ -560,12 +606,13 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       }),
     };
     const result = await handleMessage(
-      { ...message('/루나드림 일반 25 true'), roomId: 'dream-room', senderId: 'dream-sender' },
+      { ...message('!루나드림'), roomId: 'dream-room', senderId: 'dream-sender' },
       { ...env, ALLOWED_ROOMS: 'dream-room' },
       { nexon },
     );
-    expect(result.reply).toContain('[일반 루나 크리스탈 드림 25회 뽑기]');
-    expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(25);
+    expect(result.reply).toContain('[루나 크리스탈 드림 10회 뽑기]');
+    expect(result.reply).toContain('조합: 원더 스윗 + 원더 블랙');
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
     expect(nexon.findLunaCrystalDream).toHaveBeenCalledWith('일반', expect.anything());
   });
   it('handles global weather lookup', async () => {
@@ -684,6 +731,22 @@ describe('HTTP boundary', () => {
     const response = await handler.fetch(new Request('https://example.test/health'), env);
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: 'ok' });
+  });
+  it('protects and disables notice alerts by default', async () => {
+    const handler = { fetch: httpHandler };
+    const unauthorized = await handler.fetch(
+      new Request('https://example.test/v1/notice-alerts'),
+      env,
+    );
+    expect(unauthorized.status).toBe(401);
+    const disabled = await handler.fetch(
+      new Request('https://example.test/v1/notice-alerts', {
+        headers: { authorization: 'Bearer test' },
+      }),
+      env,
+    );
+    expect(disabled.status).toBe(200);
+    expect(await disabled.json()).toEqual({ notices: [] });
   });
   it('adapts an API Gateway v2 health event to the Lambda handler', async () => {
     const result = await lambdaHandler({

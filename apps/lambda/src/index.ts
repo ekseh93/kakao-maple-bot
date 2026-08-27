@@ -9,7 +9,7 @@ import {
   parseCommand,
   parseRoyalOptions,
   playRps,
-  recommendFood,
+  formatFoodRecommendation,
   validateCharacterName,
   validateRegion,
 } from '@kakao-maple-bot/core';
@@ -26,6 +26,7 @@ import {
   type StockClient,
   type StockQuote,
   type UnionCharacter,
+  type UnionChampion,
   type NoticeList,
   type RoyalStyleList,
   type WonderBerryList,
@@ -42,10 +43,11 @@ export interface Env {
   NEXON_API_KEY?: string;
   SOL_ERDA_FRAGMENT_PRICE?: string;
   SOL_ERDA_FRAGMENT_PRICE_UPDATED_AT?: string;
-  KIS_APP_KEY?: string;
-  KIS_APP_SECRET?: string;
-  KIS_BASE_URL?: string;
+  KRX_AUTH_KEY?: string;
+  TIINGO_TOKEN?: string;
   STOCK_ENABLED?: string;
+  NOTICE_ALERT_ENABLED?: string;
+  NOTICE_ALERT_KEYWORDS?: string;
 }
 export type Message = {
   eventId: string;
@@ -54,6 +56,7 @@ export type Message = {
   message: string;
   sentAt?: string;
 };
+const defaultNoticeAlertKeywords = ['채널 점검', '마이너버전', '클라이언트'];
 type Dependencies = {
   nexon?: NexonClient;
   stock?: StockClient;
@@ -68,14 +71,21 @@ const characterCache = new Map<string, { value: Character; expiresAt: number }>(
 const hexaCache = new Map<string, { value: HexaCharacter; expiresAt: number }>();
 const dojangCache = new Map<string, { value: DojangCharacter; expiresAt: number }>();
 const unionCache = new Map<string, { value: UnionCharacter; expiresAt: number }>();
+const unionChampionCache = new Map<string, { value: UnionChampion; expiresAt: number }>();
 const equipmentCache = new Map<string, { value: EquipmentCharacter; expiresAt: number }>();
 const experienceCache = new Map<string, { value: ExperienceHistory; expiresAt: number }>();
 let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 let wonderBerryCache: { value: WonderBerryList; expiresAt: number } | undefined;
-const lunaSweetCache = new Map<'일반' | '스페셜', { value: LunaCrystalSweetList; expiresAt: number }>();
-const lunaDreamCache = new Map<'일반' | '스페셜', { value: LunaCrystalSweetList; expiresAt: number }>();
+const lunaSweetCache = new Map<
+  '일반' | '스페셜',
+  { value: LunaCrystalSweetList; expiresAt: number }
+>();
+const lunaDreamCache = new Map<
+  '일반' | '스페셜',
+  { value: LunaCrystalSweetList; expiresAt: number }
+>();
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 const weatherCache = new Map<string, { value: WeatherSnapshot; expiresAt: number }>();
 
@@ -155,6 +165,8 @@ export async function handleMessage(
   }
   for (const [name, entry] of characterCache)
     if (entry.expiresAt <= now) characterCache.delete(name);
+  for (const [name, entry] of unionChampionCache)
+    if (entry.expiresAt <= now) unionChampionCache.delete(name);
   for (const [name, entry] of experienceCache)
     if (entry.expiresAt <= now) experienceCache.delete(name);
   for (const [code, entry] of stockCache) if (entry.expiresAt <= now) stockCache.delete(code);
@@ -162,9 +174,12 @@ export async function handleMessage(
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
   if (wonderBerryCache && wonderBerryCache.expiresAt <= now) wonderBerryCache = undefined;
-  for (const [kind, entry] of lunaSweetCache) if (entry.expiresAt <= now) lunaSweetCache.delete(kind);
-  for (const [kind, entry] of lunaDreamCache) if (entry.expiresAt <= now) lunaDreamCache.delete(kind);
-  for (const [region, entry] of weatherCache) if (entry.expiresAt <= now) weatherCache.delete(region);
+  for (const [kind, entry] of lunaSweetCache)
+    if (entry.expiresAt <= now) lunaSweetCache.delete(kind);
+  for (const [kind, entry] of lunaDreamCache)
+    if (entry.expiresAt <= now) lunaDreamCache.delete(kind);
+  for (const [region, entry] of weatherCache)
+    if (entry.expiresAt <= now) weatherCache.delete(region);
   if (!message.eventId || seen.has(message.eventId))
     return { reply: null, requestId, cache: 'bypass' };
   seen.set(message.eventId, now);
@@ -198,7 +213,7 @@ export async function handleMessage(
         if (!allowed(message.senderId, env.ADMIN_SENDERS))
           return { reply: null, requestId, cache: 'bypass' };
         return {
-          reply: `[봇 상태]\n전체 활성: ${env.BOT_ENABLED !== 'false' ? '예' : '아니오'}\nNexon configured: ${env.NEXON_API_KEY ? '예' : '아니오'}\n주식 configured: ${env.STOCK_ENABLED === 'true' && Boolean(env.KIS_APP_KEY && env.KIS_APP_SECRET) ? '예' : '아니오'}`,
+          reply: `[봇 상태]\n전체 활성: ${env.BOT_ENABLED !== 'false' ? '예' : '아니오'}\nNexon configured: ${env.NEXON_API_KEY ? '예' : '아니오'}\n주식 configured: ${env.STOCK_ENABLED === 'true' && Boolean(env.KRX_AUTH_KEY || env.TIINGO_TOKEN) ? '예' : '아니오'}`,
           requestId,
           cache: 'bypass',
         };
@@ -218,7 +233,7 @@ export async function handleMessage(
         };
       case 'food':
         return {
-          reply: `오늘의 ${parsed.args[0] ?? '전체'} 메뉴: ${recommendFood(parsed.args[0])}`,
+          reply: formatFoodRecommendation(parsed.args),
           requestId,
           cache: 'bypass',
         };
@@ -282,6 +297,18 @@ export async function handleMessage(
         unionCache.set(name, { value: union, expiresAt: now + 5 * 60_000 });
         return { reply: formatUnion(union), requestId, cache: 'miss' };
       }
+      case 'unionChampion': {
+        const name = validateCharacterName(parsed.args[0]);
+        const cached = unionChampionCache.get(name);
+        if (cached && cached.expiresAt > now)
+          return { reply: formatUnionChampion(cached.value), requestId, cache: 'hit' };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findUnionChampion) throw new Error('NOT_CONFIGURED');
+        const unionChampion = await client.findUnionChampion(name, timeoutSignal());
+        if (!unionChampion) throw new Error('NOT_FOUND');
+        unionChampionCache.set(name, { value: unionChampion, expiresAt: now + 5 * 60_000 });
+        return { reply: formatUnionChampion(unionChampion), requestId, cache: 'miss' };
+      }
       case 'equipment': {
         const name = validateCharacterName(parsed.args[0]);
         const cached = equipmentCache.get(name);
@@ -319,6 +346,15 @@ export async function handleMessage(
           eventCache = undefined;
         }
         const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (client.findSunday) {
+          const sunday = await client.findSunday(timeoutSignal());
+          if (!sunday) throw new Error('NOT_FOUND');
+          eventCache = {
+            value: { events: [sunday], fetchedAt: new Date().toISOString() },
+            expiresAt: now + 5 * 60_000,
+          };
+          return { reply: formatSunday(eventCache.value)!, requestId, cache: 'miss' };
+        }
         if (!client.findEvents) throw new Error('NOT_CONFIGURED');
         const events = await client.findEvents(timeoutSignal());
         eventCache = { value: events, expiresAt: now + 5 * 60_000 };
@@ -409,9 +445,9 @@ export async function handleMessage(
         };
       }
       case 'lunaSweet': {
-        const kind = parsed.args[0] as '일반' | '스페셜' | undefined;
-        if (kind !== '일반' && kind !== '스페셜') throw new Error('INVALID_USAGE');
-        const options = parseRoyalOptions(parsed.args.slice(1));
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        const kind = '스페셜' as const;
+        const options = parseRoyalOptions([]);
         const cached = lunaSweetCache.get(kind);
         if (cached && cached.expiresAt > now)
           return {
@@ -444,9 +480,9 @@ export async function handleMessage(
         };
       }
       case 'lunaDream': {
-        const kind = parsed.args[0] as '일반' | '스페셜' | undefined;
-        if (kind !== '일반' && kind !== '스페셜') throw new Error('INVALID_USAGE');
-        const options = parseRoyalOptions(parsed.args.slice(1));
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        const kind = '일반' as const;
+        const options = parseRoyalOptions([]);
         const cached = lunaDreamCache.get(kind);
         if (cached && cached.expiresAt > now)
           return {
@@ -506,15 +542,15 @@ export async function handleMessage(
       }
       case 'stock': {
         if (env.STOCK_ENABLED !== 'true') throw new Error('NOT_CONFIGURED');
-        const code = parsed.args[0] ?? '';
-        if (!/^\d{6}$/.test(code)) throw new Error('INVALID_USAGE');
-        const cached = stockCache.get(code);
+        const query = parsed.args.join(' ').trim();
+        if (!query || parsed.args.length > 4) throw new Error('INVALID_USAGE');
+        const cacheKey = query.toLocaleLowerCase();
+        const cached = stockCache.get(cacheKey);
         if (cached && cached.expiresAt > now)
           return { reply: formatStock(cached.value), requestId, cache: 'hit' };
-        const client =
-          deps.stock ?? createStockClient(env.KIS_APP_KEY, env.KIS_APP_SECRET, env.KIS_BASE_URL);
-        const quote = await client.quote(code, timeoutSignal());
-        stockCache.set(code, { value: quote, expiresAt: now + 15_000 });
+        const client = deps.stock ?? createStockClient(env.KRX_AUTH_KEY, env.TIINGO_TOKEN);
+        const quote = await client.quote(query, timeoutSignal());
+        stockCache.set(cacheKey, { value: quote, expiresAt: now + 15_000 });
         return { reply: formatStock(quote), requestId, cache: 'miss' };
       }
     }
@@ -600,6 +636,29 @@ function formatUnion(c: UnionCharacter): string {
     .filter(Boolean)
     .join('\n');
 }
+function formatUnionChampion(c: UnionChampion): string {
+  const lines = [
+    '[유니온 챔피언 능력치]',
+    `캐릭터: ${c.name}`,
+    `챔피언 수: ${c.champions.length}명`,
+    '────────────',
+  ];
+  for (const champion of c.champions) {
+    const detail = [
+      champion.grade,
+      champion.level !== undefined ? `Lv.${champion.level}` : undefined,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    lines.push(`▸ ${champion.name}${detail ? ` (${detail})` : ''}`);
+    for (const ability of champion.abilities) lines.push(`  - ${ability.name}: ${ability.value}`);
+  }
+  lines.push('────────────', `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`);
+  const full = lines.join('\n');
+  if (full.length <= 1000) return full;
+  const footer = `\n… ${c.champions.length}명 중 일부만 표시 (응답 제한)`;
+  return full.slice(0, 1000 - footer.length).trimEnd() + footer;
+}
 function formatEquipment(c: EquipmentCharacter): string {
   const lines = [
     '[장비 요약]',
@@ -680,7 +739,9 @@ function formatEvents(c: EventList): string {
   return `${result}${footer}\n(응답 제한으로 ${c.events.length - included}건은 생략)`;
 }
 function formatSunday(c: EventList): string | null {
-  const event = c.events.find((item) => item.title.includes('썬데이'));
+  const event = c.events.find(
+    (item) => item.title.includes('썬데이') || item.title.includes('선데이'),
+  );
   if (!event) return null;
   return [
     '[썬데이 메이플]',
@@ -722,12 +783,22 @@ function formatWeather(weather: WeatherSnapshot): string {
   ].join('\n');
 }
 function formatStock(q: StockQuote): string {
+  const price = q.price.toLocaleString(q.currency === 'KRW' ? 'ko-KR' : 'en-US', {
+    minimumFractionDigits: q.currency === 'USD' ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
+  const change =
+    q.change !== undefined && q.changeRate !== undefined
+      ? `전일 대비: ${q.change >= 0 ? '+' : ''}${q.change.toLocaleString('ko-KR')}원 (${q.changeRate.toFixed(2)}%)`
+      : '';
   return [
-    `[국내 주식 시세]`,
+    `[주식 시세]`,
     `${q.name ?? '종목'} (${q.code})`,
-    `현재가: ${q.price.toLocaleString('ko-KR')}원`,
-    `전일 대비: ${q.change >= 0 ? '+' : ''}${q.change.toLocaleString('ko-KR')}원 (${q.changeRate.toFixed(2)}%)`,
+    `시장: ${q.market}`,
+    `현재가: ${price}${q.currency === 'KRW' ? '원' : ' USD'}`,
+    change,
     q.volume !== undefined ? `거래량: ${q.volume.toLocaleString('ko-KR')}` : '',
+    `기준: ${q.dataType === 'daily' ? '일별 종가' : '실시간'} (제공자 시각 기준)`,
     `조회: ${q.fetchedAt}`,
     '참고용 정보이며 투자 권유가 아닙니다.',
   ]
@@ -737,9 +808,36 @@ function formatStock(q: StockQuote): string {
 }
 
 export async function httpHandler(request: Request, env: Env): Promise<Response> {
-  if (request.method === 'GET' && new URL(request.url).pathname === '/health')
+  const url = new URL(request.url);
+  if (request.method === 'GET' && url.pathname === '/health')
     return Response.json({ status: 'ok' });
-  if (request.method !== 'POST' || new URL(request.url).pathname !== '/v1/messages')
+  if (request.method === 'GET' && url.pathname === '/v1/notice-alerts') {
+    if (
+      !env.BOT_SHARED_SECRET ||
+      !safeEqual(request.headers.get('authorization') ?? '', `Bearer ${env.BOT_SHARED_SECRET}`)
+    )
+      return new Response('Unauthorized', { status: 401 });
+    if (env.NOTICE_ALERT_ENABLED !== 'true') return Response.json({ notices: [] });
+    const keywords = (env.NOTICE_ALERT_KEYWORDS ?? defaultNoticeAlertKeywords.join(','))
+      .split(',')
+      .map((keyword) => keyword.trim())
+      .filter(Boolean)
+      .slice(0, 10);
+    const client = createNexonClient(env.NEXON_API_KEY);
+    if (!client.findNoticeAlerts) return Response.json({ notices: [] });
+    const result = await client.findNoticeAlerts(keywords, timeoutSignal());
+    const known = new Set(
+      (url.searchParams.get('known') ?? '')
+        .split('|')
+        .filter((item) => /^https:\/\/(www\.)?maplestory\.nexon\.com\//.test(item)),
+    );
+    return Response.json({
+      notices: result.notices.filter((notice) => !known.has(notice.url)),
+      allUrls: result.notices.map((notice) => notice.url),
+      fetchedAt: result.fetchedAt,
+    });
+  }
+  if (request.method !== 'POST' || url.pathname !== '/v1/messages')
     return new Response('Not found', { status: 404 });
   const contentLength = Number(request.headers.get('content-length') ?? 0);
   if (contentLength > 16_384) return new Response('Payload too large', { status: 413 });

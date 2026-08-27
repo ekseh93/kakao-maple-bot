@@ -30,7 +30,7 @@ AWS Lambda TypeScript 번들은 `pnpm lambda:dry-run`으로 로컬 빌드하고,
 - 방·발신자·전체 rate limit
 - 중복 이벤트 2분 TTL
 - 캐릭터·주식 캐시와 공급자 재시도
-- Nexon/KIS mock 응답 및 malformed schema 격리
+- Nexon/KRX/Tiingo mock 응답 및 malformed schema 격리
 - 인증, JSON, 필수 필드, 16 KiB 본문 경계
 - 비식별 audit log 필드
 - Maple.GG·Maplescouter 링크 전용 정책 검사
@@ -38,7 +38,7 @@ AWS Lambda TypeScript 번들은 `pnpm lambda:dry-run`으로 로컬 빌드하고,
 
 ## 아직 관측하지 않은 범위
 
-- 실제 Nexon/KIS API 키를 사용한 공급자 응답
+- 실제 Nexon/KRX/Tiingo API 키를 사용한 공급자 응답
 - AWS 계정·Lambda/API Gateway 배포 및 운영 URL
 - GitHub secret 등록 또는 CI 실행 결과
 - MessengerBot R 앱 컴파일 및 Android 공기계 E2E

@@ -7,6 +7,7 @@ export type CommandName =
   | 'hexa'
   | 'dojang'
   | 'union'
+  | 'unionChampion'
   | 'equipment'
   | 'notice'
   | 'event'
@@ -23,7 +24,7 @@ export type CommandName =
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
-export const HELP = `[봇 도움말]\n!캐릭터 닉네임 (또는 !정보 닉네임)\n!헥사 닉네임\n!무릉 닉네임\n!유니온 닉네임\n!장비 닉네임\n!공지\n!이벤트\n!썬데이\n!조각\n!로얄\n!원더베리\n!루나스윗 일반 10 true\n!루나드림 일반 10 true\n!날씨 지역명\n!경험치 닉네임 (또는 /경험치 닉네임)\n!심볼 여로 1 20 (또는 !심볼계산)\n!심볼 기어드락 1 11\n!가위 / !바위 / !보\n!골라 짜장,짬뽕\n!뭐먹지 한식\n!주식 005930\n!상태 (관리자 전용)`;
+export const HELP = `[봇 도움말]\n!캐릭터 닉네임 (또는 !정보 닉네임)\n!헥사 닉네임\n!무릉 닉네임\n!유니온 닉네임\n!유챔 닉네임\n!장비 닉네임\n!공지\n!이벤트\n!썬데이\n!조각\n!로얄\n!원더베리\n!루나스윗\n!루나드림\n!날씨 지역명\n!경험치 닉네임 (또는 /경험치 닉네임)\n!심볼 여로 1 20 (또는 !심볼계산)\n!심볼 기어드락 1 11\n!가위 / !바위 / !보\n!골라 짜장,짬뽕\n!뭐먹지\n!주식 이름\n!상태 (관리자 전용)`;
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
@@ -38,10 +39,12 @@ const aliases: Record<string, CommandName> = {
   헥사: 'hexa',
   무릉: 'dojang',
   유니온: 'union',
+  유챔: 'unionChampion',
   장비: 'equipment',
   공지: 'notice',
   이벤트: 'event',
   썬데이: 'sunday',
+  선데이: 'sunday',
   조각: 'fragment',
   로얄: 'royal',
   원더베리: 'wonderBerry',
@@ -285,15 +288,89 @@ export function calculateSymbolCost(kind: string, current: number, target: numbe
 }
 
 const menus: Record<string, string[]> = {
-  전체: ['김치찌개', '돈카츠', '비빔밥', '파스타', '떡볶이'],
-  한식: ['김치찌개', '비빔밥'],
-  중식: ['짜장면', '짬뽕'],
-  일식: ['돈카츠', '초밥'],
-  양식: ['파스타', '오므라이스'],
-  분식: ['떡볶이', '김밥'],
-  야식: ['치킨', '족발'],
-  가벼운: ['샐러드', '샌드위치'],
+  전체: [
+    '김치찌개',
+    '비빔밥',
+    '삼겹살',
+    '제육볶음',
+    '불고기',
+    '닭갈비',
+    '국밥',
+    '냉면',
+    '짜장면',
+    '짬뽕',
+    '탕수육',
+    '마라탕',
+    '볶음밥',
+    '돈카츠',
+    '초밥',
+    '라멘',
+    '우동',
+    '규동',
+    '파스타',
+    '오므라이스',
+    '피자',
+    '햄버거',
+    '리조또',
+    '떡볶이',
+    '김밥',
+    '순대',
+    '어묵',
+    '라볶이',
+    '치킨',
+    '족발',
+    '보쌈',
+    '곱창',
+    '닭발',
+    '샐러드',
+    '샌드위치',
+    '포케',
+    '죽',
+  ],
+  한식: ['김치찌개', '비빔밥', '삼겹살', '제육볶음', '불고기', '닭갈비', '국밥', '냉면'],
+  중식: ['짜장면', '짬뽕', '탕수육', '마라탕', '볶음밥'],
+  일식: ['돈카츠', '초밥', '라멘', '우동', '규동'],
+  양식: ['파스타', '오므라이스', '피자', '햄버거', '리조또'],
+  분식: ['떡볶이', '김밥', '순대', '어묵', '라볶이'],
+  야식: ['치킨', '족발', '보쌈', '곱창', '닭발'],
+  가벼운: ['샐러드', '샌드위치', '포케', '죽'],
 };
+
+const foodBoostWeight = 1.5;
+
+export type FoodProbability = { name: string; probability: number; weight: number };
+
+function allFoodItems(): string[] {
+  return [...new Set(Object.values(menus).flat())].concat('재획');
+}
+
+export function foodProbabilities(): FoodProbability[] {
+  const items = allFoodItems();
+  const total = items.reduce((sum, name) => sum + (name === '재획' ? foodBoostWeight : 1), 0);
+  return items.map((name) => {
+    const weight = name === '재획' ? foodBoostWeight : 1;
+    return { name, weight, probability: (weight / total) * 100 };
+  });
+}
+
+export function formatFoodRecommendation(args: string[] = [], random = Math.random): string {
+  if (args.length > 0) throw new Error('INVALID_USAGE');
+  const probabilities = foodProbabilities();
+  const total = probabilities.reduce((sum, item) => sum + item.weight, 0);
+  let cursor = random() * total;
+  const selected =
+    probabilities.find((item) => {
+      cursor -= item.weight;
+      return cursor < 0;
+    }) ?? probabilities[probabilities.length - 1]!;
+  return [
+    '[오늘 뭐먹지]',
+    `추천: ${selected.name}`,
+    '전체 요리 확률:',
+    ...probabilities.map((item) => `- ${item.name}: ${item.probability.toFixed(2)}%`),
+    '※ 재획은 다른 음식보다 50% 높은 가중치로 계산했습니다.',
+  ].join('\n');
+}
 
 export function choose<T>(items: T[], random = Math.random): T {
   if (items.length === 0) throw new Error('INVALID_USAGE');
@@ -349,6 +426,7 @@ export function formatRoyalDraw(
     count,
     showResults,
     random,
+    false,
   );
 }
 
@@ -368,6 +446,8 @@ export function formatWonderBerryDraw(
     count,
     showResults,
     random,
+    false,
+    (item) => (item.name.includes('원더 블랙') ? `[원더 블랙] ${item.name}` : item.name),
   );
 }
 
@@ -381,7 +461,7 @@ export function formatLunaCrystalSweetDraw(
   random = Math.random,
 ): string {
   return formatWeightedDraw(
-    `[${kind} 루나 크리스탈 스윗 ${count}회 뽑기]`,
+    `[루나 크리스탈 스윗 ${count}회 뽑기]\n조합: 원더 블랙 + 원더 블랙`,
     items,
     sourceUrl,
     fetchedAt,
@@ -401,7 +481,7 @@ export function formatLunaCrystalDreamDraw(
   random = Math.random,
 ): string {
   return formatWeightedDraw(
-    `[${kind} 루나 크리스탈 드림 ${count}회 뽑기]`,
+    `[루나 크리스탈 드림 ${count}회 뽑기]\n조합: 원더 스윗 + 원더 블랙`,
     items,
     sourceUrl,
     fetchedAt,
@@ -419,15 +499,17 @@ function formatWeightedDraw(
   count = 10,
   showResults = true,
   random = Math.random,
+  includeSourceUrl = true,
+  label: (item: RoyalStyleItem) => string = (item) => item.name,
 ): string {
   const draws = drawRoyalStyles(items, count, random);
   return [
     title,
     ...(showResults
-      ? draws.map((item, index) => `${index + 1}. ${item.name} (${item.probability.toFixed(1)}%)`)
+      ? draws.map((item, index) => `${index + 1}. ${label(item)} (${item.probability.toFixed(1)}%)`)
       : [`상세 결과: 숨김`, `총 뽑기: ${count}개`]),
     `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
-    sourceUrl,
+    ...(includeSourceUrl ? [sourceUrl] : []),
     '※ 실제 구매가 아닌 확률 기반 미니게임입니다.',
   ].join('\n');
 }
