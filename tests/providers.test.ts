@@ -394,8 +394,8 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       new AbortController().signal,
     );
     expect(result?.items).toEqual([
-      { name: '최신 펫', probability: 3.32 },
-      { name: '원더 쿠키', probability: 15.02 },
+      { name: '최신 펫', probability: 3.32, category: '희귀' },
+      { name: '원더 쿠키', probability: 15.02, category: '노멀' },
     ]);
     expect(fetcher.mock.calls[0]?.[0]).toBe(
       'https://maplestory.nexon.com/Guide/CashShop/Probability/WispsWonderBerry',

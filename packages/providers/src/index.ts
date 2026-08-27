@@ -721,7 +721,7 @@ export function createNexonClient(
       const sourceUrl = 'https://maplestory.nexon.com/Guide/CashShop/Probability/WispsWonderBerry';
       const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
-      return parseProbabilityPage(await response.text(), sourceUrl, 'last');
+      return parseProbabilityPage(await response.text(), sourceUrl, 'last', true);
     },
     async findBoutiqueGift(signal) {
       const sourceUrl = 'https://maplestory.nexon.com/Guide/CashShop/Probability/BoutiqueGift';

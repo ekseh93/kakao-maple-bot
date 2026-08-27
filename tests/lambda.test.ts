@@ -606,8 +606,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       findCharacter: vi.fn(),
       findWonderBerry: vi.fn().mockResolvedValue({
         items: [
-          { name: '테스트 원더 블랙 펫', probability: 3.32 },
-          { name: '테스트 원더 쿠키', probability: 15.02 },
+          { name: '테스트 원더 블랙 펫', probability: 3.32, category: '희귀' },
+          { name: '테스트 원더 쿠키', probability: 15.02, category: '노멀' },
         ],
         sourceUrl: 'https://maplestory.nexon.com/Guide/CashShop/Probability/WispsWonderBerry',
         fetchedAt: '2026-08-27T00:00:00.000Z',
@@ -620,7 +620,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('[위습의 원더베리 10회 뽑기]');
     expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
-    expect(result.reply).toContain('실제 구매가 아닌');
+    expect(result.reply).toContain('[블랙] 테스트 원더 블랙 펫');
+    expect(result.reply).not.toContain('기준: Nexon 공식 확률 페이지');
+    expect(result.reply).not.toContain('실제 구매가 아닌');
     expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');
   });
   it('handles ten Boutique Gift openings with Fever Time on the tenth', async () => {

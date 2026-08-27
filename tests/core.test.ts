@@ -55,17 +55,19 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('parses the Wonder Berry command', () =>
     expect(parseCommand('!원더베리')).toEqual({ name: 'wonderBerry', args: [] }));
-  it('labels Wonder Black results and omits the source URL', () => {
+  it('labels rare Wonder Berry results and omits metadata', () => {
     const output = formatWonderBerryDraw(
-      [{ name: '원더 블랙 펫', probability: 100 }],
+      [{ name: '원더 블랙 펫', probability: 100, category: '희귀' }],
       'https://example.com/probability',
       '2026-08-27T00:00:00.000Z',
       1,
       true,
       () => 0,
     );
-    expect(output).toContain('[원더 블랙] 원더 블랙 펫');
+    expect(output).toContain('[블랙] 원더 블랙 펫');
     expect(output).not.toContain('https://example.com/probability');
+    expect(output).not.toContain('기준: Nexon 공식 확률 페이지');
+    expect(output).not.toContain('실제 구매가 아닌');
   });
   it('formats nine normal Boutique Gift draws and one Fever Time draw', () => {
     const output = formatBoutiqueGiftDraw(

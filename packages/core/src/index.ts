@@ -566,7 +566,8 @@ export function formatWonderBerryDraw(
     showResults,
     random,
     false,
-    (item) => (item.name.includes('원더 블랙') ? `[원더 블랙] ${item.name}` : item.name),
+    (item) => (item.category?.includes('희귀') ? `[블랙] ${item.name}` : item.name),
+    false,
   );
 }
 
