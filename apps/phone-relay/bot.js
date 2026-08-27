@@ -5,8 +5,9 @@ var CONFIG = {
   sharedSecret: ''
 };
 
+// MessengerBot R passes: room, message, sender, isGroupChat, replier, imageDB, packageName.
 // eslint-disable-next-line no-unused-vars
-function response(room, sender, message) {
+function response(room, message, sender, isGroupChat, replier, imageDB, packageName) {
   if (typeof message !== 'string' || message.trim().charAt(0) !== '!') return;
   if (!CONFIG.endpoint || !CONFIG.sharedSecret) return;
   var eventId = Date.now().toString(36) + Math.random().toString(36).slice(2);
