@@ -935,14 +935,13 @@ export function formatBossForceBoost(args: string[] = []): string {
   if (args.length > 0) throw new Error('INVALID_USAGE');
   return [
     '[어센틱 보스 포스 보정]',
-    '┌──────────────┬──────────────────┬──────────┬────────────┐',
-    '│ 보스         │ 난이도·페이즈     │ 100%     │ 125%       │',
-    '├──────────────┼──────────────────┼──────────┼────────────┤',
-    ...authenticBossForceRows.map(
-      (row) =>
-        `│ ${row.boss.padEnd(10, ' ')} │ ${row.phaseOrDifficulty.padEnd(16, ' ')} │ ${String(row.normal).padStart(8, ' ')} │ ${String(row.bonus).padStart(10, ' ')} │`,
-    ),
-    '└──────────────┴──────────────────┴──────────┴────────────┘',
+    '────────────',
+    ...authenticBossForceRows.flatMap((row) => [
+      `• ${row.boss} (${row.phaseOrDifficulty})`,
+      `  └ 100% 피해 포스: ${row.normal}`,
+      `  └ 125% 피해 포스: ${row.bonus}`,
+      '',
+    ]),
     '※ 어센틱 포스 +50 달성 시 125% 피해가 적용됩니다.',
     '출처: https://matsu1207.tistory.com/771?category=1218857',
   ].join('\n');
