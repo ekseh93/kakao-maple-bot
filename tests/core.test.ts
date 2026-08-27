@@ -198,8 +198,10 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
       args: ['기어드락', '1', '11'],
     });
   });
-  it('T-012 trims and deduplicates choices', () =>
-    expect(chooseItems(' A, A, B')).toMatch(/^(A|B)$/));
+  it('T-012 trims and deduplicates comma or space-separated choices', () => {
+    expect(chooseItems(' A, A, B')).toMatch(/^(A|B)$/);
+    expect(chooseItems(' A A B')).toMatch(/^(A|B)$/);
+  });
   it('T-013 recommends the complete food list with a boosted farming option', () => {
     const probabilities = foodProbabilities();
     const normal = probabilities.find((item) => item.name === '김치찌개')!;
