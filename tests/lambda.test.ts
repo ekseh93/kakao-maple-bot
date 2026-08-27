@@ -473,6 +473,27 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(10);
     expect(result.reply).toContain('실제 구매가 아닌');
   });
+  it('handles ten weighted Wonder Berry draws', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findWonderBerry: vi.fn().mockResolvedValue({
+        items: [
+          { name: '테스트 원더 블랙 펫', probability: 3.32 },
+          { name: '테스트 원더 쿠키', probability: 15.02 },
+        ],
+        sourceUrl: 'https://maplestory.nexon.com/Guide/CashShop/Probability/WispsWonderBerry',
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!원더베리'), roomId: 'wonder-room', senderId: 'wonder-sender' },
+      { ...env, ALLOWED_ROOMS: 'wonder-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[위습의 원더베리 10회 뽑기]');
+    expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(10);
+    expect(result.reply).toContain('실제 구매가 아닌');
+  });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {
       findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),

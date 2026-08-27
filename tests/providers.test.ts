@@ -240,6 +240,24 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       'https://maplestory.nexon.com/Guide/CashShop/Probability',
     );
   });
+  it('maps the latest official Wonder Berry probability table', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        '<h3>&lt;old&gt;</h3><table><tr><th>구분</th><th>아이템명</th><th>획득확률</th></tr><tr><td>노멀</td><td>오래된 아이템</td><td>50%</td></tr></table><h3>&lt;latest&gt;</h3><table><tr><th>구분</th><th>아이템명</th><th>획득확률</th></tr><tr><td>희귀</td><td>최신 펫</td><td>3.32%</td></tr><tr><td>노멀</td><td>원더 쿠키</td><td>15.02%</td></tr></table>',
+        { status: 200, headers: { 'content-type': 'text/html' } },
+      ),
+    );
+    const result = await createNexonClient(undefined, fetcher).findWonderBerry?.(
+      new AbortController().signal,
+    );
+    expect(result?.items).toEqual([
+      { name: '최신 펫', probability: 3.32 },
+      { name: '원더 쿠키', probability: 15.02 },
+    ]);
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      'https://maplestory.nexon.com/Guide/CashShop/Probability/WispsWonderBerry',
+    );
+  });
   it('maps eight official experience history snapshots', async () => {
     const fetcher = vi
       .fn()

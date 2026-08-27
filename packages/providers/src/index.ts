@@ -20,6 +20,7 @@ export type NexonClient = {
   findNotice?(signal: AbortSignal): Promise<NoticeList>;
   findEvents?(signal: AbortSignal): Promise<EventList>;
   findRoyalStyles?(signal: AbortSignal): Promise<RoyalStyleList>;
+  findWonderBerry?(signal: AbortSignal): Promise<WonderBerryList>;
 };
 export type ExperienceSnapshot = {
   date: string;
@@ -69,6 +70,7 @@ export type EventItem = {
 export type EventList = { events: EventItem[]; fetchedAt: string };
 export type RoyalStyleItem = { name: string; probability: number };
 export type RoyalStyleList = { items: RoyalStyleItem[]; sourceUrl: string; fetchedAt: string };
+export type WonderBerryList = { items: RoyalStyleItem[]; sourceUrl: string; fetchedAt: string };
 export type StockQuote = {
   code: string;
   name?: string;
@@ -140,8 +142,13 @@ function decodeHtml(value: string): string {
     .trim();
 }
 
-function parseRoyalStylePage(html: string, sourceUrl: string): RoyalStyleList {
-  const table = html.match(/<table\b[\s\S]*?획득확률[\s\S]*?<\/table>/i)?.[0];
+function parseProbabilityPage(
+  html: string,
+  sourceUrl: string,
+  tablePosition: 'first' | 'last' = 'first',
+): RoyalStyleList {
+  const tables = html.match(/<table\b[\s\S]*?획득확률[\s\S]*?<\/table>/gi) ?? [];
+  const table = tablePosition === 'last' ? tables.at(-1) : tables[0];
   if (!table) throw new Error('PROVIDER_SCHEMA');
   const items: RoyalStyleItem[] = [];
   for (const row of table.match(/<tr\b[\s\S]*?<\/tr>/gi) ?? []) {
@@ -538,7 +545,14 @@ export function createNexonClient(
       const sourceUrl = 'https://maplestory.nexon.com/Guide/CashShop/Probability';
       const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
-      return parseRoyalStylePage(await response.text(), sourceUrl);
+      return parseProbabilityPage(await response.text(), sourceUrl);
+    },
+    async findWonderBerry(signal) {
+      const sourceUrl =
+        'https://maplestory.nexon.com/Guide/CashShop/Probability/WispsWonderBerry';
+      const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return parseProbabilityPage(await response.text(), sourceUrl, 'last');
     },
   };
 }

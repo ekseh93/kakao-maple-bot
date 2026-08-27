@@ -13,13 +13,14 @@ export type CommandName =
   | 'sunday'
   | 'fragment'
   | 'royal'
+  | 'wonderBerry'
   | 'experience'
   | 'character'
   | 'stock'
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
-export const HELP = `[봇 도움말]\n!캐릭터 닉네임 (또는 !정보 닉네임)\n!헥사 닉네임\n!무릉 닉네임\n!유니온 닉네임\n!장비 닉네임\n!공지\n!이벤트\n!썬데이\n!조각\n!로얄\n!경험치 닉네임 (또는 /경험치 닉네임)\n!심볼 여로 1 20 (또는 !심볼계산)\n!심볼 기어드락 1 11\n!가위 / !바위 / !보\n!골라 짜장,짬뽕\n!뭐먹지 한식\n!주식 005930\n!상태 (관리자 전용)`;
+export const HELP = `[봇 도움말]\n!캐릭터 닉네임 (또는 !정보 닉네임)\n!헥사 닉네임\n!무릉 닉네임\n!유니온 닉네임\n!장비 닉네임\n!공지\n!이벤트\n!썬데이\n!조각\n!로얄\n!원더베리\n!경험치 닉네임 (또는 /경험치 닉네임)\n!심볼 여로 1 20 (또는 !심볼계산)\n!심볼 기어드락 1 11\n!가위 / !바위 / !보\n!골라 짜장,짬뽕\n!뭐먹지 한식\n!주식 005930\n!상태 (관리자 전용)`;
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
@@ -40,6 +41,7 @@ const aliases: Record<string, CommandName> = {
   썬데이: 'sunday',
   조각: 'fragment',
   로얄: 'royal',
+  원더베리: 'wonderBerry',
   경험치: 'experience',
   가위: 'rps',
   바위: 'rps',
@@ -312,9 +314,28 @@ export function formatRoyalDraw(
   fetchedAt: string,
   random = Math.random,
 ): string {
+  return formatWeightedDraw('[로얄스타일 10회 뽑기]', items, sourceUrl, fetchedAt, random);
+}
+
+export function formatWonderBerryDraw(
+  items: RoyalStyleItem[],
+  sourceUrl: string,
+  fetchedAt: string,
+  random = Math.random,
+): string {
+  return formatWeightedDraw('[위습의 원더베리 10회 뽑기]', items, sourceUrl, fetchedAt, random);
+}
+
+function formatWeightedDraw(
+  title: string,
+  items: RoyalStyleItem[],
+  sourceUrl: string,
+  fetchedAt: string,
+  random: () => number,
+): string {
   const draws = drawRoyalStyles(items, 10, random);
   return [
-    '[로얄스타일 10회 뽑기]',
+    title,
     ...draws.map((item, index) => `${index + 1}. ${item.name} (${item.probability.toFixed(1)}%)`),
     `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
     sourceUrl,

@@ -21,6 +21,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('parses the fragment price command', () =>
     expect(parseCommand('!조각')).toEqual({ name: 'fragment', args: [] }));
+  it('parses the Wonder Berry command', () =>
+    expect(parseCommand('!원더베리')).toEqual({ name: 'wonderBerry', args: [] }));
   it('draws ten royal items using weighted probabilities', () => {
     const draws = drawRoyalStyles(
       [

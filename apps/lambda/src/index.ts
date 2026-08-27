@@ -1,6 +1,7 @@
 import {
   chooseItems,
   formatRoyalDraw,
+  formatWonderBerryDraw,
   formatSymbol,
   HELP,
   parseCommand,
@@ -23,6 +24,7 @@ import {
   type UnionCharacter,
   type NoticeList,
   type RoyalStyleList,
+  type WonderBerryList,
 } from '@kakao-maple-bot/providers';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
@@ -65,6 +67,7 @@ const experienceCache = new Map<string, { value: ExperienceHistory; expiresAt: n
 let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
+let wonderBerryCache: { value: WonderBerryList; expiresAt: number } | undefined;
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -149,6 +152,7 @@ export async function handleMessage(
   if (noticeCache && noticeCache.expiresAt <= now) noticeCache = undefined;
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
+  if (wonderBerryCache && wonderBerryCache.expiresAt <= now) wonderBerryCache = undefined;
   if (!message.eventId || seen.has(message.eventId))
     return { reply: null, requestId, cache: 'bypass' };
   seen.set(message.eventId, now);
@@ -349,6 +353,31 @@ export async function handleMessage(
         royalCache = { value: royal, expiresAt: now + 5 * 60_000 };
         return {
           reply: formatRoyalDraw(royal.items, royal.sourceUrl, royal.fetchedAt),
+          requestId,
+          cache: 'miss',
+        };
+      }
+      case 'wonderBerry': {
+        if (wonderBerryCache && wonderBerryCache.expiresAt > now)
+          return {
+            reply: formatWonderBerryDraw(
+              wonderBerryCache.value.items,
+              wonderBerryCache.value.sourceUrl,
+              wonderBerryCache.value.fetchedAt,
+            ),
+            requestId,
+            cache: 'hit',
+          };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findWonderBerry) throw new Error('NOT_CONFIGURED');
+        const wonderBerry = await client.findWonderBerry(timeoutSignal());
+        wonderBerryCache = { value: wonderBerry, expiresAt: now + 5 * 60_000 };
+        return {
+          reply: formatWonderBerryDraw(
+            wonderBerry.items,
+            wonderBerry.sourceUrl,
+            wonderBerry.fetchedAt,
+          ),
           requestId,
           cache: 'miss',
         };
