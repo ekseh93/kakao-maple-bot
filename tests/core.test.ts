@@ -11,6 +11,7 @@ import {
   formatFoodRecommendation,
   foodProbabilities,
   formatWonderBerryDraw,
+  formatBoutiqueGiftDraw,
 } from '@kakao-maple-bot/core';
 
 describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
@@ -42,6 +43,18 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     );
     expect(output).toContain('[원더 블랙] 원더 블랙 펫');
     expect(output).not.toContain('https://example.com/probability');
+  });
+  it('formats nine normal Boutique Gift draws and one Fever Time draw', () => {
+    const output = formatBoutiqueGiftDraw(
+      [{ name: '부티크 티켓 1개', probability: 100 }],
+      [{ name: '부티크 티켓 10개', probability: 100 }],
+      'https://example.com/boutique',
+      '2026-08-27T00:00:00.000Z',
+      () => 0,
+    );
+    expect(output).toContain('[부티크 기프트 10개 열기]');
+    expect(output).toContain('9. 부티크 티켓 1개');
+    expect(output).toContain('10. [피버 타임] 부티크 티켓 10개');
   });
   it('uses the shared count and result options for Wonder Berry', () =>
     expect(parseRoyalOptions(['25', 'false'])).toEqual({ count: 25, showResults: false }));

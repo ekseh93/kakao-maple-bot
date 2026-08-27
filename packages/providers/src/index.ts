@@ -24,6 +24,7 @@ export type NexonClient = {
   findSunday?(signal: AbortSignal): Promise<EventItem | null>;
   findRoyalStyles?(signal: AbortSignal): Promise<RoyalStyleList>;
   findWonderBerry?(signal: AbortSignal): Promise<WonderBerryList>;
+  findBoutiqueGift?(signal: AbortSignal): Promise<BoutiqueGiftList>;
   findLunaCrystalSweet?(
     kind: '일반' | '스페셜',
     signal: AbortSignal,
@@ -105,6 +106,12 @@ export type EventList = { events: EventItem[]; fetchedAt: string };
 export type RoyalStyleItem = { name: string; probability: number };
 export type RoyalStyleList = { items: RoyalStyleItem[]; sourceUrl: string; fetchedAt: string };
 export type WonderBerryList = { items: RoyalStyleItem[]; sourceUrl: string; fetchedAt: string };
+export type BoutiqueGiftList = {
+  normalItems: RoyalStyleItem[];
+  feverItems: RoyalStyleItem[];
+  sourceUrl: string;
+  fetchedAt: string;
+};
 export type LunaCrystalSweetList = {
   kind: '일반' | '스페셜';
   items: RoyalStyleItem[];
@@ -734,6 +741,18 @@ export function createNexonClient(
       const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
       return parseProbabilityPage(await response.text(), sourceUrl, 'last');
+    },
+    async findBoutiqueGift(signal) {
+      const sourceUrl = 'https://maplestory.nexon.com/Guide/CashShop/Probability/BoutiqueGift';
+      const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      const html = await response.text();
+      return {
+        normalItems: parseProbabilityPage(html, sourceUrl, 'first').items,
+        feverItems: parseProbabilityPage(html, sourceUrl, 'last').items,
+        sourceUrl,
+        fetchedAt: new Date().toISOString(),
+      };
     },
     async findLunaCrystalSweet(kind, signal) {
       const sourceUrl =

@@ -583,6 +583,25 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('실제 구매가 아닌');
     expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');
   });
+  it('handles ten Boutique Gift openings with Fever Time on the tenth', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findBoutiqueGift: vi.fn().mockResolvedValue({
+        normalItems: [{ name: '티켓 1개', probability: 100 }],
+        feverItems: [{ name: '티켓 10개', probability: 100 }],
+        sourceUrl: 'https://maplestory.nexon.com/Guide/CashShop/Probability/BoutiqueGift',
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!부티크'), roomId: 'boutique-room', senderId: 'boutique-sender' },
+      { ...env, ALLOWED_ROOMS: 'boutique-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[부티크 기프트 10개 열기]');
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
+    expect(result.reply).toContain('10. [피버 타임] 티켓 10개');
+  });
   it('supports a custom Wonder Berry count and hides detailed results', async () => {
     const nexon = {
       findCharacter: vi.fn(),

@@ -381,6 +381,25 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       'https://maplestory.nexon.com/Guide/CashShop/Probability/WispsWonderBerry',
     );
   });
+  it('maps normal and Fever Time Boutique Gift probability tables', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '<table><tr><th>구분</th><th>아이템명</th><th>획득확률</th></tr><tr><td>일반</td><td>티켓 1개</td><td>90%</td></tr><tr><td>일반</td><td>티켓 10개</td><td>10%</td></tr></table><table><tr><th>구분</th><th>아이템명</th><th>획득확률</th></tr><tr><td>피버</td><td>티켓 10개</td><td>100%</td></tr></table>',
+          { status: 200, headers: { 'content-type': 'text/html' } },
+        ),
+      );
+    const result = await createNexonClient(undefined, fetcher).findBoutiqueGift?.(
+      new AbortController().signal,
+    );
+    expect(result?.normalItems).toEqual([
+      { name: '티켓 1개', probability: 90 },
+      { name: '티켓 10개', probability: 10 },
+    ]);
+    expect(result?.feverItems).toEqual([{ name: '티켓 10개', probability: 100 }]);
+    expect(fetcher.mock.calls[0]?.[0]).toContain('BoutiqueGift');
+  });
   it('maps the selected official Luna Crystal Sweet probability table', async () => {
     const fetcher = vi
       .fn()

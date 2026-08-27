@@ -2,6 +2,7 @@ import {
   chooseItems,
   formatRoyalDraw,
   formatWonderBerryDraw,
+  formatBoutiqueGiftDraw,
   formatLunaCrystalSweetDraw,
   formatLunaCrystalDreamDraw,
   formatSymbol,
@@ -33,6 +34,7 @@ import {
   type InvenClient,
   type RoyalStyleList,
   type WonderBerryList,
+  type BoutiqueGiftList,
   type WeatherSnapshot,
   type LunaCrystalSweetList,
 } from '@kakao-maple-bot/providers';
@@ -81,6 +83,7 @@ let invenCache: { value: InvenTopPostList; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 let wonderBerryCache: { value: WonderBerryList; expiresAt: number } | undefined;
+let boutiqueGiftCache: { value: BoutiqueGiftList; expiresAt: number } | undefined;
 const lunaSweetCache = new Map<
   '일반' | '스페셜',
   { value: LunaCrystalSweetList; expiresAt: number }
@@ -181,6 +184,7 @@ export async function handleMessage(
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
   if (wonderBerryCache && wonderBerryCache.expiresAt <= now) wonderBerryCache = undefined;
+  if (boutiqueGiftCache && boutiqueGiftCache.expiresAt <= now) boutiqueGiftCache = undefined;
   for (const [kind, entry] of lunaSweetCache)
     if (entry.expiresAt <= now) lunaSweetCache.delete(kind);
   for (const [kind, entry] of lunaDreamCache)
@@ -432,6 +436,34 @@ export async function handleMessage(
             wonderBerry.fetchedAt,
             options.count,
             options.showResults,
+          ),
+          requestId,
+          cache: 'miss',
+        };
+      }
+      case 'boutiqueGift': {
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        if (boutiqueGiftCache && boutiqueGiftCache.expiresAt > now)
+          return {
+            reply: formatBoutiqueGiftDraw(
+              boutiqueGiftCache.value.normalItems,
+              boutiqueGiftCache.value.feverItems,
+              boutiqueGiftCache.value.sourceUrl,
+              boutiqueGiftCache.value.fetchedAt,
+            ),
+            requestId,
+            cache: 'hit',
+          };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findBoutiqueGift) throw new Error('NOT_CONFIGURED');
+        const boutiqueGift = await client.findBoutiqueGift(timeoutSignal());
+        boutiqueGiftCache = { value: boutiqueGift, expiresAt: now + 5 * 60_000 };
+        return {
+          reply: formatBoutiqueGiftDraw(
+            boutiqueGift.normalItems,
+            boutiqueGift.feverItems,
+            boutiqueGift.sourceUrl,
+            boutiqueGift.fetchedAt,
           ),
           requestId,
           cache: 'miss',
