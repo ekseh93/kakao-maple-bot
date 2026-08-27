@@ -740,6 +740,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('기온: 28.4°C');
     expect(result.reply).toContain('습도: 72%');
     expect(result.reply).toContain('PM2.5: 8.2');
+    expect(result.reply).not.toContain('조회:');
+    expect(result.reply).not.toContain('Open-Meteo 모델 기반');
   });
   it('handles the local Korean and Japanese lotto command', async () => {
     const result = await handleMessage(

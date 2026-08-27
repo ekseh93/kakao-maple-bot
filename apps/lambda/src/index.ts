@@ -870,8 +870,6 @@ function formatWeather(weather: WeatherSnapshot): string {
     `습도: ${weather.humidityPercent.toFixed(0)}%`,
     `미세먼지 PM10: ${weather.pm10 !== undefined ? `${weather.pm10.toFixed(1)} μg/m³` : '정보 없음'}`,
     `초미세먼지 PM2.5: ${weather.pm25 !== undefined ? `${weather.pm25.toFixed(1)} μg/m³` : '정보 없음'}`,
-    `조회: ${weather.fetchedAt}`,
-    '※ 전 세계 지역 검색 및 Open-Meteo 모델 기반 참고 정보입니다.',
   ].join('\n');
 }
 function formatStock(q: StockQuote): string {
