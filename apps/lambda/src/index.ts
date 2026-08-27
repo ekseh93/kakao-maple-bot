@@ -290,6 +290,20 @@ export async function handleMessage(
         eventCache = { value: events, expiresAt: now + 5 * 60_000 };
         return { reply: formatEvents(events), requestId, cache: 'miss' };
       }
+      case 'sunday': {
+        if (eventCache && eventCache.expiresAt > now) {
+          const reply = formatSunday(eventCache.value);
+          if (reply) return { reply, requestId, cache: 'hit' };
+          eventCache = undefined;
+        }
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findEvents) throw new Error('NOT_CONFIGURED');
+        const events = await client.findEvents(timeoutSignal());
+        eventCache = { value: events, expiresAt: now + 5 * 60_000 };
+        const reply = formatSunday(events);
+        if (!reply) throw new Error('NOT_FOUND');
+        return { reply, requestId, cache: 'miss' };
+      }
       case 'experience': {
         const name = validateCharacterName(parsed.args[0]);
         const cached = experienceCache.get(name);
@@ -476,6 +490,20 @@ function formatEvents(c: EventList): string {
     included += 1;
   }
   return `${result}${footer}\n(응답 제한으로 ${c.events.length - included}건은 생략)`;
+}
+function formatSunday(c: EventList): string | null {
+  const event = c.events.find((item) => item.title.includes('썬데이'));
+  if (!event) return null;
+  return [
+    '[썬데이 메이플]',
+    event.title,
+    event.startDate || event.endDate
+      ? `기간: ${(event.startDate ?? '?').slice(0, 10)}~${(event.endDate ?? '?').slice(0, 10)}`
+      : '',
+    event.url,
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 function formatStock(q: StockQuote): string {
   return [

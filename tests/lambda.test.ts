@@ -414,6 +414,31 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('2026-08-01~2026-08-31');
     expect(result.reply).toContain('https://maplestory.nexon.com/News/Event/1');
   });
+  it('handles the latest Sunday Maple event', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findEvents: vi.fn().mockResolvedValue({
+        events: [
+          {
+            title: '썬데이 메이플 8월 30일',
+            url: 'https://maplestory.nexon.com/News/Event/30',
+            startDate: '2026-08-30T00:00:00.000Z',
+            endDate: '2026-08-30T23:59:59.000Z',
+          },
+        ],
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!썬데이'), roomId: 'sunday-room', senderId: 'sunday-sender' },
+      { ...env, ALLOWED_ROOMS: 'sunday-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[썬데이 메이플]');
+    expect(result.reply).toContain('썬데이 메이플 8월 30일');
+    expect(result.reply).toContain('기간: 2026-08-30~2026-08-30');
+    expect(result.reply).toContain('https://maplestory.nexon.com/News/Event/30');
+  });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {
       findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),
