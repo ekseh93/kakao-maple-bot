@@ -47,8 +47,6 @@ resource "aws_lambda_function" "bot" {
       NOTICE_ALERT_ENABLED = tostring(var.notice_alert_enabled)
       NOTICE_ALERT_KEYWORDS = var.notice_alert_keywords
       NEXON_API_KEY     = var.nexon_api_key
-      SOL_ERDA_FRAGMENT_PRICE = var.sol_erda_fragment_price
-      SOL_ERDA_FRAGMENT_PRICE_UPDATED_AT = var.sol_erda_fragment_price_updated_at
       KRX_AUTH_KEY      = var.krx_auth_key
       TIINGO_TOKEN      = var.tiingo_token
     }

@@ -65,18 +65,6 @@ variable "nexon_api_key" {
   default     = ""
 }
 
-variable "sol_erda_fragment_price" {
-  description = "Manually maintained Elysium Sol Erda fragment price in mesos per item. Not a live auction feed."
-  type        = string
-  default     = ""
-}
-
-variable "sol_erda_fragment_price_updated_at" {
-  description = "Date or timestamp of the manually maintained fragment price."
-  type        = string
-  default     = ""
-}
-
 variable "krx_auth_key" {
   description = "KRX Open API auth key. Keep this outside Git."
   type        = string

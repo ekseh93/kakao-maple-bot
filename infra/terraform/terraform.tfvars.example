@@ -11,7 +11,5 @@ notice_alert_keywords = "채널 점검,마이너버전,클라이언트"
 # environment-driven tfvars, or a CI secret manager.
 bot_shared_secret = ""
 nexon_api_key     = ""
-sol_erda_fragment_price = ""
-sol_erda_fragment_price_updated_at = ""
 krx_auth_key      = ""
 tiingo_token      = ""

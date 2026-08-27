@@ -79,14 +79,6 @@
 
 Nexon Open API의 `character/hexamatrix`에서 장착 중인 HEXA 코어명, 레벨, 종류, 연결 스킬을 조회합니다. 카카오톡에서 읽기 쉽도록 캐릭터명·장착 코어 수·코어 유형·코어명·레벨·연결 스킬을 고정 템플릿으로 표시하며, 응답은 1,000자 이내로 제한합니다. HEXA 성장 계산은 공식 성장표 fixture가 확정된 후 별도 명령으로 추가합니다.
 
-### !조각
-
-```text
-!조각
-```
-
-Terraform의 `sol_erda_fragment_price`에 운영자가 입력한 엘리시움 기준 솔 에르다 조각 가격을 표시합니다. Nexon Open API에는 경매장 실시간 시세 API가 없으므로 자동 경매장 조회가 아니며, `sol_erda_fragment_price_updated_at`에 입력한 갱신일도 함께 표시합니다. 가격이 설정되지 않으면 설정 안내만 반환합니다.
-
 ### !로얄
 
 ```text

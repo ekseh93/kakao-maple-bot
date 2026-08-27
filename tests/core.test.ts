@@ -26,8 +26,6 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('!unknown')?.name).toBe('help');
     expect(parseCommand('!유챔 테스트')).toEqual({ name: 'unionChampion', args: ['테스트'] });
   });
-  it('parses the fragment price command', () =>
-    expect(parseCommand('!조각')).toEqual({ name: 'fragment', args: [] }));
   it('parses the Wonder Berry command', () =>
     expect(parseCommand('!원더베리')).toEqual({ name: 'wonderBerry', args: [] }));
   it('labels Wonder Black results and omits the source URL', () => {

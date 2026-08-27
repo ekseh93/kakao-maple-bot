@@ -34,12 +34,6 @@ Parameters:
     Type: String
     NoEcho: true
     Default: ''
-  SolErdaFragmentPrice:
-    Type: String
-    Default: ''
-  SolErdaFragmentPriceUpdatedAt:
-    Type: String
-    Default: ''
   KrxAuthKey:
     Type: String
     NoEcho: true
@@ -83,8 +77,6 @@ Resources:
           NOTICE_ALERT_ENABLED: !Ref NoticeAlertEnabled
           NOTICE_ALERT_KEYWORDS: !Ref NoticeAlertKeywords
           NEXON_API_KEY: !Ref NexonApiKey
-          SOL_ERDA_FRAGMENT_PRICE: !Ref SolErdaFragmentPrice
-          SOL_ERDA_FRAGMENT_PRICE_UPDATED_AT: !Ref SolErdaFragmentPriceUpdatedAt
           KRX_AUTH_KEY: !Ref KrxAuthKey
           TIINGO_TOKEN: !Ref TiingoToken
 
