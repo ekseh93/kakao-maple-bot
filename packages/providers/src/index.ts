@@ -204,6 +204,22 @@ function decodeHtml(value: string): string {
     .trim();
 }
 
+function parseLatestSundayEventPage(html: string): EventItem | null {
+  const pattern =
+    /<a\s+href="(\/News\/Event\/(?:Ongoing|Closed)\/\d+(?:\?[^\"]*)?)"[^>]*>[\s\S]*?<em\s+class="event_listMt">([\s\S]*?)<\/em>[\s\S]*?<\/a>[\s\S]*?<dd\s+class="date">\s*<p>(\d{4}\.\d{2}\.\d{2})/i;
+  const match = html.match(pattern);
+  if (!match) return null;
+  const title = decodeHtml(match[2] ?? '');
+  const date = (match[3] ?? '').replaceAll('.', '-');
+  if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('PROVIDER_SCHEMA');
+  return {
+    title,
+    url: `https://maplestory.nexon.com${match[1]}`,
+    startDate: date,
+    endDate: date,
+  };
+}
+
 function parseInvenTopPosts(html: string, boardUrl: string): InvenTopPostList {
   const posts: InvenTopPost[] = [];
   const subjectPattern = /<a\b[^>]*class=["'][^"']*subject-link[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
@@ -681,7 +697,11 @@ export function createNexonClient(
           };
         }
       }
-      return null;
+      const sourceUrl =
+        'https://maplestory.nexon.com/News/Event/Closed?search=%EC%8D%AC%EB%8D%B0%EC%9D%B4';
+      const eventResponse = await fetchWithRetry(fetcher, sourceUrl, { signal });
+      if (!eventResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return parseLatestSundayEventPage(await eventResponse.text());
     },
     async findRoyalStyles(signal) {
       const sourceUrl = 'https://maplestory.nexon.com/Guide/CashShop/Probability';
