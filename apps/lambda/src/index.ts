@@ -15,6 +15,7 @@ import {
 } from '@kakao-maple-bot/core';
 import {
   createNexonClient,
+  createInvenClient,
   createStockClient,
   type Character,
   type DojangCharacter,
@@ -28,6 +29,8 @@ import {
   type UnionCharacter,
   type UnionChampion,
   type NoticeList,
+  type InvenTopPostList,
+  type InvenClient,
   type RoyalStyleList,
   type WonderBerryList,
   type WeatherSnapshot,
@@ -57,6 +60,7 @@ export type Message = {
 const defaultNoticeAlertKeywords = ['채널 점검', '마이너버전', '클라이언트'];
 type Dependencies = {
   nexon?: NexonClient;
+  inven?: InvenClient;
   stock?: StockClient;
   now?: () => Date;
   seen?: Set<string>;
@@ -73,6 +77,7 @@ const unionChampionCache = new Map<string, { value: UnionChampion; expiresAt: nu
 const equipmentCache = new Map<string, { value: EquipmentCharacter; expiresAt: number }>();
 const experienceCache = new Map<string, { value: ExperienceHistory; expiresAt: number }>();
 let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
+let invenCache: { value: InvenTopPostList; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 let wonderBerryCache: { value: WonderBerryList; expiresAt: number } | undefined;
@@ -172,6 +177,7 @@ export async function handleMessage(
   for (const [query, entry] of stockCandidatesCache)
     if (entry.expiresAt <= now) stockCandidatesCache.delete(query);
   if (noticeCache && noticeCache.expiresAt <= now) noticeCache = undefined;
+  if (invenCache && invenCache.expiresAt <= now) invenCache = undefined;
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
   if (wonderBerryCache && wonderBerryCache.expiresAt <= now) wonderBerryCache = undefined;
@@ -330,6 +336,14 @@ export async function handleMessage(
         const notices = await client.findNotice(timeoutSignal());
         noticeCache = { value: notices, expiresAt: now + 5 * 60_000 };
         return { reply: formatNotice(notices), requestId, cache: 'miss' };
+      }
+      case 'inven': {
+        if (invenCache && invenCache.expiresAt > now)
+          return { reply: formatInven(invenCache.value), requestId, cache: 'hit' };
+        const inven = deps.inven ?? createInvenClient();
+        const posts = await inven.findTopPosts(timeoutSignal());
+        invenCache = { value: posts, expiresAt: now + 60_000 };
+        return { reply: formatInven(posts), requestId, cache: 'miss' };
       }
       case 'event': {
         if (eventCache && eventCache.expiresAt > now)
@@ -674,6 +688,16 @@ function formatNotice(c: NoticeList): string {
         `- ${notice.title}${notice.date ? ` (${notice.date.slice(0, 10)})` : ''}\n  ${notice.url}`,
     ),
     `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
+  ]
+    .join('\n')
+    .slice(0, 1000);
+}
+function formatInven(c: InvenTopPostList): string {
+  return [
+    '[메이플 인벤 10추글]',
+    ...c.posts.map((post, index) => `${index + 1}. ${post.title}`),
+    '',
+    `10추 게시판: ${c.boardUrl}`,
   ]
     .join('\n')
     .slice(0, 1000);

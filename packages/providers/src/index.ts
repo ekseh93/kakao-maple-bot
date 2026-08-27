@@ -86,6 +86,15 @@ export type EquipmentItem = {
 export type EquipmentCharacter = { name: string; items: EquipmentItem[]; fetchedAt: string };
 export type NoticeItem = { title: string; url: string; date?: string };
 export type NoticeList = { notices: NoticeItem[]; fetchedAt: string };
+export type InvenTopPost = { title: string };
+export type InvenTopPostList = {
+  posts: InvenTopPost[];
+  boardUrl: string;
+  fetchedAt: string;
+};
+export type InvenClient = {
+  findTopPosts(signal: AbortSignal): Promise<InvenTopPostList>;
+};
 export type EventItem = {
   title: string;
   url: string;
@@ -186,6 +195,21 @@ function decodeHtml(value: string): string {
     .replace(/&#39;/gi, "'")
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function parseInvenTopPosts(html: string, boardUrl: string): InvenTopPostList {
+  const posts: InvenTopPost[] = [];
+  const subjectPattern = /<a\b[^>]*class=["'][^"']*subject-link[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
+  for (const match of html.matchAll(subjectPattern)) {
+    const title = decodeHtml(match[1] ?? '')
+      .replace(/^\[[^\]]+\]\s*/, '')
+      .trim();
+    if (!title || posts.some((post) => post.title === title)) continue;
+    posts.push({ title });
+    if (posts.length === 5) break;
+  }
+  if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
+  return { posts, boardUrl, fetchedAt: new Date().toISOString() };
 }
 
 function parseProbabilityPage(
@@ -850,6 +874,23 @@ const yahooPublicHeaders = {
   Accept: 'application/json',
   'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
 };
+
+export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
+  const boardUrl = 'https://www.inven.co.kr/board/maple/5974?my=chu';
+  return {
+    async findTopPosts(signal) {
+      const response = await fetchWithRetry(fetcher, boardUrl, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return parseInvenTopPosts(await response.text(), boardUrl);
+    },
+  };
+}
 
 export function createStockClient(
   krxAuthKey: string | undefined,

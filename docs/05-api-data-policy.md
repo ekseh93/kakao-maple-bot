@@ -130,6 +130,7 @@ MVP는 국내·미국 주식의 읽기 전용 일별 시세만 허용합니다.
 - KakaoTalk 운영정책
 - Nexon Open API 공지·필드·호출 제한
 - KRX/Tiingo API 인증·시세 정책
+- 인벤 공개 게시판의 이용약관·robots.txt·접속 제한
 - Maple.GG·Maplescouter 이용약관
 - 메이플 계산식과 최대 레벨
 

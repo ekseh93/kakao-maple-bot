@@ -1,7 +1,30 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createNexonClient, createStockClient } from '@kakao-maple-bot/providers';
+import {
+  createInvenClient,
+  createNexonClient,
+  createStockClient,
+} from '@kakao-maple-bot/providers';
 
 describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
+  it('maps the first five Inven 10-recommendation post titles', async () => {
+    const html = `
+      <div class="board-list"><a class="subject-link"><span class="category">[수다]</span> 첫 번째 글 </a>
+      <a class="subject-link"><span class="category">[정보]</span> 두 번째 글 </a>
+      <a class="subject-link"><span class="category">[수다]</span> 세 번째 글 </a>
+      <a class="subject-link"><span class="category">[인방]</span> 네 번째 글 </a>
+      <a class="subject-link"><span class="category">[정보]</span> 다섯 번째 글 </a>
+      <a class="subject-link">여섯 번째 글</a></div>`;
+    const fetcher = vi.fn().mockResolvedValue(new Response(html, { status: 200 }));
+    const result = await createInvenClient(fetcher).findTopPosts(new AbortController().signal);
+    expect(result.posts.map((post) => post.title)).toEqual([
+      '첫 번째 글',
+      '두 번째 글',
+      '세 번째 글',
+      '네 번째 글',
+      '다섯 번째 글',
+    ]);
+    expect(result.boardUrl).toBe('https://www.inven.co.kr/board/maple/5974?my=chu');
+  });
   it('maps Nexon character stats and HEXA summary without third-party access', async () => {
     const fetcher = vi
       .fn()

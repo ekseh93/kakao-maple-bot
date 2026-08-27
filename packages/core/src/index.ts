@@ -10,6 +10,7 @@ export type CommandName =
   | 'unionChampion'
   | 'equipment'
   | 'notice'
+  | 'inven'
   | 'event'
   | 'sunday'
   | 'royal'
@@ -23,7 +24,7 @@ export type CommandName =
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
-export const HELP = `[봇 도움말]\n!캐릭터 닉네임 (또는 !정보 닉네임)\n!헥사 닉네임\n!무릉 닉네임\n!유니온 닉네임\n!유챔 닉네임\n!장비 닉네임\n!공지\n!이벤트\n!썬데이\n!로얄\n!원더베리\n!루나스윗\n!루나드림\n!날씨 지역명\n!경험치 닉네임 (또는 /경험치 닉네임)\n!심볼 여로 1 20 (또는 !심볼계산)\n!심볼 기어드락 1 11\n!가위 / !바위 / !보\n!골라 짜장,짬뽕\n!뭐먹지\n!주식 이름\n!상태 (관리자 전용)`;
+export const HELP = `[봇 도움말]\n!캐릭터 닉네임 (또는 !정보 닉네임)\n!헥사 닉네임\n!무릉 닉네임\n!유니온 닉네임\n!유챔 닉네임\n!장비 닉네임\n!공지\n!이벤트\n!썬데이\n!인벤\n!로얄\n!원더베리\n!루나스윗\n!루나드림\n!날씨 지역명\n!경험치 닉네임 (또는 /경험치 닉네임)\n!심볼 여로 1 20 (또는 !심볼계산)\n!심볼 기어드락 1 11\n!가위 / !바위 / !보\n!골라 짜장,짬뽕\n!뭐먹지\n!주식 이름\n!상태 (관리자 전용)`;
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
@@ -41,6 +42,7 @@ const aliases: Record<string, CommandName> = {
   유챔: 'unionChampion',
   장비: 'equipment',
   공지: 'notice',
+  인벤: 'inven',
   이벤트: 'event',
   썬데이: 'sunday',
   선데이: 'sunday',

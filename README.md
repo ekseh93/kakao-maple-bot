@@ -34,6 +34,7 @@
 | 공지 키워드 자동 알림       | 새 공지 자동 전송                     | Nexon Open API + MessengerBot R 폴링           |
 | 진행 중 이벤트              | !이벤트                               | Nexon Open API                                 |
 | 썬데이 메이플               | !썬데이 / !선데이                     | Nexon Open API 공지 목록                       |
+| 인벤 10추글                 | !인벤                                 | 메이플 인벤 공개 10추 게시판                  |
 | 경험치 히스토리             | !경험치 닉네임 / /경험치 닉네임       | Nexon Open API 날짜별 기본 정보                |
 | 심볼 계산                   | !심볼 여로 1 20 / !심볼 기어드락 1 11 | 성장치·지역별 강화 메소 표 기반 자체 계산식    |
 | 외부 상세보기               | 캐릭터 조회 응답의 링크               | Maple.GG 링크만 생성                           |
@@ -113,7 +114,7 @@ pnpm audit
 
 Lambda 로컬 검증은 비밀을 저장소에 넣지 않고 환경 변수 또는 로컬 설정으로 주입합니다. 예시는 `.env.example`을 참고하세요. 기본 허용 방은 비어 있어 명시적으로 설정하지 않으면 모든 메시지를 무시합니다.
 
-구현된 범위는 Phase 0 기반, Phase 1 순수 명령, Phase 2 인증·방 권한·kill switch·중복 이벤트 TTL·방 rate limit, Phase 3 Nexon 어댑터와 링크 전용 외부 상세보기, Phase 4 MessengerBot R 릴레이 스크립트와 운영 문서, Phase 5 읽기 전용 KRX/Tiingo/Yahoo Finance 주식 어댑터, Phase 6 로컬 안전성 보완입니다. 공급자 테스트는 fetch mock으로 수행하며, 승인된 도쿄 AWS Lambda 배포와 API smoke test만 별도로 수행했습니다.
+구현된 범위는 Phase 0 기반, Phase 1 순수 명령, Phase 2 인증·방 권한·kill switch·중복 이벤트 TTL·방 rate limit, Phase 3 Nexon 어댑터와 링크 전용 외부 상세보기, Phase 4 MessengerBot R 릴레이 스크립트와 운영 문서, Phase 5 읽기 전용 KRX/Tiingo/Yahoo Finance 주식 어댑터와 인벤 공개 게시판 어댑터, Phase 6 로컬 안전성 보완입니다. 공급자 테스트는 fetch mock으로 수행하며, 승인된 도쿄 AWS Lambda 배포와 API smoke test만 별도로 수행했습니다.
 
 GitHub secret 등록, Nexon/KRX/Tiingo 키 발급, 공기계 설치·컴파일·카카오 E2E는 별도 승인과 준비가 필요한 후속 단계입니다. Maple.GG와 Maplescouter에는 링크 생성 외 HTTP 요청을 하지 않습니다.
 

@@ -29,6 +29,20 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toBeNull();
     expect(nexon.findCharacter).not.toHaveBeenCalled();
   });
+
+  it('formats Inven 10-recommendation titles and board link', async () => {
+    const inven = {
+      findTopPosts: vi.fn().mockResolvedValue({
+        posts: [{ title: '첫 글' }, { title: '둘째 글' }],
+        boardUrl: 'https://www.inven.co.kr/board/maple/5974?my=chu',
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage({ ...message('!인벤'), roomId: 'room-a' }, env, { inven });
+    expect(result.reply).toContain('[메이플 인벤 10추글]');
+    expect(result.reply).toContain('1. 첫 글');
+    expect(result.reply).toContain('10추 게시판: https://www.inven.co.kr/board/maple/5974?my=chu');
+  });
   it('T-001 does not spend command rate budget on ordinary chat', async () => {
     const roomEnv = { ...env, ALLOWED_ROOMS: 'chat-room' };
     const ordinary = await handleMessage(
