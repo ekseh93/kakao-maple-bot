@@ -326,19 +326,25 @@ function formatCharacter(c: Character): string {
     .slice(0, 1000);
 }
 function formatHexa(c: HexaCharacter): string {
-  const lines = c.cores.map((core) => {
-    const skills = core.linkedSkills.length ? ` / ${core.linkedSkills.join(', ')}` : '';
-    return `- ${core.name} Lv.${core.level} (${core.type})${skills}`;
-  });
-  return [
-    `[HEXA 코어]`,
-    `${c.name}`,
-    `코어 수: ${c.cores.length}`,
-    ...lines,
-    `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
-  ]
-    .join('\n')
-    .slice(0, 1000);
+  const lines = [
+    '[HEXA 코어]',
+    `캐릭터: ${c.name}`,
+    `장착 코어: ${c.cores.length}개`,
+    '────────────',
+  ];
+  for (const core of c.cores) {
+    lines.push(
+      `▸ ${core.type}`,
+      `  코어: ${core.name}`,
+      `  레벨: Lv.${core.level}`,
+      `  연결 스킬: ${core.linkedSkills.length ? core.linkedSkills.join(', ') : '없음'}`,
+    );
+  }
+  lines.push('────────────', `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`);
+  const full = lines.join('\n');
+  if (full.length <= 1000) return full;
+  const footer = `\n… ${c.cores.length}개 중 일부만 표시 (응답 제한)`;
+  return full.slice(0, 1000 - footer.length).trimEnd() + footer;
 }
 function formatDojang(c: DojangCharacter): string {
   const minutes = Math.floor(c.timeSeconds / 60);
