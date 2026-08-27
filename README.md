@@ -67,6 +67,7 @@
 15. [트러블슈팅 기록](docs/13-troubleshooting.md)
 16. [Terraform AWS 설계](infra/terraform/README.md)
 17. [변경 기록](docs/14-change-log.md)
+18. [공기계 E2E 체크리스트](docs/16-phone-e2e-checklist.md)
 
 ## 구현 원칙
 
