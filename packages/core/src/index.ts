@@ -1259,12 +1259,15 @@ export function formatLunaCrystalDreamDraw(
     showResults,
     random,
     false,
-    (item) =>
-      item.category?.includes('쁘띠') || item.name.includes('쁘띠')
-        ? `[쁘띠] ${item.name}`
-        : item.category?.includes('드림') || item.name.includes('드림')
-          ? `[뒤진펫] ${item.name}`
-          : item.name,
+    (item) => {
+      if (Math.abs(item.probability - 8.4) < 0.001) return `[뒤진라벨] ${item.name}`;
+      if (Math.abs(item.probability - 6.8) < 0.001) return `[쁘띠] ${item.name}`;
+      if (item.category?.includes('쁘띠') || item.name.includes('쁘띠'))
+        return `[쁘띠] ${item.name}`;
+      if (item.category?.includes('드림') || item.name.includes('드림'))
+        return `[뒤진펫] ${item.name}`;
+      return item.name;
+    },
     false,
   );
 }
