@@ -11,6 +11,7 @@ import {
   createNexonClient,
   createStockClient,
   type Character,
+  type HexaCharacter,
   type NexonClient,
   type StockClient,
   type StockQuote,
@@ -46,6 +47,7 @@ const roomRequests = new Map<string, number[]>();
 const senderRequests = new Map<string, number[]>();
 let globalRequests: number[] = [];
 const characterCache = new Map<string, { value: Character; expiresAt: number }>();
+const hexaCache = new Map<string, { value: HexaCharacter; expiresAt: number }>();
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -206,6 +208,18 @@ export async function handleMessage(
         characterCache.set(name, { value: character, expiresAt: now + 5 * 60_000 });
         return { reply: formatCharacter(character), requestId, cache: 'miss' };
       }
+      case 'hexa': {
+        const name = validateCharacterName(parsed.args[0]);
+        const cached = hexaCache.get(name);
+        if (cached && cached.expiresAt > now)
+          return { reply: formatHexa(cached.value), requestId, cache: 'hit' };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findHexa) throw new Error('NOT_CONFIGURED');
+        const hexa = await client.findHexa(name, timeoutSignal());
+        if (!hexa) throw new Error('NOT_FOUND');
+        hexaCache.set(name, { value: hexa, expiresAt: now + 5 * 60_000 });
+        return { reply: formatHexa(hexa), requestId, cache: 'miss' };
+      }
       case 'stock': {
         if (env.STOCK_ENABLED !== 'true') throw new Error('NOT_CONFIGURED');
         const code = parsed.args[0] ?? '';
@@ -242,6 +256,21 @@ function formatCharacter(c: Character): string {
     `상세: https://maple.gg/u/${encodeURIComponent(c.name)}`,
   ]
     .filter(Boolean)
+    .join('\n')
+    .slice(0, 1000);
+}
+function formatHexa(c: HexaCharacter): string {
+  const lines = c.cores.map((core) => {
+    const skills = core.linkedSkills.length ? ` / ${core.linkedSkills.join(', ')}` : '';
+    return `- ${core.name} Lv.${core.level} (${core.type})${skills}`;
+  });
+  return [
+    `[HEXA 코어]`,
+    `${c.name}`,
+    `코어 수: ${c.cores.length}`,
+    ...lines,
+    `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
+  ]
     .join('\n')
     .slice(0, 1000);
 }

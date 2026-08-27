@@ -29,6 +29,37 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       true,
     );
   });
+  it('maps the official HEXA core response', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ocid: 'ocid-fixture' }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            date: '2026-08-27T00:00:00+09:00',
+            character_hexa_core_equipment: [
+              {
+                hexa_core_name: '테스트 마스터리',
+                hexa_core_level: 30,
+                hexa_core_type: '마스터리',
+                linked_skill: [{ hexa_skill_id: '테스트 스킬' }],
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      );
+    const result = await createNexonClient('fixture-key', fetcher).findHexa?.(
+      '테스트',
+      new AbortController().signal,
+    );
+    expect(result).toMatchObject({
+      name: '테스트',
+      cores: [{ name: '테스트 마스터리', level: 30 }],
+    });
+  });
   it('maps KIS quote fixture without order or account endpoints', async () => {
     const fetcher = vi
       .fn()

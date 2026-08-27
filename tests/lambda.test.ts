@@ -250,6 +250,22 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       ).reply,
     ).toContain('찾지 못했습니다');
   });
+  it('handles HEXA core lookup with a bounded response', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findHexa: vi.fn().mockResolvedValue({
+        name: '헥사캐릭터',
+        cores: [{ name: '마스터리', level: 30, type: '마스터리', linkedSkills: ['스킬'] }],
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!헥사 헥사캐릭터'), roomId: 'hexa-room' },
+      { ...env, ALLOWED_ROOMS: 'hexa-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('마스터리 Lv.30');
+  });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {
       findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),

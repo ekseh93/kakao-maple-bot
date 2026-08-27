@@ -54,3 +54,9 @@
   - 그랜드 어센틱: 탈라하트, 기어드락
 - 지역별로 심볼 종류를 구분하되, 레벨업 필요 성장치는 공식 아케인/어센틱 성장 테이블을 계열별로 공통 적용합니다. 최신 지역 기어드락은 공식 업데이트의 그랜드 어센틱심볼 명칭을 반영했습니다.
 - 근거: [메이플스토리 아케인포스/어센틱포스 가이드](https://maplestory.nexon.com/Guide/N23GameInformation/Articles/396), [기어드락 업데이트 안내](https://gi.maplestory.nexon.com/Update/797)
+
+## 2026-08-27 HEXA 코어 조회 추가
+
+- `!헥사 <닉네임>`으로 Nexon Open API `character/hexamatrix`의 장착 HEXA 코어 요약을 제공합니다.
+- 코어명·레벨·종류·연결 스킬만 반환하며, 응답은 1,000자로 제한합니다.
+- API fixture를 이용한 provider·Lambda 테스트를 추가했습니다.
