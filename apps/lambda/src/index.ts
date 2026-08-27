@@ -321,6 +321,12 @@ function formatCharacter(c: Character): string {
     c.hexaCoreCount !== undefined
       ? `HEXA: 코어 ${c.hexaCoreCount}개 / 총 레벨 ${c.hexaCoreLevelTotal ?? 0}`
       : '',
+    ...(c.hexaCores && c.hexaCores.length > 0
+      ? [
+          'HEXA 코어 목록:',
+          ...c.hexaCores.map((core) => `▸ ${core.type}: ${core.name} Lv.${core.level}`),
+        ]
+      : []),
     `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
     `상세: https://maple.gg/u/${encodeURIComponent(c.name)}`,
   ]

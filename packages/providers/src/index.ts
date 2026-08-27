@@ -7,6 +7,7 @@ export type Character = {
   combatPower?: number;
   hexaCoreCount?: number;
   hexaCoreLevelTotal?: number;
+  hexaCores?: Array<{ type: string; name: string; level: number }>;
   fetchedAt: string;
 };
 export type NexonClient = {
@@ -164,7 +165,11 @@ export function createNexonClient(
       );
       if (!hexa.ok) throw new Error(hexa.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
       const hexaBody = (await hexa.json()) as {
-        character_hexa_core_equipment?: Array<{ hexa_core_level?: number }> | null;
+        character_hexa_core_equipment?: Array<{
+          hexa_core_type?: string;
+          hexa_core_name?: string;
+          hexa_core_level?: number;
+        }> | null;
       };
       if (
         hexaBody.character_hexa_core_equipment !== null &&
@@ -172,7 +177,14 @@ export function createNexonClient(
       )
         throw new Error('PROVIDER_SCHEMA');
       const hexaCores = hexaBody.character_hexa_core_equipment ?? [];
-      if (hexaCores.some((core) => !Number.isInteger(core.hexa_core_level)))
+      if (
+        hexaCores.some(
+          (core) =>
+            typeof core.hexa_core_type !== 'string' ||
+            typeof core.hexa_core_name !== 'string' ||
+            !Number.isInteger(core.hexa_core_level),
+        )
+      )
         throw new Error('PROVIDER_SCHEMA');
       return {
         name: characterName ?? name,
@@ -183,6 +195,11 @@ export function createNexonClient(
         ...(combatPower !== undefined ? { combatPower } : {}),
         hexaCoreCount: hexaCores.length,
         hexaCoreLevelTotal: hexaCores.reduce((sum, core) => sum + (core.hexa_core_level ?? 0), 0),
+        hexaCores: hexaCores.map((core) => ({
+          type: core.hexa_core_type!,
+          name: core.hexa_core_name!,
+          level: core.hexa_core_level!,
+        })),
         fetchedAt: new Date().toISOString(),
       };
     },

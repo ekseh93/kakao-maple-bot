@@ -28,7 +28,10 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            character_hexa_core_equipment: [{ hexa_core_level: 30 }, { hexa_core_level: 15 }],
+            character_hexa_core_equipment: [
+              { hexa_core_type: '마스터리', hexa_core_name: '테스트 코어', hexa_core_level: 30 },
+              { hexa_core_type: '강화', hexa_core_name: '강화 코어', hexa_core_level: 15 },
+            ],
           }),
           { status: 200 },
         ),
@@ -41,6 +44,10 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result?.combatPower).toBe(12345678);
     expect(result?.hexaCoreCount).toBe(2);
     expect(result?.hexaCoreLevelTotal).toBe(45);
+    expect(result?.hexaCores).toEqual([
+      { type: '마스터리', name: '테스트 코어', level: 30 },
+      { type: '강화', name: '강화 코어', level: 15 },
+    ]);
     expect(fetcher).toHaveBeenCalledTimes(4);
     expect(fetcher.mock.calls.every(([url]) => String(url).includes('open.api.nexon.com'))).toBe(
       true,

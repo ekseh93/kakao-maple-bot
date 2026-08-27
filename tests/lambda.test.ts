@@ -231,6 +231,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
           combatPower: 12345678,
           hexaCoreCount: 2,
           hexaCoreLevelTotal: 45,
+          hexaCores: [{ type: '마스터리', name: '테스트 코어', level: 30 }],
           fetchedAt: '2026-08-26T00:00:00.000Z',
         })
         .mockResolvedValueOnce(null),
@@ -244,6 +245,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(success.reply).toContain('Lv. 280');
     expect(success.reply).toContain('전투력: 12,345,678');
     expect(success.reply).toContain('HEXA: 코어 2개 / 총 레벨 45');
+    expect(success.reply).toContain('HEXA 코어 목록:\n▸ 마스터리: 테스트 코어 Lv.30');
     expect(success.reply).toContain('https://maple.gg/u/%ED%85%8C%EC%8A%A4%ED%8A%B8');
     expect(
       (
