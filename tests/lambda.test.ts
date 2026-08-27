@@ -393,7 +393,13 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
             grade: 'S',
             className: '궁수',
             slot: 1,
-            abilities: [{ name: '챔피언 휘장', value: '경험치 획득량 +15%' }],
+            abilities: [
+              {
+                name: '챔피언 휘장',
+                value:
+                  '올스탯 20, 최대 HP/MP 1000 증가, 공격력/마력 10 증가, 보스 몬스터 공격 시 데미지 5% 증가, 크리티컬 데미지 3.00% 증가, 방어율 무시 5% 증가',
+              },
+            ],
           },
         ],
         fetchedAt: '2026-08-27T00:00:00.000Z',
@@ -410,7 +416,14 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('[유니온 챔피언 능력치]');
     expect(result.reply).toContain('메르세데스 (S 궁수)');
-    expect(result.reply).toContain('챔피언 휘장: 경험치 획득량 +15%');
+    expect(result.reply).toContain('[휘장 효과 합계]');
+    expect(result.reply).toContain('- 올스탯: 20');
+    expect(result.reply).toContain('- 최대 HP/MP: 1,000');
+    expect(result.reply).toContain('- 공격력/마력: 10');
+    expect(result.reply).toContain('- 보스 몬스터 공격 시 데미지: 5.00%');
+    expect(result.reply).toContain('- 크리티컬 데미지: 3.00%');
+    expect(result.reply).toContain('- 방어율 무시: 5.00%');
+    expect(result.reply).not.toContain('챔피언 휘장:');
     expect(nexon.findUnionChampion).toHaveBeenCalledWith('유챔캐릭터', expect.anything());
   });
   it('handles equipment lookup with a readable template', async () => {

@@ -729,6 +729,28 @@ function formatUnion(c: UnionCharacter): string {
     .join('\n');
 }
 function formatUnionChampion(c: UnionChampion): string {
+  const totals = {
+    allStat: 0,
+    hpMp: 0,
+    attackMagic: 0,
+    bossDamage: 0,
+    criticalDamage: 0,
+    ignoreDefense: 0,
+  };
+  const addTotal = (key: keyof typeof totals, value: string, pattern: RegExp) => {
+    const match = value.match(pattern);
+    if (match) totals[key] += Number(match[1]);
+  };
+  for (const champion of c.champions) {
+    for (const ability of champion.abilities) {
+      addTotal('allStat', ability.value, /올스탯\s*([\d.]+)/);
+      addTotal('hpMp', ability.value, /최대\s*HP\/MP\s*([\d.]+)/);
+      addTotal('attackMagic', ability.value, /공격력\/마력\s*([\d.]+)/);
+      addTotal('bossDamage', ability.value, /보스 몬스터 공격 시 데미지\s*([\d.]+)%/);
+      addTotal('criticalDamage', ability.value, /크리티컬 데미지\s*([\d.]+)%/);
+      addTotal('ignoreDefense', ability.value, /방어율 무시\s*([\d.]+)%/);
+    }
+  }
   const lines = [
     '[유니온 챔피언 능력치]',
     `캐릭터: ${c.name}`,
@@ -738,9 +760,19 @@ function formatUnionChampion(c: UnionChampion): string {
   for (const champion of c.champions) {
     const detail = [champion.grade, champion.className].filter(Boolean).join(' ');
     lines.push(`▸ ${champion.name}${detail ? ` (${detail})` : ''}`);
-    for (const ability of champion.abilities) lines.push(`  - ${ability.name}: ${ability.value}`);
   }
-  lines.push('────────────', `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`);
+  lines.push(
+    '────────────',
+    '[휘장 효과 합계]',
+    `- 올스탯: ${totals.allStat.toLocaleString('ko-KR')}`,
+    `- 최대 HP/MP: ${totals.hpMp.toLocaleString('ko-KR')}`,
+    `- 공격력/마력: ${totals.attackMagic.toLocaleString('ko-KR')}`,
+    `- 보스 몬스터 공격 시 데미지: ${totals.bossDamage.toFixed(2)}%`,
+    `- 크리티컬 데미지: ${totals.criticalDamage.toFixed(2)}%`,
+    `- 방어율 무시: ${totals.ignoreDefense.toFixed(2)}%`,
+    '────────────',
+    `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
+  );
   const full = lines.join('\n');
   if (full.length <= 1000) return full;
   const footer = `\n… ${c.champions.length}명 중 일부만 표시 (응답 제한)`;
