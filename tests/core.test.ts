@@ -28,9 +28,17 @@ import {
   formatLunaCrystalDreamDraw,
   drawLottoNumbers,
   formatLotto,
+  FORMATTED_HELP,
 } from '@kakao-maple-bot/core';
 
 describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
+  it('keeps help commands grouped and aligned in two sections', () => {
+    expect(FORMATTED_HELP).toContain('【메이플스토리】');
+    expect(FORMATTED_HELP).toContain('【기타 기능】');
+    expect(FORMATTED_HELP).toContain('!보스포뻥');
+    expect(FORMATTED_HELP).toContain('!주식 <이름>');
+    expect(FORMATTED_HELP).toContain('│ 명령어               │ 설명                   │');
+  });
   it('T-001 ignores ordinary chat', () => expect(parseCommand('안녕하세요')).toBeNull());
   it('accepts slash experience history commands', () =>
     expect(parseCommand('/경험치 테스트')).toEqual({ name: 'experience', args: ['테스트'] }));
