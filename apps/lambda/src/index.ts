@@ -15,6 +15,7 @@ import {
   formatNetflixRecommendation,
   formatAnimeRecommendation,
   formatBossRewards,
+  formatBossRewardSummaries,
   formatMekaBerry,
   formatMepoEfficiency,
   formatMaxLevelSymbolEffects,
@@ -242,7 +243,7 @@ export async function handleMessage(
     switch (parsed.name) {
       case 'help':
         return {
-          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개\n!메포효율 — 메포 대비 경험치 효율\n!금주의신상 — 금주의 신상 최신 글\n!디코 — 디스코드 링크\n!심볼만렙 — 어센틱 심볼 만렙 효과`,
+          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!보스보상 — 스우~벨로나 주요 보상표\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개\n!메포효율 — 메포 대비 경험치 효율\n!금주의신상 — 금주의 신상 최신 글\n!디코 — 디스코드 링크\n!심볼만렙 — 어센틱 심볼 만렙 효과`,
           requestId,
           cache: 'bypass',
         };
@@ -282,6 +283,8 @@ export async function handleMessage(
         };
       case 'boss':
         return { reply: formatBossRewards(parsed.args), requestId, cache: 'bypass' };
+      case 'bossRewards':
+        return { reply: formatBossRewardSummaries(parsed.args), requestId, cache: 'bypass' };
       case 'mekaBerry':
         return { reply: formatMekaBerry(parsed.args), requestId, cache: 'bypass' };
       case 'mepoEfficiency':

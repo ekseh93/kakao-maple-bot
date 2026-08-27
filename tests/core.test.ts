@@ -15,6 +15,7 @@ import {
   formatNetflixRecommendation,
   formatAnimeRecommendation,
   formatBossRewards,
+  formatBossRewardSummaries,
   formatMekaBerry,
   formatMepoEfficiency,
   formatMaxLevelSymbolEffects,
@@ -70,6 +71,17 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('8,740,000,000');
     expect(output).toContain('출처: https://matsu1207.tistory.com/757');
     expect(() => formatBossRewards(['닉네임'])).toThrow('INVALID_USAGE');
+  });
+  it('parses and formats the boss reward summary from Swoo to Velona', () => {
+    expect(parseCommand('!보스보상')).toEqual({ name: 'bossRewards', args: [] });
+    const output = formatBossRewardSummaries();
+    expect(output).toContain('[보스 주요 보상]');
+    expect(output).toContain('스우');
+    expect(output).toContain('검은 마법사');
+    expect(output).toContain('벨로나');
+    expect(output).toContain('앱솔랩스 방어구/무기 상자');
+    expect(output).toContain('출처: https://matsu1207.tistory.com/937');
+    expect(() => formatBossRewardSummaries(['스우'])).toThrow('INVALID_USAGE');
   });
   it('parses and formats Meka Berry rates for levels 280 through 299', () => {
     expect(parseCommand('!메카베리 280')).toEqual({ name: 'mekaBerry', args: ['280'] });
