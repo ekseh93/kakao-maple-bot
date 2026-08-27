@@ -136,7 +136,9 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output.indexOf('선데이몬파')).toBeLessThan(output.indexOf('하이마운틴'));
     expect(output.indexOf('하이마운틴')).toBeLessThan(output.indexOf('메카베리'));
     expect(output).toContain('17.8070');
-    expect(output).toContain('출처: https://www.inven.co.kr/board/maple/2304/48140');
+    expect(output).toContain('효율(1%/1만): 17.8070');
+    expect(output).not.toContain('┌──');
+    expect(output).not.toContain('출처: https://www.inven.co.kr/board/maple/2304/48140');
     expect(() => formatMepoEfficiency(['284'])).toThrow('INVALID_USAGE');
   });
   it('parses and formats max-level Authentic Symbol effects', () => {
@@ -148,7 +150,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('아르테리아');
     expect(output).toContain('벨로나 공격 시 데미지 +20%');
     expect(output).toContain('기어드락');
-    expect(output).toContain('출처: https://matsu1207.tistory.com/1052');
+    expect(output).not.toContain('출처: https://matsu1207.tistory.com/1052');
     expect(() => formatMaxLevelSymbolEffects(['11'])).toThrow('INVALID_USAGE');
   });
   it('parses aliases and ignores unknown commands', () => {
@@ -158,6 +160,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('!unknown')).toBeNull();
     expect(parseCommand('!정보 테스트')).toEqual({ name: 'character', args: ['테스트'] });
     expect(parseCommand('!유챔 테스트')).toEqual({ name: 'unionChampion', args: ['테스트'] });
+    expect(parseCommand('!ㅁㅁㅈ')).toEqual({ name: 'food', args: [] });
   });
   it('parses the Wonder Berry command', () =>
     expect(parseCommand('!원더베리')).toEqual({ name: 'wonderBerry', args: [] }));
@@ -185,6 +188,29 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
       () => 0,
     );
     expect(output).toContain('[원더블랙] 곰곰 사원');
+  });
+  it('labels official Wonder Black names even without category metadata', () => {
+    const output = formatWonderBerryDraw(
+      [
+        { name: '토토 사원', probability: 5 },
+        { name: '펭펭 사원', probability: 5 },
+      ],
+      'https://example.com/probability',
+      '2026-08-27T00:00:00.000Z',
+      2,
+      true,
+      () => 0,
+    );
+    expect(output).toContain('[원더블랙] 토토 사원');
+    const secondOutput = formatWonderBerryDraw(
+      [{ name: '펭펭 사원', probability: 5 }],
+      'https://example.com/probability',
+      '2026-08-27T00:00:00.000Z',
+      1,
+      true,
+      () => 0,
+    );
+    expect(secondOutput).toContain('[원더블랙] 펭펭 사원');
   });
   it('formats nine normal Boutique Gift draws and one Fever Time draw', () => {
     const output = formatBoutiqueGiftDraw(
@@ -224,10 +250,32 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
       '2026-08-27T00:00:00.000Z',
       1,
       true,
+      () => 0,
+    );
+    expect(luna).toContain('[쁘띠] 루나 쁘띠펫 테스트');
+    const sweetLuna = formatLunaCrystalSweetDraw(
+      '일반',
+      [
+        { name: '루나 쁘띠펫 테스트', probability: 50, category: '루나 쁘띠 펫' },
+        { name: '루나 스윗펫 테스트', probability: 50, category: '루나 스윗 펫' },
+      ],
+      'https://example.com/luna',
+      '2026-08-27T00:00:00.000Z',
+      1,
+      true,
       () => 0.75,
     );
-    expect(luna).toContain('[스윗] 루나 스윗펫 테스트');
-    expect(luna).not.toContain('[쁘티]');
+    expect(sweetLuna).toContain('[스윗] 루나 스윗펫 테스트');
+    const probabilityPetit = formatLunaCrystalSweetDraw(
+      '일반',
+      [{ name: '확률 쁘띠 펫', probability: 3.9 }],
+      'https://example.com/luna',
+      '2026-08-27T00:00:00.000Z',
+      1,
+      true,
+      () => 0,
+    );
+    expect(probabilityPetit).toContain('[쁘띠] 확률 쁘띠 펫');
     expect(luna).not.toContain('기준: Nexon');
     expect(luna).not.toContain('https://example.com/luna');
   });
@@ -368,13 +416,11 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('formats a date-stable entertainment fortune for a birth year', () => {
     const now = new Date('2026-08-27T03:00:00.000Z');
-    const first = formatFortune(['00년생'], now);
+    const first = formatFortune(['2000-01-01', '남자', '양력'], now);
     expect(first).toContain('[오늘의 운세]');
-    expect(first).toContain('출생연도: 2000년생');
-    expect(first).toBe(formatFortune(['00년생'], now));
-    expect(formatFortune(['93'], now)).toContain('출생연도: 1993년생');
-    expect(formatFortune(['93년생'], now)).toContain('출생연도: 1993년생');
-    expect(formatFortune(['2000'], now)).toContain('출생연도: 2000년생');
+    expect(first).toContain('생년월일: 2000-01-01 (남자 / 양력)');
+    expect(first).toBe(formatFortune(['2000-01-01', '남자', '양력'], now));
+    expect(formatFortune(['1993-08-15', '여자', '음력'], now)).toContain('출생시간: 미입력');
   });
   it('rejects the retired food category argument', () =>
     expect(() => formatFoodRecommendation(['한식'])).toThrow('INVALID_USAGE'));

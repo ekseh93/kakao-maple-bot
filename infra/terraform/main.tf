@@ -40,15 +40,18 @@ resource "aws_lambda_function" "bot" {
 
   environment {
     variables = {
-      BOT_SHARED_SECRET = var.bot_shared_secret
-      BOT_ENABLED       = tostring(var.bot_enabled)
-      ALLOWED_ROOMS     = var.allowed_rooms
-      STOCK_ENABLED     = tostring(var.stock_enabled)
-      NOTICE_ALERT_ENABLED = tostring(var.notice_alert_enabled)
-      NOTICE_ALERT_KEYWORDS = var.notice_alert_keywords
-      NEXON_API_KEY     = var.nexon_api_key
-      KRX_AUTH_KEY      = var.krx_auth_key
-      TIINGO_TOKEN      = var.tiingo_token
+      BOT_SHARED_SECRET      = var.bot_shared_secret
+      BOT_ENABLED            = tostring(var.bot_enabled)
+      ALLOWED_ROOMS          = var.allowed_rooms
+      ADMIN_SENDERS          = var.admin_senders
+      STOCK_ENABLED          = tostring(var.stock_enabled)
+      NOTICE_ALERT_ENABLED   = tostring(var.notice_alert_enabled)
+      NOTICE_ALERT_KEYWORDS  = var.notice_alert_keywords
+      NEXON_API_KEY          = var.nexon_api_key
+      KRX_AUTH_KEY           = var.krx_auth_key
+      TIINGO_TOKEN           = var.tiingo_token
+      TMDB_READ_ACCESS_TOKEN = var.tmdb_read_access_token
+      TMDB_REGION            = var.tmdb_region
     }
   }
 

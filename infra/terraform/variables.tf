@@ -40,6 +40,12 @@ variable "allowed_rooms" {
   default     = ""
 }
 
+variable "admin_senders" {
+  description = "Comma-separated sender display names allowed to use !상태."
+  type        = string
+  default     = ""
+}
+
 variable "stock_enabled" {
   description = "Enable read-only KRX and Tiingo stock lookup."
   type        = bool
@@ -77,4 +83,22 @@ variable "tiingo_token" {
   type        = string
   sensitive   = true
   default     = ""
+}
+
+variable "tmdb_read_access_token" {
+  description = "TMDB API Read Access Token. Keep this outside Git."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "tmdb_region" {
+  description = "ISO 3166-1 region used for Netflix availability filtering."
+  type        = string
+  default     = "KR"
+
+  validation {
+    condition     = length(var.tmdb_region) == 2 && var.tmdb_region == upper(var.tmdb_region)
+    error_message = "tmdb_region must be a two-letter uppercase ISO country code, such as KR or JP."
+  }
 }

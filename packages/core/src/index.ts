@@ -1,3 +1,17 @@
+import { calculateDailyFortune } from './fortune-mcp-adapter.js';
+export { formatExchangeRates, type ExchangeRateView } from './exchange.js';
+export {
+  formatCinemaTheaters,
+  formatComparedProducts,
+  formatDaisoInventory,
+  formatDaisoProducts,
+  formatStores,
+  formatNationalFuelPrices,
+  formatLowestFuelStations,
+  formatNearbyPlaces,
+  formatDaisoProductDetail,
+} from './retail.js';
+
 export type CommandName =
   | 'help'
   | 'rps'
@@ -20,6 +34,12 @@ export type CommandName =
   | 'equipment'
   | 'notice'
   | 'inven'
+  | 'hotDeals'
+  | 'graphicsCard'
+  | 'monitor'
+  | 'japanTravelPosts'
+  | 'japanRestaurantPosts'
+  | 'manga'
   | 'mabbakDorosi'
   | 'mepoEfficiency'
   | 'weeklyNewProduct'
@@ -37,10 +57,18 @@ export type CommandName =
   | 'experience'
   | 'character'
   | 'stock'
+  | 'daiso'
+  | 'productCompare'
+  | 'stores'
+  | 'inventory'
+  | 'cinema'
+  | 'fuel'
+  | 'fuelStations'
+  | 'exchangeRate'
+  | 'nearbyPlaces'
+  | 'daisoProductDetail'
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
-
-export const HELP = `[봇 도움말]\n【메이플스토리】\n!정보 닉네임 — 캐릭터 조회\n!무릉 닉네임 — 무릉 기록\n!유니온 닉네임 — 유니온 요약\n!유챔 닉네임 — 유니온 챔피언\n!장비 닉네임 — 장비 요약\n!경험치 닉네임 — 경험치 이력\n!심볼 기어드락 1 11 — 심볼 계산\n!공지 — 공식 공지\n!이벤트 — 진행 이벤트\n!썬데이 / !선데이 — 썬데이 메이플\n!인벤 — 인벤 10추글\n!웹툰 — 네이버 웹툰 추천\n!부티크 — 부티크 기프트\n!로얄 — 로얄스타일\n!원더베리 — 위습의 원더베리\n!루나스윗 — 루나 크리스탈\n!루나드림 — 루나 크리스탈\n\n【기타 기능】\n!날씨 지역명 — 날씨 조회\n!가위 / !바위 / !보 — 가위바위보\n!골라 치킨 짬뽕 — 메뉴 선택\n!뭐먹지 — 메뉴 추천\n!일본여행 — 여행지 추천\n!운세 00년생 — 오늘의 운세\n!로또 — 한·일 번호 추천\n!넷플 — 넷플릭스 추천\n!애니 — 일본 애니 추천\n!주식 이름 — 주식 시세\n!상태 — 관리자 전용`;
 
 const helpRows = {
   maple: [
@@ -50,6 +78,8 @@ const helpRows = {
     ['!유챔 <닉네임>', '유니온 챔피언'],
     ['!장비 <닉네임>', '장비 요약'],
     ['!경험치 <닉네임>', '경험치 이력'],
+    ['!메카베리 <레벨>', '메카베리/크림슨 경험치'],
+    ['!메포효율', '메포 대비 BM 경치 효율표'],
     ['!심볼 <지역> 1 11', '심볼 계산'],
     ['!심볼만렙', '어센틱 심볼 만렙 효과'],
     ['!보스', '보스 결정 가격표'],
@@ -60,7 +90,7 @@ const helpRows = {
     ['!이벤트', '진행 이벤트'],
     ['!썬데이 / !선데이', '썬데이 메이플'],
     ['!인벤', '인벤 10추글'],
-    ['!메카베리 <레벨>', '메카베리 경험치'],
+    ['!디코', '디스코드 링크'],
   ],
   miniGames: [
     ['!부티크', '부티크 기프트'],
@@ -71,21 +101,36 @@ const helpRows = {
   ],
   other: [
     ['!날씨 <지역>', '현재 날씨'],
+    ['!기름 / !유가', '전국 평균 유가'],
+    ['!주유소', '전국 최저가 주유소 TOP 3'],
+    ['!환율', '달러·엔화 환율'],
+    ['!주변 <지역> [카테고리]', '주변 음식점·카페 검색'],
+    ['!상품상세 <다이소상품ID>', '다이소 상품 상세'],
+    ['!주변 <지역> [카테고리]', '주변 음식점·카페 검색'],
+    ['!상품상세 <다이소상품ID>', '다이소 상품 상세'],
     ['!가위 / !바위 / !보', '가위바위보'],
     ['!골라 <메뉴들>', '메뉴 선택'],
     ['!뭐먹지 !ㅁㅁㅈ', '메뉴 추천'],
     ['!일본여행', '여행지 추천'],
-    ['!운세 <출생연도>', '오늘의 운세'],
+    ['!운세 <생년월일> <성별> <양력/음력>', '출생시간 없는 운세'],
     ['!로또', '한·일 번호 추천'],
     ['!넷플', '넷플릭스 추천'],
     ['!애니', '일본 애니 추천'],
+    ['!만화', '나무위키 일본 만화 목록 랜덤 추천'],
     ['!웹툰', '네이버 웹툰 추천'],
+    ['!일본여행기', '디시인사이드 일본여행 최신 글 5개'],
+    ['!일본음식점', '디시인사이드 일본 음식점 최신 글 5개'],
+    ['!핫딜', '퀘이사존 최신 핫딜 5개'],
+    ['!글카', '퀘이사존 그래픽카드 최신 글 5개'],
+    ['!모니터', '디시인사이드 모니터 최신 글 10개'],
     ['!주식 <이름>', '주식 시세'],
-    ['!디코', '디스코드 링크'],
-    ['!마빡도로시', '최신 글 3개'],
-    ['!메포효율', '메포 대비 효율표'],
     ['!금주의신상', '금주의 신상'],
     ['!상태', '관리자 전용'],
+    ['!다이소 <상품>', '다이소 상품 검색'],
+    ['!상품비교 <상품>', '상품 가격 후보 비교'],
+    ['!매장 <브랜드> <지역>', '주변 매장 검색'],
+    ['!재고 다이소 <상품> <지역>', '다이소 재고 확인'],
+    ['!영화관 <지역>', '영화관 검색'],
   ],
 } as const;
 
@@ -106,6 +151,9 @@ export const FORMATTED_HELP = [
   ...formatHelpSection('기타 기능', helpRows.other),
 ].join('\n');
 
+// Kept as a compatibility export for consumers that imported the old help constant.
+export const HELP = FORMATTED_HELP;
+
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
   캐릭터: 'character',
@@ -125,6 +173,11 @@ const aliases: Record<string, CommandName> = {
   장비: 'equipment',
   공지: 'notice',
   인벤: 'inven',
+  핫딜: 'hotDeals',
+  글카: 'graphicsCard',
+  모니터: 'monitor',
+  일본여행기: 'japanTravelPosts',
+  일본음식점: 'japanRestaurantPosts',
   마빡도로시: 'mabbakDorosi',
   메포효율: 'mepoEfficiency',
   금주의신상: 'weeklyNewProduct',
@@ -148,15 +201,28 @@ const aliases: Record<string, CommandName> = {
   골라: 'choice',
   선택: 'choice',
   뭐먹지: 'food',
+  ㅁㅁㅈ: 'food',
   메뉴: 'food',
   뭐먹을까: 'food',
   일본여행: 'japanTravel',
   넷플: 'netflix',
   넷플릭스: 'netflix',
   애니: 'anime',
+  만화: 'manga',
   운세: 'fortune',
   로또: 'lotto',
   주식: 'stock',
+  다이소: 'daiso',
+  상품비교: 'productCompare',
+  매장: 'stores',
+  재고: 'inventory',
+  영화관: 'cinema',
+  기름: 'fuel',
+  유가: 'fuel',
+  주유소: 'fuelStations',
+  환율: 'exchangeRate',
+  주변: 'nearbyPlaces',
+  상품상세: 'daisoProductDetail',
   상태: 'status',
 };
 
@@ -645,7 +711,6 @@ export function formatMaxLevelSymbolEffects(args: string[] = []): string {
       ...item.effects.map((effect) => `  └ ${effect}`),
       '',
     ]),
-    '출처: https://matsu1207.tistory.com/1052',
   ].join('\n');
 }
 
@@ -687,15 +752,14 @@ export function formatMepoEfficiency(args: string[] = []): string {
   return [
     '[메포 대비 경험치 효율]',
     '기준: 284레벨 / 효율 높은 순',
-    '┌──┬────────────┬──────────┬──────────────────┬──────────────────┐',
-    '│순위│ 콘텐츠     │효율(1%/1만)│ 추가 경험치       │ 사용 메포         │',
-    '├──┼────────────┼──────────┼──────────────────┼──────────────────┤',
-    ...mesoPointEfficiencies.map(
-      (item, index) =>
-        `│${String(index + 1).padStart(2, ' ')}│ ${item.content.padEnd(10, ' ')} │ ${item.efficiency.toFixed(4).padStart(8, ' ')} │ ${item.experience.padEnd(16, ' ')} │ ${item.meso.padEnd(16, ' ')} │`,
-    ),
-    '└──┴────────────┴──────────┴──────────────────┴──────────────────┘',
-    '출처: https://www.inven.co.kr/board/maple/2304/48140',
+    '────────────',
+    ...mesoPointEfficiencies.flatMap((item, index) => [
+      `${index + 1}. ${item.content}`,
+      `   효율(1%/1만): ${item.efficiency.toFixed(4)}`,
+      `   추가 경험치: ${item.experience}`,
+      `   사용 메포: ${item.meso}`,
+      '',
+    ]),
   ].join('\n');
 }
 
@@ -963,6 +1027,26 @@ const netflixTitles = [
   '사냥개들',
   '살인자ㅇ난감',
 ] as const;
+const netflixCountryByTitle: Record<string, string> = {
+  '오징어 게임': 'KR',
+  '더 글로리': 'KR',
+  스위트홈: 'KR',
+  킹덤: 'KR',
+  지옥: 'KR',
+  '이상한 변호사 우영우': 'KR',
+  마스크걸: 'KR',
+  '더 에이트 쇼': 'KR',
+  사냥개들: 'KR',
+  살인자ㅇ난감: 'KR',
+  '기묘한 이야기': 'US',
+  브리저튼: 'US',
+  웬즈데이: 'US',
+  '종이의 집': 'ES',
+  나르코스: 'US',
+  '블랙 미러': 'GB',
+  '퀸스 갬빗': 'US',
+  'D.P.': 'KR',
+};
 
 const animeCatalog = {
   완결: [
@@ -997,8 +1081,48 @@ const animeCatalog = {
   ],
 } as const;
 
-export function formatNetflixRecommendation(random = Math.random): string {
-  return ['[넷플릭스 랜덤 추천]', `작품: ${choose([...netflixTitles], random)}`].join('\n');
+export function formatNetflixRecommendation(
+  random = Math.random,
+  titles: readonly (string | { title: string; country?: string })[] = netflixTitles,
+): string {
+  const selected = choose([...titles], random);
+  const title = typeof selected === 'string' ? selected : selected.title;
+  const country = typeof selected === 'string' ? netflixCountryByTitle[selected] : selected.country;
+  return [
+    '[넷플릭스 랜덤 추천]',
+    `작품: ${country ? `[${countryName(country)}] ` : ''}${title}`,
+  ].join('\n');
+}
+
+function countryName(code: string): string {
+  const names: Record<string, string> = {
+    KR: '한국',
+    JP: '일본',
+    US: '미국',
+    GB: '영국',
+    CN: '중국',
+    FR: '프랑스',
+    DE: '독일',
+    ES: '스페인',
+    IT: '이탈리아',
+    IN: '인도',
+  };
+  return names[code] ?? code;
+}
+
+export function formatHotDeals(
+  posts: readonly { title: string; url?: string }[],
+  boardUrl: string,
+): string {
+  if (posts.length === 0) throw new Error('NOT_FOUND');
+  return [
+    '[퀘이사존 최신 핫딜]',
+    ...posts.slice(0, 5).map((post, index) => `${index + 1}. ${post.title}\n   ${post.url ?? ''}`),
+    '',
+    `게시판: ${boardUrl}`,
+  ]
+    .join('\n')
+    .slice(0, 1000);
 }
 
 export function formatAnimeRecommendation(random = Math.random): string {
@@ -1011,66 +1135,50 @@ export function formatAnimeRecommendation(random = Math.random): string {
   ].join('\n');
 }
 
-const fortuneMessages = {
-  overall: [
-    '작은 기회가 좋은 흐름으로 이어지는 날입니다.',
-    '서두르기보다 순서를 지키면 운이 따릅니다.',
-    '새로운 제안은 메모해 두면 좋은 결과로 이어집니다.',
-    '익숙한 일에서도 의외의 행운을 발견할 수 있습니다.',
-  ],
-  work: [
-    '미뤄 둔 일을 하나 정리하면 집중력이 올라갑니다.',
-    '혼자 판단하기보다 주변 의견을 들으면 실수가 줄어듭니다.',
-    '짧고 명확하게 말할수록 협업운이 좋아집니다.',
-    '오전에 중요한 일을 먼저 처리해 보세요.',
-  ],
-  money: [
-    '충동구매를 한 번 미루면 금전운이 안정됩니다.',
-    '작은 절약이 생각보다 큰 도움이 됩니다.',
-    '오늘은 수익보다 지출 점검에 유리한 날입니다.',
-    '계획에 없는 결제는 내일 다시 확인하세요.',
-  ],
-  relationship: [
-    '먼저 건넨 짧은 인사가 분위기를 바꿉니다.',
-    '상대의 말을 끝까지 들으면 좋은 대화가 됩니다.',
-    '고마운 사람에게 안부를 전해 보세요.',
-    '가볍게 웃을 수 있는 대화가 행운을 부릅니다.',
-  ],
-  luckyItem: ['파란색 소품', '따뜻한 음료', '작은 메모장', '편한 운동화'],
-} as const;
-
-function fortuneIndex(seed: string, length: number): number {
-  let hash = 0;
-  for (const character of seed) hash = (hash * 31 + character.codePointAt(0)!) >>> 0;
-  return hash % length;
+export function formatMangaRecommendation(
+  items: readonly { title: string; url: string }[],
+  random = Math.random,
+): string {
+  const item = items[Math.floor(random() * items.length)];
+  if (!item) throw new Error('NOT_FOUND');
+  return ['[일본 만화 랜덤 추천]', `작품: ${item.title}`].join('\n');
 }
 
 export function formatFortune(args: string[] = [], now = new Date()): string {
-  if (args.length !== 1 || !/^(?:\d{2}|\d{4})(?:년생)?$/.test(args[0]!))
+  if (
+    args.length !== 3 ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(args[0]!) ||
+    !/^(?:남자|여자|남|여)$/.test(args[1]!) ||
+    !/^(?:양력|음력)$/.test(args[2]!)
+  )
     throw new Error('INVALID_USAGE');
-  const birthText = args[0]!.replace(/년생$/, '');
-  const birthYear =
-    birthText.length === 2
-      ? Number(birthText) <= 26
-        ? 2000 + Number(birthText)
-        : 1900 + Number(birthText)
-      : Number(birthText);
+  const birthDate = new Date(`${args[0]}T00:00:00Z`);
+  if (Number.isNaN(birthDate.getTime()) || birthDate.toISOString().slice(0, 10) !== args[0])
+    throw new Error('INVALID_USAGE');
+  const birthYear = Number(args[0]!.slice(0, 4));
   const currentYear = Number(
     new Intl.DateTimeFormat('en', { timeZone: 'Asia/Seoul', year: 'numeric' }).format(now),
   );
   if (birthYear < 1900 || birthYear > currentYear) throw new Error('INVALID_USAGE');
   const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(now);
-  const seed = `${date}:${birthYear}`;
+  const gender = args[1] === '남' ? '남자' : args[1] === '여' ? '여자' : args[1]!;
+  const result = calculateDailyFortune({
+    birthDate: args[0]!,
+    gender: gender as '남자' | '여자',
+    calendar: args[2] as '양력' | '음력',
+    targetDate: date,
+  });
   return [
     '[오늘의 운세]',
-    `출생연도: ${birthYear}년생`,
+    `생년월일: ${args[0]} (${args[1]} / ${args[2]})`,
+    '출생시간: 미입력',
     `기준일: ${date}`,
-    `총운: ${fortuneMessages.overall[fortuneIndex(seed + ':overall', fortuneMessages.overall.length)]}`,
-    `일/공부운: ${fortuneMessages.work[fortuneIndex(seed + ':work', fortuneMessages.work.length)]}`,
-    `금전운: ${fortuneMessages.money[fortuneIndex(seed + ':money', fortuneMessages.money.length)]}`,
-    `대인운: ${fortuneMessages.relationship[fortuneIndex(seed + ':relationship', fortuneMessages.relationship.length)]}`,
-    `행운 아이템: ${fortuneMessages.luckyItem[fortuneIndex(seed + ':item', fortuneMessages.luckyItem.length)]}`,
-    '※ 생년월일 기반 오락용 콘텐츠이며 실제 예측이나 투자·의료·법률 조언이 아닙니다.',
+    `총운: ${result.scores.overall}점 / ${result.overall}`,
+    `일·공부운: ${result.scores.work}점 / ${result.work}`,
+    `금전운: ${result.scores.money}점 / ${result.money}`,
+    `대인운: ${result.scores.relationship}점 / ${result.relationship}`,
+    `행운 아이템: ${result.luckyItem}`,
+    '※ 출생시간 미입력 기준 오락용 콘텐츠이며 실제 예측이나 투자·의료·법률 조언이 아닙니다.',
   ].join('\n');
 }
 
@@ -1178,6 +1286,7 @@ export function formatWonderBerryDraw(
   showResults = true,
   random = Math.random,
 ): string {
+  const wonderBlackNames = new Set(['토토 사원', '곰곰 사원', '펭펭 사원']);
   return formatWeightedDraw(
     `[위습의 원더베리 ${count}회 뽑기]`,
     items,
@@ -1188,7 +1297,9 @@ export function formatWonderBerryDraw(
     random,
     false,
     (item) =>
-      item.category?.includes('희귀') || item.probability <= 3.3
+      item.category?.includes('희귀') ||
+      item.probability <= 3.3 ||
+      wonderBlackNames.has(item.name.trim())
         ? `[원더블랙] ${item.name}`
         : item.name,
     false,
@@ -1230,8 +1341,10 @@ export function formatLunaCrystalSweetDraw(
     random,
     false,
     (item) =>
-      item.category?.includes('쁘띠') || item.name.includes('쁘띠')
-        ? `[쁘티] ${item.name}`
+      Math.abs(item.probability - 3.9) < 0.001 ||
+      item.category?.includes('쁘띠') ||
+      item.name.includes('쁘띠')
+        ? `[쁘띠] ${item.name}`
         : `[스윗] ${item.name}`,
     false,
   );

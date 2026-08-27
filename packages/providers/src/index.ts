@@ -88,6 +88,11 @@ export type InvenTopPostList = {
 export type InvenClient = {
   findTopPosts(signal: AbortSignal): Promise<InvenTopPostList>;
   findMabbakDorosiPosts?(signal: AbortSignal): Promise<InvenTopPostList>;
+  findHotDeals?(signal: AbortSignal): Promise<InvenTopPostList>;
+  findGraphicsCardPosts?(signal: AbortSignal): Promise<InvenTopPostList>;
+  findMonitorPosts?(signal: AbortSignal): Promise<InvenTopPostList>;
+  findJapanTravelPosts?(signal: AbortSignal): Promise<InvenTopPostList>;
+  findJapanRestaurantPosts?(signal: AbortSignal): Promise<InvenTopPostList>;
 };
 export type WebtoonItem = {
   titleId: number;
@@ -99,6 +104,79 @@ export type WebtoonItem = {
 export type WebtoonList = { items: WebtoonItem[]; fetchedAt: string };
 export type WebtoonClient = {
   findCurrentWebtoons(signal: AbortSignal): Promise<WebtoonList>;
+};
+export type MangaItem = { title: string; url: string };
+export type MangaList = { items: MangaItem[]; sourceUrl: string; fetchedAt: string };
+export type MangaClient = { findJapaneseManga(signal: AbortSignal): Promise<MangaList> };
+export type RetailProduct = {
+  id?: string;
+  name: string;
+  price?: number;
+  currency?: string;
+  soldOut?: boolean;
+  pickupAvailable?: boolean;
+  brand?: string;
+};
+export type RetailStore = {
+  name: string;
+  address?: string;
+  distanceKm?: number;
+  service: string;
+};
+export type RetailInventoryItem = {
+  storeName: string;
+  address?: string;
+  available?: boolean;
+  quantity?: number;
+};
+export type CinemaTheater = {
+  name: string;
+  address?: string;
+  distanceKm?: number;
+  service: string;
+};
+export type FuelPrice = { productName: string; price: number; diff?: number; tradeDate?: string };
+export type FuelStation = {
+  name: string;
+  brandName?: string;
+  price: number;
+  address?: string;
+  roadAddress?: string;
+};
+export type NearbyPlace = {
+  name: string;
+  category?: string;
+  address?: string;
+  roadAddress?: string;
+  phone?: string;
+  link?: string;
+};
+export type DaisoProductDetail = RetailProduct & { isNew?: boolean; imageUrl?: string };
+export type McpRetailClient = {
+  searchDaisoProducts(query: string, signal: AbortSignal): Promise<RetailProduct[]>;
+  compareProducts(query: string, signal: AbortSignal): Promise<RetailProduct[]>;
+  findStores(brand: string, location: string, signal: AbortSignal): Promise<RetailStore[]>;
+  checkDaisoInventory(
+    query: string,
+    location: string,
+    signal: AbortSignal,
+  ): Promise<RetailInventoryItem[]>;
+  findCinemaTheaters(location: string, signal: AbortSignal): Promise<CinemaTheater[]>;
+  findNationalFuelPrices(signal: AbortSignal): Promise<FuelPrice[]>;
+  findLowestFuelStations(signal: AbortSignal): Promise<FuelStation[]>;
+  findNearbyPlaces(
+    location: string,
+    category: string | undefined,
+    signal: AbortSignal,
+  ): Promise<NearbyPlace[]>;
+  findDaisoProductDetail(
+    productId: string,
+    signal: AbortSignal,
+  ): Promise<DaisoProductDetail | null>;
+};
+export type ExchangeRate = { usdKrw: number; jpyKrw: number; updatedAt?: string };
+export type ExchangeRateClient = {
+  findUsdAndJpyRates(signal: AbortSignal): Promise<ExchangeRate>;
 };
 export type NaverBlogPost = { title: string; url: string; publishedAt?: string };
 export type NaverBlogClient = {
@@ -149,10 +227,70 @@ export type StockQuote = {
   fetchedAt: string;
   dataType: 'daily' | 'realtime';
 };
+
+const weatherSearchAliases: Record<string, string> = {
+  서울: 'Seoul',
+  부산: 'Busan',
+  대구: 'Daegu',
+  인천: 'Incheon',
+  광주: 'Gwangju',
+  대전: 'Daejeon',
+  울산: 'Ulsan',
+  제주: 'Jeju City',
+  도쿄: 'Tokyo',
+  오사카: 'Osaka',
+  홋카이도: 'Sapporo',
+  아오모리: 'Aomori',
+  이와테: 'Morioka',
+  미야기: 'Sendai',
+  아키타: 'Akita',
+  야마가타: 'Yamagata',
+  후쿠시마: 'Fukushima',
+  이바라키: 'Mito',
+  도치기: 'Utsunomiya',
+  군마: 'Maebashi',
+  사이타마: 'Saitama',
+  치바: 'Chiba',
+  가나가와: 'Yokohama',
+  니가타: 'Niigata',
+  도야마: 'Toyama',
+  이시카와: 'Kanazawa',
+  후쿠이: 'Fukui',
+  야마나시: 'Kofu',
+  나가노: 'Nagano',
+  기후: 'Gifu',
+  시즈오카: 'Shizuoka',
+  아이치: 'Nagoya',
+  미에: 'Tsu',
+  시가: 'Otsu',
+  교토: 'Kyoto',
+  효고: 'Kobe',
+  나라: 'Nara',
+  와카야마: 'Wakayama',
+  돗토리: 'Tottori',
+  시마네: 'Matsue',
+  오카야마: 'Okayama',
+  히로시마: 'Hiroshima',
+  야마구치: 'Yamaguchi',
+  도쿠시마: 'Tokushima',
+  가가와: 'Takamatsu',
+  에히메: 'Matsuyama',
+  고치: 'Kochi',
+  후쿠오카: 'Fukuoka',
+  사가: 'Saga',
+  나가사키: 'Nagasaki',
+  구마모토: 'Kumamoto',
+  오이타: 'Oita',
+  미야자키: 'Miyazaki',
+  가고시마: 'Kagoshima',
+  오키나와: 'Naha',
+};
 export type StockClient = {
   quote(query: string, signal: AbortSignal): Promise<StockQuote>;
   quoteCandidates?(query: string, signal: AbortSignal): Promise<StockQuote[]>;
 };
+export type NetflixTitle = { title: string; mediaType: 'movie' | 'tv'; country?: string };
+export type NetflixClient = { findTitles(signal: AbortSignal): Promise<NetflixTitle[]> };
 
 function finiteNumber(value: string | undefined): number {
   const parsed = Number(value);
@@ -228,6 +366,29 @@ function parseLatestSundayEventPage(html: string): EventItem | null {
   };
 }
 
+function parseOngoingEventPage(html: string, limit = 10): EventList['events'] {
+  const events: EventList['events'] = [];
+  const pattern =
+    /<a\s+href=["'](\/News\/Event\/Ongoing\/\d+(?:\?[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>([\s\S]{0,500})/gi;
+  for (const match of html.matchAll(pattern)) {
+    const title = decodeHtml(match[2] ?? '');
+    const dateText = decodeHtml(match[3] ?? '');
+    if (!title || !dateText || events.some((event) => event.title === title)) continue;
+    const dates = [...dateText.matchAll(/(\d{4})[.\-/](\d{2})[.\-/](\d{2})/g)].map(
+      (date) => `${date[1]}-${date[2]}-${date[3]}`,
+    );
+    events.push({
+      title,
+      url: `https://maplestory.nexon.com${match[1]}`,
+      ...(dates[0] ? { startDate: dates[0] } : {}),
+      ...(dates[1] ? { endDate: dates[1] } : {}),
+    });
+    if (events.length === limit) break;
+  }
+  if (events.length === 0) throw new Error('PROVIDER_SCHEMA');
+  return events;
+}
+
 function parseInvenTopPosts(html: string, boardUrl: string, limit = 5): InvenTopPostList {
   const posts: InvenTopPost[] = [];
   const subjectPattern = /<a\b[^>]*class=["'][^"']*subject-link[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
@@ -247,6 +408,105 @@ function parseInvenTopPosts(html: string, boardUrl: string, limit = 5): InvenTop
   }
   if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
   return { posts, boardUrl, fetchedAt: new Date().toISOString() };
+}
+
+function parseQuasarZoneHotDeals(html: string, boardUrl: string): InvenTopPostList {
+  const posts: InvenTopPost[] = [];
+  const pattern =
+    /<a\b[^>]*href=["']([^"']*\/bbs\/qb_saleinfo\/views\/\d+(?:\?[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  for (const match of html.matchAll(pattern)) {
+    const title = decodeHtml(match[2] ?? '')
+      .replace(/<[^>]*>/g, '')
+      .trim();
+    if (!title || posts.some((post) => post.title === title)) continue;
+    const path = (match[1] ?? '').match(/\/bbs\/qb_saleinfo\/views\/\d+/)?.[0];
+    if (!path) continue;
+    posts.push({ title, url: `https://quasarzone.com${path}` });
+    if (posts.length === 5) break;
+  }
+  if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
+  return { posts, boardUrl, fetchedAt: new Date().toISOString() };
+}
+
+function parseQuasarZonePosts(html: string, boardUrl: string, limit: number): InvenTopPostList {
+  const posts: InvenTopPost[] = [];
+  const pattern = /<a\b[^>]*href=["'](\/bbs\/qb_tsy\/views\/\d+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  for (const match of html.matchAll(pattern)) {
+    const title = decodeHtml(match[2] ?? '')
+      .replace(/<[^>]*>/g, '')
+      .trim();
+    if (
+      !title ||
+      /(?:게시판\s*)?특별\s*규정/i.test(title) ||
+      /^\s*\[?공지\]?\s*$/i.test(title) ||
+      posts.some((post) => post.title === title)
+    )
+      continue;
+    posts.push({ title, url: `https://quasarzone.com${match[1]}` });
+    if (posts.length === limit) break;
+  }
+  if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
+  return { posts, boardUrl, fetchedAt: new Date().toISOString() };
+}
+
+function parseDcinsideMonitorPosts(html: string, boardUrl: string): InvenTopPostList {
+  const posts: InvenTopPost[] = [];
+  const pattern =
+    /<a\b[^>]*href=["']([^"']*\/mgallery\/board\/view\/[^"']*?[?&]id=mnt[&]no=\d+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  for (const match of html.matchAll(pattern)) {
+    const title = decodeHtml(match[2] ?? '').trim();
+    const href = match[1] ?? '';
+    if (!title || posts.some((post) => post.title === title)) continue;
+    posts.push({
+      title,
+      url: href.startsWith('http') ? href : `https://gall.dcinside.com${href}`,
+    });
+    if (posts.length === 10) break;
+  }
+  if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
+  return { posts, boardUrl, fetchedAt: new Date().toISOString() };
+}
+
+function parseDcinsideBoardPosts(
+  html: string,
+  boardUrl: string,
+  galleryId: string,
+  limit: number,
+): InvenTopPostList {
+  const posts: InvenTopPost[] = [];
+  const pattern = new RegExp(
+    `<a\\b[^>]*href=["']([^"']*\\/mgallery\\/board\\/view\\/[^"']*?[?&]id=${galleryId}[&]no=\\d+)["'][^>]*>([\\s\\S]*?)<\\/a>`,
+    'gi',
+  );
+  for (const match of html.matchAll(pattern)) {
+    const title = decodeHtml(match[2] ?? '').trim();
+    const href = match[1] ?? '';
+    if (!title || posts.some((post) => post.title === title)) continue;
+    posts.push({
+      title,
+      url: href.startsWith('http') ? href : `https://gall.dcinside.com${href}`,
+    });
+    if (posts.length === limit) break;
+  }
+  if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
+  return { posts, boardUrl, fetchedAt: new Date().toISOString() };
+}
+
+async function fetchDcinsideHtml(
+  fetcher: typeof fetch,
+  primaryUrl: string,
+  mobileUrl: string,
+  signal: AbortSignal,
+): Promise<string> {
+  const headers = {
+    Accept: 'text/html,application/xhtml+xml',
+    'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+  };
+  for (const url of [primaryUrl, mobileUrl]) {
+    const response = await fetchWithRetry(fetcher, url, { headers, signal });
+    if (response.ok) return response.text();
+  }
+  throw new Error('PROVIDER_UNAVAILABLE');
 }
 
 function parseLatestWeeklyNewProduct(xml: string): NaverBlogPost | null {
@@ -675,38 +935,20 @@ export function createNexonClient(
       return { notices, fetchedAt: new Date().toISOString() };
     },
     async findEvents(signal) {
-      if (!apiKey) throw new Error('NOT_CONFIGURED');
-      const response = await fetchWithRetry(
-        fetcher,
-        'https://open.api.nexon.com/maplestory/v1/notice-event',
-        { headers: { 'x-nxopen-api-key': apiKey }, signal },
-      );
+      const sourceUrl = 'https://maplestory.nexon.com/News/Event/Ongoing';
+      const response = await fetchWithRetry(fetcher, sourceUrl, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
       if (!response.ok)
         throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
-      const body = (await response.json()) as {
-        event_notice?: Array<{
-          title?: string;
-          url?: string;
-          date_event_start?: string;
-          date_event_end?: string;
-        }> | null;
+      return {
+        events: parseOngoingEventPage(await response.text(), 10),
+        fetchedAt: new Date().toISOString(),
       };
-      if (!Array.isArray(body.event_notice)) throw new Error('PROVIDER_SCHEMA');
-      const events = body.event_notice.map((event) => {
-        if (typeof event.title !== 'string' || typeof event.url !== 'string')
-          throw new Error('PROVIDER_SCHEMA');
-        if (!/^https:\/\/(www\.)?maplestory\.nexon\.com\//.test(event.url))
-          throw new Error('PROVIDER_SCHEMA');
-        const startDate = optionalString(event.date_event_start);
-        const endDate = optionalString(event.date_event_end);
-        return {
-          title: event.title,
-          url: event.url,
-          ...(startDate ? { startDate } : {}),
-          ...(endDate ? { endDate } : {}),
-        };
-      });
-      return { events, fetchedAt: new Date().toISOString() };
     },
     async findSunday(signal) {
       if (!apiKey) throw new Error('NOT_CONFIGURED');
@@ -790,11 +1032,12 @@ export function createNexonClient(
       };
     },
     async findWeather(region, signal) {
+      const searchRegion = weatherSearchAliases[region.trim()] ?? region;
       const geocodeUrl = new URL('https://geocoding-api.open-meteo.com/v1/search');
       geocodeUrl.search = new URLSearchParams({
-        name: region,
+        name: searchRegion,
         count: '1',
-        language: 'ko',
+        language: 'en',
         format: 'json',
       }).toString();
       const geocodeResponse = await fetchWithRetry(fetcher, geocodeUrl.toString(), { signal });
@@ -807,8 +1050,44 @@ export function createNexonClient(
           country?: string;
         }> | null;
       };
-      if (!Array.isArray(geocodeBody.results)) throw new Error('PROVIDER_SCHEMA');
-      const place = geocodeBody.results[0];
+      let place = Array.isArray(geocodeBody.results) ? geocodeBody.results[0] : undefined;
+      if (!place) {
+        const fallbackUrl = new URL('https://nominatim.openstreetmap.org/search');
+        fallbackUrl.search = new URLSearchParams({
+          q: region,
+          format: 'jsonv2',
+          limit: '1',
+          'accept-language': 'ko',
+        }).toString();
+        const fallbackResponse = await fetchWithRetry(fetcher, fallbackUrl.toString(), {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'KakaoMapleBot/1.0 (weather lookup)',
+          },
+          signal,
+        });
+        if (!fallbackResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
+        const fallbackBody = (await fallbackResponse.json()) as Array<{
+          name?: string;
+          display_name?: string;
+          lat?: string;
+          lon?: string;
+          address?: { country?: string };
+        }>;
+        const fallbackPlace = fallbackBody[0];
+        if (fallbackPlace) {
+          const latitude = Number(fallbackPlace.lat);
+          const longitude = Number(fallbackPlace.lon);
+          if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
+            throw new Error('PROVIDER_SCHEMA');
+          place = {
+            name: fallbackPlace.name ?? fallbackPlace.display_name ?? region,
+            latitude,
+            longitude,
+            ...(fallbackPlace.address?.country ? { country: fallbackPlace.address.country } : {}),
+          };
+        }
+      }
       if (!place) return null;
       if (
         typeof place.name !== 'string' ||
@@ -884,10 +1163,31 @@ const yahooSearchAliases: Record<string, string> = {
   SK하이닉스: 'SK hynix',
   네이버: 'NAVER',
   카카오: 'Kakao',
+  애플: 'Apple',
+  마이크로소프트: 'Microsoft',
+  엔비디아: 'NVIDIA',
+  테슬라: 'Tesla',
+  아마존: 'Amazon',
+  구글: 'Alphabet',
+  알파벳: 'Alphabet',
+  메타: 'Meta Platforms',
+  넷플릭스: 'Netflix',
+  코카콜라: 'Coca-Cola',
+  맥도날드: "McDonald's",
+  월마트: 'Walmart',
+  버크셔해서웨이: 'Berkshire Hathaway',
+  AMD: 'Advanced Micro Devices',
+  인텔: 'Intel',
   넥슨: 'NEXON',
   닌텐도: 'Nintendo',
   소니: 'Sony',
   도요타: 'Toyota',
+  혼다: 'Honda',
+  소프트뱅크: 'SoftBank Group',
+  유니클로: 'Fast Retailing',
+  라쿠텐: 'Rakuten',
+  키엔스: 'Keyence',
+  미쓰비시: 'Mitsubishi',
 };
 const yahooKoreanAliases = new Set(['삼성전자', 'SK하이닉스', '네이버', '카카오']);
 
@@ -924,6 +1224,63 @@ export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
       const result = parseInvenTopPosts(await response.text(), mabbakDorosiUrl, 3);
       if (result.posts.some((post) => !post.url)) throw new Error('PROVIDER_SCHEMA');
       return result;
+    },
+    async findHotDeals(signal) {
+      const boardUrl = 'https://quasarzone.com/bbs/qb_saleinfo';
+      const response = await fetchWithRetry(fetcher, boardUrl, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return parseQuasarZoneHotDeals(await response.text(), boardUrl);
+    },
+    async findGraphicsCardPosts(signal) {
+      const boardUrl = 'https://quasarzone.com/bbs/qb_tsy';
+      const response = await fetchWithRetry(fetcher, boardUrl, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return parseQuasarZonePosts(await response.text(), boardUrl, 5);
+    },
+    async findMonitorPosts(signal) {
+      const boardUrl =
+        'https://gall.dcinside.com/mgallery/board/lists/?id=mnt&sort_type=N&search_head=70&page=1';
+      const html = await fetchDcinsideHtml(
+        fetcher,
+        boardUrl,
+        'https://m.dcinside.com/board/mnt',
+        signal,
+      );
+      return parseDcinsideMonitorPosts(html, boardUrl);
+    },
+    async findJapanTravelPosts(signal) {
+      const boardUrl =
+        'https://gall.dcinside.com/mgallery/board/lists/?id=nokanto&sort_type=N&search_head=10&page=1';
+      const html = await fetchDcinsideHtml(
+        fetcher,
+        boardUrl,
+        'https://m.dcinside.com/board/nokanto',
+        signal,
+      );
+      return parseDcinsideBoardPosts(html, boardUrl, 'nokanto', 5);
+    },
+    async findJapanRestaurantPosts(signal) {
+      const boardUrl =
+        'https://gall.dcinside.com/mgallery/board/lists/?id=nokanto&sort_type=N&search_head=100&page=1';
+      const html = await fetchDcinsideHtml(
+        fetcher,
+        boardUrl,
+        'https://m.dcinside.com/board/nokanto',
+        signal,
+      );
+      return parseDcinsideBoardPosts(html, boardUrl, 'nokanto', 5);
     },
   };
 }
@@ -1006,7 +1363,7 @@ export function createStockClient(
 
   const quoteYahooMarket = async (
     input: string,
-    market: 'KRX',
+    market: 'KRX' | 'US',
     signal: AbortSignal,
   ): Promise<StockQuote | null> => {
     const searchInput = yahooSearchAliases[input] ?? input;
@@ -1024,12 +1381,13 @@ export function createStockClient(
       }>;
     };
     if (!Array.isArray(searchBody.quotes)) throw new Error('PROVIDER_SCHEMA');
-    const match = searchBody.quotes.find(
-      (item) =>
-        typeof item.symbol === 'string' &&
-        /\.(KS|KQ)$/i.test(item.symbol) &&
-        ['EQUITY', 'ETF'].includes(item.quoteType ?? ''),
-    );
+    const match = searchBody.quotes.find((item) => {
+      if (typeof item.symbol !== 'string' || !['EQUITY', 'ETF'].includes(item.quoteType ?? ''))
+        return false;
+      return market === 'KRX'
+        ? /\.(KS|KQ)$/i.test(item.symbol)
+        : !/\.(KS|KQ|T)$/i.test(item.symbol);
+    });
     if (!match?.symbol) return null;
     const chartResponse = await request(
       `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(match.symbol)}?range=5d&interval=1d&events=history`,
@@ -1061,7 +1419,7 @@ export function createStockClient(
       code: match.symbol,
       name: match.longname ?? match.shortname ?? match.symbol,
       price,
-      currency: 'KRW',
+      currency: market === 'KRX' ? 'KRW' : 'USD',
       market,
       ...(change !== undefined ? { change, changeRate: (change / previous!) * 100 } : {}),
       dataType: 'daily',
@@ -1142,8 +1500,164 @@ export function createStockClient(
       } catch (error) {
         if (!firstProviderError) firstProviderError = error;
       }
+      try {
+        const us = await quoteYahooMarket(input, 'US', signal);
+        if (us) candidates.push(us);
+      } catch (error) {
+        if (!firstProviderError) firstProviderError = error;
+      }
       if (candidates.length === 0) throw firstProviderError ?? new Error('NOT_FOUND');
       return candidates;
+    },
+  };
+}
+
+export function createTmdbNetflixClient(
+  readAccessToken: string | undefined,
+  region = 'KR',
+  fetcher: typeof fetch = fetch,
+): NetflixClient {
+  return {
+    async findTitles(signal) {
+      if (!readAccessToken) throw new Error('NOT_CONFIGURED');
+      const params = new URLSearchParams({
+        language: 'ko-KR',
+        watch_region: region,
+        with_watch_providers: '8',
+        with_watch_monetization_types: 'flatrate',
+        sort_by: 'popularity.desc',
+        page: '1',
+      });
+      const results: NetflixTitle[] = [];
+      for (const mediaType of ['movie', 'tv'] as const) {
+        const response = await fetchWithRetry(
+          fetcher,
+          `https://api.themoviedb.org/3/discover/${mediaType}?${params.toString()}`,
+          {
+            headers: { Accept: 'application/json', Authorization: `Bearer ${readAccessToken}` },
+            signal,
+          },
+        );
+        if (!response.ok)
+          throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+        const body = (await response.json()) as {
+          results?: Array<{
+            title?: unknown;
+            name?: unknown;
+            origin_country?: unknown;
+            original_language?: unknown;
+          }>;
+        };
+        if (!Array.isArray(body.results)) throw new Error('PROVIDER_SCHEMA');
+        for (const item of body.results) {
+          const title = mediaType === 'movie' ? item.title : item.name;
+          if (typeof title !== 'string' || title.trim() === '') throw new Error('PROVIDER_SCHEMA');
+          const originCountry = Array.isArray(item.origin_country)
+            ? item.origin_country.find((value): value is string => typeof value === 'string')
+            : undefined;
+          const languageCountry: Record<string, string> = {
+            ko: 'KR',
+            ja: 'JP',
+            zh: 'CN',
+            fr: 'FR',
+            de: 'DE',
+            es: 'ES',
+            it: 'IT',
+            hi: 'IN',
+          };
+          const country =
+            originCountry ??
+            (typeof item.original_language === 'string'
+              ? languageCountry[item.original_language]
+              : undefined);
+          results.push({ title, mediaType, ...(country ? { country } : {}) });
+        }
+      }
+      if (results.length === 0) throw new Error('NOT_FOUND');
+      return results;
+    },
+  };
+}
+
+export function createRidiMangaClient(fetcher: typeof fetch = fetch): MangaClient {
+  return {
+    async findJapaneseManga(signal) {
+      const sourceUrl = 'https://ridibooks.com/comics/ebook';
+      const response = await fetchWithRetry(fetcher, sourceUrl, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      const html = await response.text();
+      const items: MangaItem[] = [];
+      const pattern = /<a\b[^>]*href=["'](\/books\/\d+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+      for (const match of html.matchAll(pattern)) {
+        const title = decodeHtml(match[2] ?? '').trim();
+        const href = match[1] ?? '';
+        if (!title || items.some((item) => item.title === title)) continue;
+        items.push({ title, url: `https://ridibooks.com${href}` });
+      }
+      if (items.length === 0) throw new Error('PROVIDER_SCHEMA');
+      return { items, sourceUrl, fetchedAt: new Date().toISOString() };
+    },
+  };
+}
+
+const namuJapaneseMangaListUrls = [
+  'https://namu.wiki/w/일본%20만화/목록/ㄱ',
+  'https://namu.wiki/w/일본%20만화/목록/ㄴ',
+  'https://namu.wiki/w/일본%20만화/목록/ㄷ',
+  'https://namu.wiki/w/일본%20만화/목록/ㄹ',
+  'https://namu.wiki/w/일본%20만화/목록/ㅁ',
+  'https://namu.wiki/w/일본%20만화/목록/ㅂ',
+  'https://namu.wiki/w/일본%20만화/목록/ㅅ',
+  'https://namu.wiki/w/일본%20만화/목록/ㅇ',
+  'https://namu.wiki/w/일본%20만화/목록/ㅈ',
+  'https://namu.wiki/w/일본%20만화/목록/ㅊ',
+  'https://namu.wiki/w/일본%20만화/목록/ㅋ',
+  'https://namu.wiki/w/일본%20만화/목록/ㅌ',
+  'https://namu.wiki/w/일본%20만화/목록/ㅍ',
+  'https://namu.wiki/w/일본%20만화/목록/ㅎ',
+  'https://namu.wiki/w/일본%20만화/목록/숫자',
+  'https://namu.wiki/w/일본%20만화/목록/라틴%20문자',
+] as const;
+
+export function createNamuMangaClient(fetcher: typeof fetch = fetch): MangaClient {
+  return {
+    async findJapaneseManga(signal) {
+      const pages = await Promise.all(
+        namuJapaneseMangaListUrls.map(async (sourceUrl) => {
+          const response = await fetchWithRetry(fetcher, sourceUrl, {
+            headers: {
+              Accept: 'text/html,application/xhtml+xml',
+              'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+            },
+            signal,
+          });
+          if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+          return await response.text();
+        }),
+      );
+      const items: MangaItem[] = [];
+      const pattern = /<a\b[^>]*href=["'](\/w\/[^"]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+      for (const html of pages) {
+        for (const match of html.matchAll(pattern)) {
+          const title = decodeHtml(match[2] ?? '').trim();
+          const href = match[1] ?? '';
+          if (!title || title.length > 120 || /^일본 만화\/목록/.test(title)) continue;
+          if (items.some((item) => item.title === title)) continue;
+          items.push({ title, url: `https://namu.wiki${href}` });
+        }
+      }
+      if (items.length === 0) throw new Error('PROVIDER_SCHEMA');
+      return {
+        items,
+        sourceUrl: 'https://namu.wiki/w/일본%20만화/목록',
+        fetchedAt: new Date().toISOString(),
+      };
     },
   };
 }
@@ -1217,6 +1731,370 @@ export function createNaverBlogClient(fetcher: typeof fetch = fetch): NaverBlogC
       });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
       return parseLatestWeeklyNewProduct(await response.text());
+    },
+  };
+}
+
+type JsonRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): JsonRecord | null {
+  return value !== null && typeof value === 'object' ? (value as JsonRecord) : null;
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function asNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function firstArray(data: JsonRecord, keys: string[]): JsonRecord[] {
+  for (const key of keys) {
+    const value = data[key];
+    if (Array.isArray(value))
+      return value.map(asRecord).filter((item): item is JsonRecord => item !== null);
+  }
+  return [];
+}
+
+function productFromRecord(item: JsonRecord): RetailProduct | null {
+  const name = asString(item.name) ?? asString(item.productName) ?? asString(item.title);
+  if (!name) return null;
+  const id = asString(item.id) ?? asString(item.productId) ?? asString(item.itemCode);
+  const price = asNumber(item.price) ?? asNumber(item.salePrice);
+  return {
+    name,
+    ...(id ? { id } : {}),
+    ...(price !== undefined ? { price } : {}),
+    ...(asString(item.currency) ? { currency: asString(item.currency) } : {}),
+    ...(typeof item.soldOut === 'boolean' ? { soldOut: item.soldOut } : {}),
+    ...(typeof item.pickupAvailable === 'boolean' ? { pickupAvailable: item.pickupAvailable } : {}),
+    ...(asString(item.brand) ? { brand: asString(item.brand) } : {}),
+  };
+}
+
+function storeFromRecord(item: JsonRecord, service: string): RetailStore | null {
+  const name = asString(item.name) ?? asString(item.storeName) ?? asString(item.theaterName);
+  if (!name) return null;
+  const address = asString(item.address) ?? asString(item.roadAddress);
+  const distanceKm = asNumber(item.distanceKm) ?? asNumber(item.distance);
+  return {
+    name,
+    service,
+    ...(address ? { address } : {}),
+    ...(distanceKm !== undefined ? { distanceKm } : {}),
+  };
+}
+
+function inventoryFromRecord(item: JsonRecord): RetailInventoryItem | null {
+  const storeName = asString(item.storeName) ?? asString(item.name) ?? asString(item.store);
+  if (!storeName) return null;
+  const address = asString(item.address) ?? asString(item.roadAddress);
+  const quantity = asNumber(item.quantity) ?? asNumber(item.stock);
+  const available =
+    typeof item.available === 'boolean'
+      ? item.available
+      : typeof item.inStock === 'boolean'
+        ? item.inStock
+        : quantity !== undefined
+          ? quantity > 0
+          : undefined;
+  return {
+    storeName,
+    ...(address ? { address } : {}),
+    ...(available !== undefined ? { available } : {}),
+    ...(quantity !== undefined ? { quantity } : {}),
+  };
+}
+
+export function createMcpRetailClient(
+  fetcher: typeof fetch = fetch,
+  baseUrl = 'https://mcp.aka.page',
+): McpRetailClient {
+  async function call(
+    action: string,
+    params: Record<string, string>,
+    signal: AbortSignal,
+  ): Promise<JsonRecord> {
+    const search = new URLSearchParams({ action, ...params });
+    const response = await fetchWithRetry(
+      fetcher,
+      `${baseUrl}/api/actions/query?${search.toString()}`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      },
+    );
+    if (!response.ok)
+      throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+    const body = asRecord(await response.json());
+    if (!body || body.success !== true) throw new Error('PROVIDER_SCHEMA');
+    const data = asRecord(body.data);
+    if (!data) throw new Error('PROVIDER_SCHEMA');
+    return data;
+  }
+
+  return {
+    async searchDaisoProducts(query, signal) {
+      const data = await call('daisoSearchProducts', { q: query, pageSize: '5' }, signal);
+      const products = firstArray(data, ['products', 'items'])
+        .map(productFromRecord)
+        .filter((item): item is RetailProduct => item !== null);
+      if (products.length === 0) throw new Error('NOT_FOUND');
+      return products;
+    },
+    async compareProducts(query, signal) {
+      const data = await call('compareProducts', { keyword: query, limit: '5' }, signal);
+      const products = firstArray(data, ['products', 'items', 'comparisons'])
+        .map(productFromRecord)
+        .filter((item): item is RetailProduct => item !== null);
+      if (products.length === 0) throw new Error('NOT_FOUND');
+      return products;
+    },
+    async findStores(brand, location, signal) {
+      const brands: Record<string, { action: string; service: string }> = {
+        다이소: { action: 'daisoFindStores', service: '다이소' },
+        올리브영: { action: 'oliveyoungFindStores', service: '올리브영' },
+        CU: { action: 'cuFindStores', service: 'CU' },
+        씨유: { action: 'cuFindStores', service: 'CU' },
+        이마트24: { action: 'emart24FindStores', service: '이마트24' },
+        롯데마트: { action: 'lottemartFindStores', service: '롯데마트' },
+        GS25: { action: 'gs25FindStores', service: 'GS25' },
+        지에스25: { action: 'gs25FindStores', service: 'GS25' },
+        세븐일레븐: { action: 'sevenelevenSearchStores', service: '세븐일레븐' },
+      };
+      const key = Object.keys(brands).find(
+        (value) => value.toLocaleLowerCase() === brand.toLocaleLowerCase(),
+      );
+      const selected = key ? brands[key] : undefined;
+      if (!selected) throw new Error('INVALID_USAGE');
+      const data = await call(selected.action, { keyword: location, limit: '5' }, signal);
+      const stores = firstArray(data, ['stores', 'theaters', 'items'])
+        .map((item) => storeFromRecord(item, selected.service))
+        .filter((item): item is RetailStore => item !== null);
+      if (stores.length === 0) throw new Error('NOT_FOUND');
+      return stores;
+    },
+    async checkDaisoInventory(query, location, signal) {
+      const products = await this.searchDaisoProducts(query, signal);
+      const productId = products[0]?.id;
+      if (!productId) throw new Error('PROVIDER_SCHEMA');
+      const data = await call(
+        'daisoCheckInventory',
+        { productId, keyword: location, pageSize: '5' },
+        signal,
+      );
+      const inventory = firstArray(data, ['stores', 'inventory', 'items'])
+        .map(inventoryFromRecord)
+        .filter((item): item is RetailInventoryItem => item !== null);
+      if (inventory.length === 0) throw new Error('NOT_FOUND');
+      return inventory;
+    },
+    async findCinemaTheaters(location, signal) {
+      const actions = [
+        { action: 'megaboxFindTheaters', service: '메가박스' },
+        { action: 'lottecinemaFindTheaters', service: '롯데시네마' },
+        { action: 'cgvFindTheaters', service: 'CGV' },
+      ];
+      const results = await Promise.allSettled(
+        actions.map(async ({ action, service }) => {
+          const data = await call(action, { keyword: location, limit: '3' }, signal);
+          return firstArray(data, ['theaters', 'stores', 'items'])
+            .map((item) => storeFromRecord(item, service))
+            .filter((item): item is RetailStore => item !== null)
+            .map((item) => ({
+              name: item.name,
+              service: item.service,
+              ...(item.address ? { address: item.address } : {}),
+              ...(item.distanceKm !== undefined ? { distanceKm: item.distanceKm } : {}),
+            }));
+        }),
+      );
+      const theaters = results.flatMap((result) =>
+        result.status === 'fulfilled' ? result.value : [],
+      );
+      if (theaters.length === 0) throw new Error('PROVIDER_UNAVAILABLE');
+      return theaters;
+    },
+    async findNationalFuelPrices(signal) {
+      const response = await fetchWithRetry(fetcher, `${baseUrl}/api/opinet/average`, {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = asRecord(await response.json());
+      const data = body ? asRecord(body.data) : null;
+      const prices = data ? firstArray(data, ['prices', 'items']) : [];
+      const result = prices.flatMap((item) => {
+        const productName = asString(item.productName) ?? asString(item.name);
+        const price = asNumber(item.price);
+        if (!productName || price === undefined) return [];
+        const diff = asNumber(item.diff);
+        return [
+          {
+            productName,
+            price,
+            ...(diff !== undefined ? { diff } : {}),
+            ...(asString(item.tradeDate) ? { tradeDate: asString(item.tradeDate) } : {}),
+          },
+        ];
+      });
+      if (body?.success !== true || result.length === 0) throw new Error('PROVIDER_SCHEMA');
+      return result;
+    },
+    async findLowestFuelStations(signal) {
+      const search = new URLSearchParams({ fuelCode: 'B027', count: '3' });
+      const response = await fetchWithRetry(
+        fetcher,
+        `${baseUrl}/api/opinet/lowest?${search.toString()}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+          },
+          signal,
+        },
+      );
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = asRecord(await response.json());
+      const data = body ? asRecord(body.data) : null;
+      const stations = data ? firstArray(data, ['stations', 'items']) : [];
+      const result = stations.flatMap((item) => {
+        const name = asString(item.name) ?? asString(item.stationName);
+        const price = asNumber(item.price);
+        if (!name || price === undefined) return [];
+        const brandName = asString(item.brandName) ?? asString(item.brand);
+        const address = asString(item.address);
+        const roadAddress = asString(item.roadAddress);
+        return [
+          {
+            name,
+            price,
+            ...(brandName ? { brandName } : {}),
+            ...(address ? { address } : {}),
+            ...(roadAddress ? { roadAddress } : {}),
+          },
+        ];
+      });
+      if (body?.success !== true || result.length === 0) throw new Error('PROVIDER_SCHEMA');
+      return result.sort((left, right) => left.price - right.price).slice(0, 3);
+    },
+    async findNearbyPlaces(location, category, signal) {
+      const search = new URLSearchParams({ location, limit: '5' });
+      if (category) search.set('category', category);
+      const response = await fetchWithRetry(
+        fetcher,
+        `${baseUrl}/api/places/search?${search.toString()}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+          },
+          signal,
+        },
+      );
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = asRecord(await response.json());
+      const data = body ? asRecord(body.data) : null;
+      const places = data ? firstArray(data, ['places', 'items']) : [];
+      const result = places.flatMap((item) => {
+        const name = asString(item.name) ?? asString(item.title);
+        if (!name) return [];
+        const categoryValue = asString(item.category);
+        const address = asString(item.address);
+        const roadAddress = asString(item.roadAddress);
+        const phone = asString(item.phone) ?? asString(item.telephone);
+        const link = asString(item.link);
+        return [
+          {
+            name,
+            ...(categoryValue ? { category: categoryValue } : {}),
+            ...(address ? { address } : {}),
+            ...(roadAddress ? { roadAddress } : {}),
+            ...(phone ? { phone } : {}),
+            ...(link ? { link } : {}),
+          },
+        ];
+      });
+      if (body?.success !== true || result.length === 0) throw new Error('NOT_FOUND');
+      return result.slice(0, 5);
+    },
+    async findDaisoProductDetail(productId, signal) {
+      const response = await fetchWithRetry(
+        fetcher,
+        `${baseUrl}/api/daiso/products/${encodeURIComponent(productId)}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+          },
+          signal,
+        },
+      );
+      if (response.status === 404) return null;
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = asRecord(await response.json());
+      const product = body ? asRecord(body.data) : null;
+      if (body?.success !== true || !product) throw new Error('PROVIDER_SCHEMA');
+      const name = asString(product.name);
+      if (!name) throw new Error('PROVIDER_SCHEMA');
+      const price = asNumber(product.price);
+      const currency = asString(product.currency);
+      const brand = asString(product.brand);
+      const imageUrl = asString(product.imageUrl);
+      return {
+        name,
+        ...(asString(product.id) ? { id: asString(product.id) } : { id: productId }),
+        ...(price !== undefined ? { price } : {}),
+        ...(currency ? { currency } : {}),
+        ...(brand ? { brand } : {}),
+        ...(typeof product.soldOut === 'boolean' ? { soldOut: product.soldOut } : {}),
+        ...(typeof product.isNew === 'boolean' ? { isNew: product.isNew } : {}),
+        ...(imageUrl ? { imageUrl } : {}),
+      };
+    },
+  };
+}
+
+export function createExchangeRateClient(
+  fetcher: typeof fetch = fetch,
+  baseUrl = 'https://open.er-api.com/v6/latest/USD',
+): ExchangeRateClient {
+  return {
+    async findUsdAndJpyRates(signal) {
+      const response = await fetchWithRetry(fetcher, baseUrl, {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = asRecord(await response.json());
+      const rates = body ? asRecord(body.rates) : null;
+      const usdKrw = rates ? asNumber(rates.KRW) : undefined;
+      const usdJpy = rates ? asNumber(rates.JPY) : undefined;
+      if (body?.result !== 'success' || usdKrw === undefined || usdJpy === undefined || usdJpy <= 0)
+        throw new Error('PROVIDER_SCHEMA');
+      return {
+        usdKrw,
+        jpyKrw: usdKrw / usdJpy,
+        ...(asString(body.time_last_update_utc)
+          ? { updatedAt: asString(body.time_last_update_utc) }
+          : {}),
+      };
     },
   };
 }

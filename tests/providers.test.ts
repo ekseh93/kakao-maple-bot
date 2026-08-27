@@ -4,10 +4,62 @@ import {
   createNaverWebtoonClient,
   createNexonClient,
   createNaverBlogClient,
+  createNamuMangaClient,
+  createExchangeRateClient,
   createStockClient,
+  createTmdbNetflixClient,
 } from '@kakao-maple-bot/providers';
 
 describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
+  it('converts USD-base public rates into KRW rates for USD and JPY', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          result: 'success',
+          time_last_update_utc: 'Thu, 27 Aug 2026 00:02:31 +0000',
+          rates: { JPY: 159.234947, KRW: 1384.607983 },
+        }),
+        { status: 200 },
+      ),
+    );
+    const result = await createExchangeRateClient(fetcher).findUsdAndJpyRates(
+      new AbortController().signal,
+    );
+    expect(result.usdKrw).toBe(1384.607983);
+    expect(result.jpyKrw).toBeCloseTo(8.695, 2);
+    expect(result.updatedAt).toContain('27 Aug 2026');
+  });
+  it('queries TMDB movie and TV catalogs with Netflix provider filters', async () => {
+    const fetcher = vi.fn().mockImplementation((url: string) => {
+      const isMovie = url.includes('/discover/movie');
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({ results: [isMovie ? { title: '영화 제목' } : { name: '드라마 제목' }] }),
+          { status: 200 },
+        ),
+      );
+    });
+    const result = await createTmdbNetflixClient('tmdb-token', 'JP', fetcher).findTitles(
+      new AbortController().signal,
+    );
+    expect(result).toEqual([
+      { title: '영화 제목', mediaType: 'movie' },
+      { title: '드라마 제목', mediaType: 'tv' },
+    ]);
+    expect(fetcher.mock.calls[0]?.[0]).toContain('watch_region=JP');
+    expect(fetcher.mock.calls[0]?.[1]?.headers).toMatchObject({
+      Authorization: 'Bearer tmdb-token',
+    });
+  });
+
+  it('does not call TMDB when the read token is absent', async () => {
+    const fetcher = vi.fn();
+    await expect(
+      createTmdbNetflixClient(undefined, 'KR', fetcher).findTitles(new AbortController().signal),
+    ).rejects.toThrow('NOT_CONFIGURED');
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it('maps current Naver weekday webtoons and excludes finished/resting titles', async () => {
     const fetcher = vi.fn().mockImplementation(() =>
       Promise.resolve(
@@ -33,6 +85,220 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       url: 'https://comic.naver.com/webtoon/list?titleId=1',
     });
     expect(fetcher).toHaveBeenCalledTimes(7);
+  });
+
+  it('maps NamuWiki Japanese manga links from all list pages', async () => {
+    const fetcher = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            '<a href="/w/작품A"><span>일본 만화 작품</span></a>' +
+              '<a href="/w/작품B">다른 작품</a>',
+            { status: 200 },
+          ),
+        ),
+      );
+    const result = await createNamuMangaClient(fetcher).findJapaneseManga(
+      new AbortController().signal,
+    );
+    expect(result.items).toEqual([
+      { title: '일본 만화 작품', url: 'https://namu.wiki/w/작품A' },
+      { title: '다른 작품', url: 'https://namu.wiki/w/작품B' },
+    ]);
+    expect(fetcher).toHaveBeenCalledTimes(16);
+  });
+
+  it('maps the latest Quasar Zone hot-deal titles and links', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '<a href="/bbs/qb_saleinfo/views/1?_method=GET&sort=num"><h3>[쿠팡] 상품 A</h3></a>' +
+            '<a href="/bbs/qb_saleinfo/views/2">상품 B</a>',
+          { status: 200 },
+        ),
+      );
+    const result = await createInvenClient(fetcher).findHotDeals?.(new AbortController().signal);
+    expect(result?.posts).toEqual([
+      { title: '[쿠팡] 상품 A', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/1' },
+      { title: '상품 B', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/2' },
+    ]);
+  });
+
+  it('maps five Quasar Zone graphics-card titles and links', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '<a href="/bbs/qb_tsy/views/10">타세요 게시판 특별 규정(22.08.22)</a>' +
+            '<a href="/bbs/qb_tsy/views/11"><h3>그래픽카드 글 A</h3></a>' +
+            '<a href="/bbs/qb_tsy/views/12">그래픽카드 글 B</a>',
+          { status: 200 },
+        ),
+      );
+    const result = await createInvenClient(fetcher).findGraphicsCardPosts?.(
+      new AbortController().signal,
+    );
+    expect(result?.posts).toEqual([
+      { title: '그래픽카드 글 A', url: 'https://quasarzone.com/bbs/qb_tsy/views/11' },
+      { title: '그래픽카드 글 B', url: 'https://quasarzone.com/bbs/qb_tsy/views/12' },
+    ]);
+  });
+
+  it('maps ten DCInside monitor titles and links', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '<a href="/mgallery/board/view/?id=mnt&no=101"><em>모니터 글 A</em></a>' +
+            '<a href="/mgallery/board/view/?id=mnt&no=102">모니터 글 B</a>',
+          { status: 200 },
+        ),
+      );
+    const result = await createInvenClient(fetcher).findMonitorPosts?.(
+      new AbortController().signal,
+    );
+    expect(result?.posts).toEqual([
+      {
+        title: '모니터 글 A',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=mnt&no=101',
+      },
+      {
+        title: '모니터 글 B',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=mnt&no=102',
+      },
+    ]);
+  });
+
+  it('maps five DCInside Japan-travel titles and links', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '<a href="/mgallery/board/view/?id=nokanto&no=201"><em>여행기 A</em></a>' +
+            '<a href="/mgallery/board/view/?id=nokanto&no=202">여행기 B</a>',
+          { status: 200 },
+        ),
+      );
+    const result = await createInvenClient(fetcher).findJapanTravelPosts?.(
+      new AbortController().signal,
+    );
+    expect(result?.posts).toEqual([
+      {
+        title: '여행기 A',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=nokanto&no=201',
+      },
+      {
+        title: '여행기 B',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=nokanto&no=202',
+      },
+    ]);
+  });
+  it('falls back to the mobile DCInside page when the desktop page is unavailable', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('', { status: 403 }))
+      .mockResolvedValueOnce(
+        new Response('<a href="/mgallery/board/view/?id=nokanto&no=401">모바일 여행기</a>', {
+          status: 200,
+        }),
+      );
+    const result = await createInvenClient(fetcher).findJapanTravelPosts?.(
+      new AbortController().signal,
+    );
+    expect(result?.posts[0]).toEqual({
+      title: '모바일 여행기',
+      url: 'https://gall.dcinside.com/mgallery/board/view/?id=nokanto&no=401',
+    });
+  });
+
+  it('maps five DCInside Japan-restaurant titles and links', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '<a href="/mgallery/board/view/?id=nokanto&no=301"><em>맛집 A</em></a>' +
+            '<a href="/mgallery/board/view/?id=nokanto&no=302">맛집 B</a>',
+          { status: 200 },
+        ),
+      );
+    const result = await createInvenClient(fetcher).findJapanRestaurantPosts?.(
+      new AbortController().signal,
+    );
+    expect(result?.posts).toEqual([
+      {
+        title: '맛집 A',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=nokanto&no=301',
+      },
+      {
+        title: '맛집 B',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=nokanto&no=302',
+      },
+    ]);
+  });
+  it('uses representative Japanese prefecture cities for weather geocoding', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            results: [{ name: 'Mito', latitude: 36.34, longitude: 140.45, country: 'Japan' }],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            current: { temperature_2m: 25, relative_humidity_2m: 70, weather_code: 1 },
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ current: { pm2_5: 5, pm10: 10 } }), { status: 200 }),
+      );
+    await createNexonClient(undefined, fetcher).findWeather?.(
+      '이바라키',
+      new AbortController().signal,
+    );
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain('name=Mito');
+  });
+  it('falls back to a Korean-aware geocoder for unknown Korean global locations', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            {
+              name: '뉴욕',
+              lat: '40.7128',
+              lon: '-74.0060',
+              address: { country: '미국' },
+            },
+          ]),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            current: { temperature_2m: 20, relative_humidity_2m: 60, weather_code: 1 },
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ current: { pm2_5: 4, pm10: 8 } }), { status: 200 }),
+      );
+    const result = await createNexonClient(undefined, fetcher).findWeather?.(
+      '뉴욕',
+      new AbortController().signal,
+    );
+    expect(result).toMatchObject({ location: '뉴욕', country: '미국' });
+    expect(String(fetcher.mock.calls[1]?.[0])).toContain('q=%EB%89%B4%EC%9A%95');
   });
   it('finds the newest weekly new product post from the Naver Blog RSS feed', async () => {
     const xml = `
@@ -322,30 +588,22 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(fetcher.mock.calls[0]?.[0]).toBe('https://open.api.nexon.com/maplestory/v1/notice');
   });
   it('maps the official ongoing event list', async () => {
-    const fetcher = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          event_notice: [
-            {
-              title: '테스트 이벤트',
-              url: 'https://maplestory.nexon.com/News/Event/1',
-              date_event_start: '2026-08-01',
-              date_event_end: '2026-08-31',
-            },
-          ],
-        }),
-        { status: 200 },
-      ),
-    );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '<a href="/News/Event/Ongoing/1"><span>테스트 이벤트</span></a>' +
+            '<dd class="date"><p>2026.08.01 ~ 2026.08.31</p></dd>',
+          { status: 200 },
+        ),
+      );
     const result = await createNexonClient('fixture-key', fetcher).findEvents?.(
       new AbortController().signal,
     );
     expect(result?.events).toMatchObject([
       { title: '테스트 이벤트', startDate: '2026-08-01', endDate: '2026-08-31' },
     ]);
-    expect(fetcher.mock.calls[0]?.[0]).toBe(
-      'https://open.api.nexon.com/maplestory/v1/notice-event',
-    );
+    expect(fetcher.mock.calls[0]?.[0]).toBe('https://maplestory.nexon.com/News/Event/Ongoing');
   });
   it('finds the latest Sunday Maple notice from the official notice API', async () => {
     const fetcher = vi.fn().mockResolvedValue(
@@ -740,6 +998,44 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       'query1.finance.yahoo.com/v1/finance/search?q=NEXON',
     );
     expect(fetcher.mock.calls[1]?.[0]).toContain('/v8/finance/chart/3659.T');
+  });
+  it('maps a Korean US-stock name to a Yahoo Finance US candidate', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ quotes: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            quotes: [{ symbol: 'AAPL', longname: 'Apple Inc.', quoteType: 'EQUITY' }],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            chart: {
+              result: [
+                {
+                  meta: { regularMarketPrice: 200, previousClose: 198 },
+                  indicators: { quote: [{ close: [198, 200] }] },
+                },
+              ],
+            },
+          }),
+          { status: 200 },
+        ),
+      );
+    const result = await createStockClient(undefined, undefined, fetcher).quoteCandidates?.(
+      '애플',
+      new AbortController().signal,
+    );
+    expect(result).toMatchObject([
+      { code: 'AAPL', name: 'Apple Inc.', price: 200, market: 'US', currency: 'USD' },
+    ]);
+    expect(fetcher.mock.calls[1]?.[0]).toContain(
+      'query1.finance.yahoo.com/v1/finance/search?q=Apple',
+    );
   });
   it('retries one Nexon 5xx but does not retry a 429', async () => {
     const retryFetcher = vi

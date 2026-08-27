@@ -38,13 +38,14 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('현/도:');
     expect(result.reply).toContain('도시:');
   });
+
   it('formats today fortune for a birth year', async () => {
     const result = await handleMessage(
-      { ...message('!운세 00년생'), roomId: 'fortune-room' },
+      { ...message('!운세 2000-01-01 남자 양력'), roomId: 'fortune-room' },
       { ...env, ALLOWED_ROOMS: 'fortune-room' },
     );
     expect(result.reply).toContain('[오늘의 운세]');
-    expect(result.reply).toContain('출생연도: 2000년생');
+    expect(result.reply).toContain('생년월일: 2000-01-01 (남자 / 양력)');
   });
 
   it('formats Inven 10-recommendation titles and board link', async () => {
@@ -216,8 +217,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('삼성전자 (005930)');
     expect(stock.quote).toHaveBeenCalledWith('005930', expect.any(AbortSignal));
-    expect(result.reply).toContain('조회: 2026-08-26T15:30:00+09:00');
-    expect(result.reply).toContain('투자 권유가 아닙니다');
+    expect(result.reply).not.toContain('조회:');
+    expect(result.reply).not.toContain('투자 권유가 아닙니다');
   });
   it('formats stock candidates by market', async () => {
     const stockEnv = { ...env, ALLOWED_ROOMS: 'stock-markets-room', STOCK_ENABLED: 'true' };
@@ -503,11 +504,14 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply).toContain('[경험치 히스토리]');
-    expect(result.reply).toContain('캐릭터: 경험치캐릭터 (현재 경험치: 2,000 EXP)');
+    expect(result.reply).toContain(
+      '캐릭터: 경험치캐릭터 (현재 레벨: Lv.280 / 현재 경험치: 12.50%)',
+    );
     expect(result.reply!.indexOf('2026-08-20')).toBeLessThan(result.reply!.indexOf('2026-08-27'));
     expect(result.reply).toContain('2026-08-27');
     expect(result.reply).toContain('Lv.280 / 12.50% / 전날 대비 +1.00%');
-    expect(result.reply).toContain('현재 경험치: 2,000 EXP');
+    expect(result.reply).not.toContain('2,000 EXP');
+    expect(result.reply).not.toContain('기준: Nexon Open API');
     expect(result.reply).toContain('7일 변화: +7.00%');
     expect(result.reply).toContain('일평균: 1.00%');
     expect(result.reply).toContain('1업(100%)까지 예상: 87.50일');
@@ -695,10 +699,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     const nexon = {
       findCharacter: vi.fn(),
       findLunaCrystalSweet: vi.fn().mockResolvedValue({
-        kind: '스페셜',
+        kind: '일반',
         items: [{ name: '테스트 루나 펫', probability: 100 }],
-        sourceUrl:
-          'https://maplestory.nexon.com/Guide/CashShop/Probability/SpecialLunaCrystalSweet',
+        sourceUrl: 'https://maplestory.nexon.com/Guide/CashShop/Probability/LunaCrystalSweet',
         fetchedAt: '2026-08-27T00:00:00.000Z',
       }),
     };
@@ -709,11 +712,11 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('[루나 크리스탈 스윗 합성]');
     expect(result.reply).toContain('재료: 원더 블랙 + 원더 블랙');
-    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(1);
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(5);
     expect(result.reply).toContain('[스윗] 테스트 루나 펫');
     expect(result.reply).not.toContain('기준: Nexon');
     expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');
-    expect(nexon.findLunaCrystalSweet).toHaveBeenCalledWith('스페셜', expect.anything());
+    expect(nexon.findLunaCrystalSweet).toHaveBeenCalledWith('일반', expect.anything());
   });
   it('handles a default Luna Crystal Dream draw', async () => {
     const nexon = {
@@ -732,7 +735,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('[루나 크리스탈 드림 합성]');
     expect(result.reply).toContain('재료: 원더 스윗 + 원더 블랙');
-    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(1);
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(5);
     expect(result.reply).toContain('[뒤진펫] 테스트 드림 펫');
     expect(result.reply).not.toContain('기준: Nexon');
     expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');
@@ -818,6 +821,123 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply?.length).toBeLessThanOrEqual(1000);
+  });
+  it('queries the retail MCP facade without an LLM', async () => {
+    const retail = {
+      searchDaisoProducts: vi
+        .fn()
+        .mockResolvedValue([{ id: 'p1', name: '수납박스', price: 5000, pickupAvailable: true }]),
+      compareProducts: vi
+        .fn()
+        .mockResolvedValue([{ name: '물티슈', price: 1000, brand: '다이소' }]),
+      findStores: vi
+        .fn()
+        .mockResolvedValue([{ name: '다이소 강남점', address: '서울 강남구', service: '다이소' }]),
+      checkDaisoInventory: vi
+        .fn()
+        .mockResolvedValue([{ storeName: '다이소 강남점', available: true, quantity: 3 }]),
+      findCinemaTheaters: vi
+        .fn()
+        .mockResolvedValue([{ name: 'CGV 강남', address: '서울 강남구', service: 'CGV' }]),
+      findNationalFuelPrices: vi
+        .fn()
+        .mockResolvedValue([{ productName: '휘발유', price: 1800.5, tradeDate: '20260828' }]),
+      findLowestFuelStations: vi.fn().mockResolvedValue([
+        {
+          name: '행운에너지',
+          brandName: 'SK에너지',
+          price: 1755,
+          roadAddress: '경북 칠곡군 약목면 칠곡대로 504',
+        },
+      ]),
+      findNearbyPlaces: vi
+        .fn()
+        .mockResolvedValue([
+          { name: '테스트 카페', category: '카페', roadAddress: '서울 강남구 테스트길 1' },
+        ]),
+      findDaisoProductDetail: vi.fn().mockResolvedValue({
+        id: '123456',
+        name: '수납박스',
+        price: 5000,
+        currency: 'KRW',
+        soldOut: false,
+        isNew: true,
+      }),
+    };
+    const exchange = {
+      findUsdAndJpyRates: vi.fn().mockResolvedValue({
+        usdKrw: 1384.6,
+        jpyKrw: 8.7,
+        updatedAt: '2026-08-28 00:00 UTC',
+      }),
+    };
+    const retailEnv = { ...env, ALLOWED_ROOMS: 'retail-room' };
+    const product = await handleMessage(
+      { ...message('!다이소 수납박스'), roomId: 'retail-room' },
+      retailEnv,
+      { retail },
+    );
+    const compare = await handleMessage(
+      { ...message('!상품비교 물티슈'), roomId: 'retail-room' },
+      retailEnv,
+      { retail },
+    );
+    const stores = await handleMessage(
+      { ...message('!매장 다이소 강남'), roomId: 'retail-room' },
+      retailEnv,
+      { retail },
+    );
+    const inventory = await handleMessage(
+      { ...message('!재고 다이소 수납박스 강남'), roomId: 'retail-room' },
+      retailEnv,
+      { retail },
+    );
+    const cinema = await handleMessage(
+      { ...message('!영화관 강남'), roomId: 'retail-room' },
+      retailEnv,
+      { retail },
+    );
+    const fuel = await handleMessage(
+      { ...message('!유가'), roomId: 'fuel-room' },
+      { ...env, ALLOWED_ROOMS: 'fuel-room' },
+      { retail },
+    );
+    expect(product.reply).toContain('[다이소 상품 검색: 수납박스]');
+    expect(compare.reply).toContain('[통합 상품 비교: 물티슈]');
+    expect(stores.reply).toContain('다이소 강남점');
+    expect(inventory.reply).toContain('재고: 있음');
+    expect(cinema.reply).toContain('[CGV] CGV 강남');
+    expect(fuel.reply).toContain('[전국 평균 유가]');
+    expect(fuel.reply).toContain('휘발유: 1,800.50원');
+    const stations = await handleMessage(
+      { ...message('!주유소'), roomId: 'fuel-station-room' },
+      { ...env, ALLOWED_ROOMS: 'fuel-station-room' },
+      { retail },
+    );
+    expect(stations.reply).toContain('[전국 최저가 주유소 TOP 3]');
+    expect(stations.reply).toContain('행운에너지');
+    const nearby = await handleMessage(
+      { ...message('!주변 강남역 카페'), roomId: 'nearby-room', senderId: 'nearby-sender' },
+      { ...env, ALLOWED_ROOMS: 'nearby-room' },
+      { retail },
+    );
+    expect(nearby.reply).toContain('[주변 장소: 강남역 / 카페]');
+    expect(nearby.reply).toContain('테스트 카페');
+    const detail = await handleMessage(
+      { ...message('!상품상세 123456'), roomId: 'detail-room', senderId: 'detail-sender' },
+      { ...env, ALLOWED_ROOMS: 'detail-room' },
+      { retail },
+    );
+    expect(detail.reply).toContain('[다이소 상품 상세: 123456]');
+    expect(detail.reply).toContain('가격: 5,000원');
+    const exchangeResult = await handleMessage(
+      { ...message('!환율'), roomId: 'exchange-room', senderId: 'exchange-sender' },
+      { ...env, ALLOWED_ROOMS: 'exchange-room' },
+      { exchange },
+    );
+    expect(exchangeResult.reply).toContain('[환율]');
+    expect(exchangeResult.reply).toContain('달러(USD): 1달러 = 1,384.60원');
+    expect(exchangeResult.reply).toContain('엔화(JPY): 100엔 = 870.00원');
   });
 });
 
