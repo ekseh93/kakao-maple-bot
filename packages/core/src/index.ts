@@ -489,14 +489,15 @@ export function formatBoutiqueGiftDraw(
   fetchedAt: string,
   random = Math.random,
 ): string {
-  const normalDraws = drawRoyalStyles(normalItems, 9, random);
+  const normalDraws = drawRoyalStyles(normalItems, 10, random);
   const feverDraw = drawRoyalStyles(feverItems, 1, random)[0]!;
   return [
-    '[부티크 기프트 10개 열기]',
-    ...normalDraws.map(
-      (item, index) => `${index + 1}. ${item.name} (${item.probability.toFixed(2)}%)`,
-    ),
+    '[부티크 기프트 11개 열기]',
+    ...normalDraws
+      .slice(0, 9)
+      .map((item, index) => `${index + 1}. ${item.name} (${item.probability.toFixed(2)}%)`),
     `10. [피버 타임] ${feverDraw.name} (${feverDraw.probability.toFixed(2)}%)`,
+    `11. ${normalDraws[9]!.name} (${normalDraws[9]!.probability.toFixed(2)}%)`,
     `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
     sourceUrl,
     '※ 실제 아이템을 지급하지 않는 확률 기반 미니게임입니다.',

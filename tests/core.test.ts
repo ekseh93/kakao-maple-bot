@@ -53,9 +53,10 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
       '2026-08-27T00:00:00.000Z',
       () => 0,
     );
-    expect(output).toContain('[부티크 기프트 10개 열기]');
+    expect(output).toContain('[부티크 기프트 11개 열기]');
     expect(output).toContain('9. 부티크 티켓 1개');
     expect(output).toContain('10. [피버 타임] 부티크 티켓 10개');
+    expect(output).toContain('11. 부티크 티켓 1개');
   });
   it('uses the shared count and result options for Wonder Berry', () =>
     expect(parseRoyalOptions(['25', 'false'])).toEqual({ count: 25, showResults: false }));
