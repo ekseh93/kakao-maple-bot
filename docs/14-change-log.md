@@ -238,6 +238,13 @@
 - 공식 API 응답 매핑과 Lambda 출력 형식을 검증하는 fixture 테스트를 추가했습니다.
 - 실제 API 실호출과 공기계 E2E는 이번 변경에서 수행하지 않았습니다.
 
+## 2026-08-27 최신 Lambda 패키지 재배포 및 도움말 검증
+
+- 누락되어 있던 최신 `apps/lambda/dist/lambda.zip`을 다시 생성하고 도쿄 리전의 기존 Lambda를 갱신했습니다.
+- Terraform 결과는 `0 to add, 1 to change, 0 to destroy`였습니다.
+- 인증된 API smoke test에서 `!도움말` 응답에 `!유챔 닉네임`을 포함한 최신 명령 목록이 반환되는 것을 확인했습니다.
+- 공기계에서 실제 카카오톡 메시지를 입력하는 E2E는 아직 수행하지 않았습니다.
+
 ## 2026-08-27 장비 요약 조회 추가
 
 - `!장비 <닉네임>`으로 Nexon Open API `character/item-equipment`의 장착 장비 부위·이름·스타포스·잠재 등급을 요약합니다.
