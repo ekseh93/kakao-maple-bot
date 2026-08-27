@@ -318,6 +318,9 @@ function formatCharacter(c: Character): string {
     c.level !== undefined || c.job ? `Lv. ${c.level ?? '-'} / ${c.job ?? '-'}` : '',
     c.guild ? `길드: ${c.guild}` : '',
     c.combatPower !== undefined ? `전투력: ${c.combatPower.toLocaleString('ko-KR')}` : '',
+    c.hexaCoreCount !== undefined
+      ? `HEXA: 코어 ${c.hexaCoreCount}개 / 총 레벨 ${c.hexaCoreLevelTotal ?? 0}`
+      : '',
     `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
     `상세: https://maple.gg/u/${encodeURIComponent(c.name)}`,
   ]

@@ -5,6 +5,8 @@ export type Character = {
   job?: string;
   guild?: string;
   combatPower?: number;
+  hexaCoreCount?: number;
+  hexaCoreLevelTotal?: number;
   fetchedAt: string;
 };
 export type NexonClient = {
@@ -140,12 +142,47 @@ export function createNexonClient(
       const level = optionalNumber(data.character_level);
       const job = optionalString(data.character_class);
       const guild = optionalString(data.character_guild_name);
+      const stat = await fetchWithRetry(
+        fetcher,
+        `${base}/character/stat?ocid=${encodeURIComponent(ocid)}`,
+        { headers, signal },
+      );
+      if (!stat.ok) throw new Error(stat.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const statBody = (await stat.json()) as {
+        final_stat?: Array<{ stat_name?: string; stat_value?: string }>;
+      };
+      if (!Array.isArray(statBody.final_stat)) throw new Error('PROVIDER_SCHEMA');
+      const combatPowerValue = statBody.final_stat.find(
+        (entry) => entry.stat_name === '전투력',
+      )?.stat_value;
+      const combatPower =
+        combatPowerValue === undefined ? undefined : finiteNumber(combatPowerValue);
+      const hexa = await fetchWithRetry(
+        fetcher,
+        `${base}/character/hexamatrix?ocid=${encodeURIComponent(ocid)}`,
+        { headers, signal },
+      );
+      if (!hexa.ok) throw new Error(hexa.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const hexaBody = (await hexa.json()) as {
+        character_hexa_core_equipment?: Array<{ hexa_core_level?: number }> | null;
+      };
+      if (
+        hexaBody.character_hexa_core_equipment !== null &&
+        !Array.isArray(hexaBody.character_hexa_core_equipment)
+      )
+        throw new Error('PROVIDER_SCHEMA');
+      const hexaCores = hexaBody.character_hexa_core_equipment ?? [];
+      if (hexaCores.some((core) => !Number.isInteger(core.hexa_core_level)))
+        throw new Error('PROVIDER_SCHEMA');
       return {
         name: characterName ?? name,
         world,
         level,
         job,
         guild,
+        ...(combatPower !== undefined ? { combatPower } : {}),
+        hexaCoreCount: hexaCores.length,
+        hexaCoreLevelTotal: hexaCores.reduce((sum, core) => sum + (core.hexa_core_level ?? 0), 0),
         fetchedAt: new Date().toISOString(),
       };
     },

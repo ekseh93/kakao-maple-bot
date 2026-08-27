@@ -228,6 +228,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
           world: '스카니아',
           level: 280,
           job: '비숍',
+          combatPower: 12345678,
+          hexaCoreCount: 2,
+          hexaCoreLevelTotal: 45,
           fetchedAt: '2026-08-26T00:00:00.000Z',
         })
         .mockResolvedValueOnce(null),
@@ -239,6 +242,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(success.reply).toContain('Lv. 280');
+    expect(success.reply).toContain('전투력: 12,345,678');
+    expect(success.reply).toContain('HEXA: 코어 2개 / 총 레벨 45');
     expect(success.reply).toContain('https://maple.gg/u/%ED%85%8C%EC%8A%A4%ED%8A%B8');
     expect(
       (

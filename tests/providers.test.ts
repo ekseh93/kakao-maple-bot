@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createNexonClient, createStockClient } from '@kakao-maple-bot/providers';
 
 describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
-  it('maps minimal Nexon fixtures and never requires a third-party site', async () => {
+  it('maps Nexon character stats and HEXA summary without third-party access', async () => {
     const fetcher = vi
       .fn()
       .mockResolvedValueOnce(
@@ -18,13 +18,30 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
           }),
           { status: 200 },
         ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ final_stat: [{ stat_name: '전투력', stat_value: '12345678' }] }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            character_hexa_core_equipment: [{ hexa_core_level: 30 }, { hexa_core_level: 15 }],
+          }),
+          { status: 200 },
+        ),
       );
     const result = await createNexonClient('fixture-key', fetcher).findCharacter(
       '테스트',
       new AbortController().signal,
     );
     expect(result?.level).toBe(280);
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(result?.combatPower).toBe(12345678);
+    expect(result?.hexaCoreCount).toBe(2);
+    expect(result?.hexaCoreLevelTotal).toBe(45);
+    expect(fetcher).toHaveBeenCalledTimes(4);
     expect(fetcher.mock.calls.every(([url]) => String(url).includes('open.api.nexon.com'))).toBe(
       true,
     );
@@ -237,6 +254,10 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ character_name: '재시도' }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ final_stat: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ character_hexa_core_equipment: [] }), { status: 200 }),
       );
     await expect(
       createNexonClient('fixture-key', retryFetcher).findCharacter(
@@ -244,7 +265,7 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
         new AbortController().signal,
       ),
     ).resolves.toMatchObject({ name: '재시도' });
-    expect(retryFetcher).toHaveBeenCalledTimes(3);
+    expect(retryFetcher).toHaveBeenCalledTimes(5);
     const rateLimited = vi.fn().mockResolvedValue(new Response('', { status: 429 }));
     await expect(
       createNexonClient('fixture-key', rateLimited).findCharacter(
