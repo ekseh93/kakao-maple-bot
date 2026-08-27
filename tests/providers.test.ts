@@ -525,47 +525,57 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result?.snapshots[0]).toMatchObject({ level: 280, experienceRate: 50.25 });
     expect(fetcher.mock.calls[1]?.[0]).toContain('character/basic?ocid=ocid-fixture&date=');
   });
-  it('maps a KRX name lookup and daily quote fixture', async () => {
+  it('maps a Yahoo Finance Korean name lookup and daily quote fixture', async () => {
     const fetcher = vi
       .fn()
       .mockResolvedValueOnce(
         new Response(
-          JSON.stringify({ OutBlock_1: [{ ISU_SRT_CD: '005930', ISU_ABBRV: '삼성전자' }] }),
+          JSON.stringify({
+            quotes: [
+              {
+                symbol: '000660.KS',
+                shortname: 'SK hynix',
+                longname: 'SK hynix Inc.',
+                quoteType: 'EQUITY',
+              },
+            ],
+          }),
           { status: 200 },
         ),
       )
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            OutBlock_1: [
-              {
-                ISU_SRT_CD: '005930',
-                TDD_CLSPRC: '70,000',
-                CMPPREVDD_PRC: '100',
-                FLUC_RT: '0.14',
-                ACC_TRDVOL: '123',
-              },
-            ],
+            chart: {
+              result: [
+                {
+                  meta: { regularMarketPrice: 250000, previousClose: 248000 },
+                  indicators: { quote: [{ close: [248000, 250000] }] },
+                },
+              ],
+            },
           }),
           { status: 200 },
         ),
       );
-    const result = await createStockClient('krx-key', undefined, fetcher).quote(
-      '삼성전자',
+    const result = await createStockClient(undefined, undefined, fetcher).quote(
+      'SK하이닉스',
       new AbortController().signal,
     );
     expect(result).toMatchObject({
-      code: '005930',
-      name: '삼성전자',
-      price: 70000,
-      change: 100,
-      changeRate: 0.14,
+      code: '000660.KS',
+      name: 'SK hynix Inc.',
+      price: 250000,
+      change: 2000,
+      changeRate: expect.closeTo(0.80645, 4),
       market: 'KRX',
       currency: 'KRW',
       dataType: 'daily',
     });
-    expect(fetcher.mock.calls[0]?.[0]).toContain('/sto/stk_isu_base_info');
-    expect(fetcher.mock.calls[1]?.[0]).toContain('/sto/stk_bydd_trd?basDd=');
+    expect(fetcher.mock.calls[0]?.[0]).toContain(
+      'query1.finance.yahoo.com/v1/finance/search?q=SK%ED%95%98%EC%9D%B4%EB%8B%89%EC%8A%A4',
+    );
+    expect(fetcher.mock.calls[1]?.[0]).toContain('/v8/finance/chart/000660.KS');
   });
   it('maps a Tiingo name search and daily price fixture', async () => {
     const fetcher = vi
@@ -666,16 +676,10 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     ).rejects.toThrow('RATE_LIMITED');
     expect(rateLimited).toHaveBeenCalledTimes(1);
   });
-  it('does not call providers when credentials are absent', async () => {
+  it('does not call Nexon providers when credentials are absent', async () => {
     const fetcher = vi.fn();
     await expect(
       createNexonClient(undefined, fetcher).findCharacter('테스트', new AbortController().signal),
-    ).rejects.toThrow('NOT_CONFIGURED');
-    await expect(
-      createStockClient(undefined, undefined, fetcher).quote(
-        '005930',
-        new AbortController().signal,
-      ),
     ).rejects.toThrow('NOT_CONFIGURED');
     expect(fetcher).not.toHaveBeenCalled();
   });

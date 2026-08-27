@@ -894,20 +894,6 @@ export function createNexonClient(
   };
 }
 
-function marketNumber(value: unknown): number {
-  if (typeof value !== 'string' && typeof value !== 'number') throw new Error('PROVIDER_SCHEMA');
-  const normalized = String(value).replace(/,/g, '').trim();
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed)) throw new Error('PROVIDER_SCHEMA');
-  return parsed;
-}
-
-function tokyoTradingDate(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' })
-    .format(new Date())
-    .replaceAll('-', '');
-}
-
 const yahooSearchAliases: Record<string, string> = {
   넥슨: 'NEXON',
   닌텐도: 'Nintendo',
@@ -938,7 +924,7 @@ export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
 }
 
 export function createStockClient(
-  krxAuthKey: string | undefined,
+  _krxAuthKey: string | undefined,
   tiingoToken: string | undefined,
   fetcher: typeof fetch = fetch,
 ): StockClient {
@@ -1013,55 +999,78 @@ export function createStockClient(
     };
   };
 
+  const quoteYahooMarket = async (
+    input: string,
+    market: 'KRX',
+    signal: AbortSignal,
+  ): Promise<StockQuote | null> => {
+    const searchInput = yahooSearchAliases[input] ?? input;
+    const searchResponse = await request(
+      `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(searchInput)}&quotesCount=20&newsCount=0`,
+      yahooPublicHeaders,
+      signal,
+    );
+    const searchBody = (await searchResponse.json()) as {
+      quotes?: Array<{
+        symbol?: string;
+        shortname?: string;
+        longname?: string;
+        quoteType?: string;
+      }>;
+    };
+    if (!Array.isArray(searchBody.quotes)) throw new Error('PROVIDER_SCHEMA');
+    const match = searchBody.quotes.find(
+      (item) =>
+        typeof item.symbol === 'string' &&
+        /\.(KS|KQ)$/i.test(item.symbol) &&
+        ['EQUITY', 'ETF'].includes(item.quoteType ?? ''),
+    );
+    if (!match?.symbol) return null;
+    const chartResponse = await request(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(match.symbol)}?range=5d&interval=1d&events=history`,
+      yahooPublicHeaders,
+      signal,
+    );
+    const chartBody = (await chartResponse.json()) as {
+      chart?: {
+        result?: Array<{
+          meta?: {
+            regularMarketPrice?: number;
+            chartPreviousClose?: number;
+            previousClose?: number;
+          };
+          indicators?: { quote?: Array<{ close?: Array<number | null> }> };
+        }> | null;
+      };
+    };
+    const result = chartBody.chart?.result?.[0];
+    const meta = result?.meta;
+    const closes = result?.indicators?.quote?.[0]?.close ?? [];
+    const latestClose = [...closes].reverse().find((value) => typeof value === 'number');
+    const price = meta?.regularMarketPrice ?? latestClose;
+    if (typeof price !== 'number' || !Number.isFinite(price)) throw new Error('PROVIDER_SCHEMA');
+    const previous = meta?.previousClose ?? meta?.chartPreviousClose;
+    const change =
+      typeof previous === 'number' && Number.isFinite(previous) ? price - previous : undefined;
+    return {
+      code: match.symbol,
+      name: match.longname ?? match.shortname ?? match.symbol,
+      price,
+      currency: 'KRW',
+      market,
+      ...(change !== undefined ? { change, changeRate: (change / previous!) * 100 } : {}),
+      dataType: 'daily',
+      fetchedAt: new Date().toISOString(),
+    };
+  };
+
   const quote = async (query: string, signal: AbortSignal): Promise<StockQuote> => {
     const input = query.trim();
     if (!input || input.length > 80) throw new Error('INVALID_USAGE');
-    if (/^[\d]{6}$|[가-힣]/.test(input)) {
-      if (!krxAuthKey) throw new Error('NOT_CONFIGURED');
-      const headers = { AUTH_KEY: krxAuthKey };
-      const masterResponse = await request(
-        'https://openapi.krx.co.kr/svc/apis/sto/stk_isu_base_info',
-        headers,
-        signal,
-      );
-      const masterBody = (await masterResponse.json()) as {
-        OutBlock_1?: Array<Record<string, unknown>>;
-      };
-      if (!Array.isArray(masterBody.OutBlock_1)) throw new Error('PROVIDER_SCHEMA');
-      const master = masterBody.OutBlock_1.find((item) => {
-        const code = String(item.ISU_SRT_CD ?? '').replace(/\s/g, '');
-        const name = String(item.ISU_ABBRV ?? '').trim();
-        return code === input || name === input;
-      });
-      if (!master) throw new Error('NOT_FOUND');
-      const code = String(master.ISU_SRT_CD ?? '').replace(/\s/g, '');
-      const name = String(master.ISU_ABBRV ?? '').trim();
-      if (!/^\d{6}$/.test(code) || !name) throw new Error('PROVIDER_SCHEMA');
-      const dailyResponse = await request(
-        `https://openapi.krx.co.kr/svc/apis/sto/stk_bydd_trd?basDd=${tokyoTradingDate()}`,
-        headers,
-        signal,
-      );
-      const dailyBody = (await dailyResponse.json()) as {
-        OutBlock_1?: Array<Record<string, unknown>>;
-      };
-      if (!Array.isArray(dailyBody.OutBlock_1)) throw new Error('PROVIDER_SCHEMA');
-      const daily = dailyBody.OutBlock_1.find(
-        (item) => String(item.ISU_SRT_CD ?? '').replace(/\s/g, '') === code,
-      );
-      if (!daily) throw new Error('NOT_FOUND');
-      return {
-        code,
-        name,
-        price: marketNumber(daily.TDD_CLSPRC),
-        change: marketNumber(daily.CMPPREVDD_PRC),
-        changeRate: marketNumber(daily.FLUC_RT),
-        volume: marketNumber(daily.ACC_TRDVOL),
-        currency: 'KRW',
-        market: 'KRX',
-        dataType: 'daily',
-        fetchedAt: new Date().toISOString(),
-      };
+    if (!yahooSearchAliases[input] && /^[\d]{6}$|[가-힣]/.test(input)) {
+      const korean = await quoteYahooMarket(input, 'KRX', signal);
+      if (!korean) throw new Error('NOT_FOUND');
+      return korean;
     }
     if (!tiingoToken) throw new Error('NOT_CONFIGURED');
     const tiingoHeaders = { Authorization: `Token ${tiingoToken}` };

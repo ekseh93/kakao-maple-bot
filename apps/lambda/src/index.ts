@@ -230,7 +230,7 @@ export async function handleMessage(
         if (!allowed(message.senderId, env.ADMIN_SENDERS))
           return { reply: null, requestId, cache: 'bypass' };
         return {
-          reply: `[봇 상태]\n전체 활성: ${env.BOT_ENABLED !== 'false' ? '예' : '아니오'}\nNexon configured: ${env.NEXON_API_KEY ? '예' : '아니오'}\n주식 configured: ${env.STOCK_ENABLED === 'true' && Boolean(env.KRX_AUTH_KEY || env.TIINGO_TOKEN) ? '예' : '아니오'}`,
+          reply: `[봇 상태]\n전체 활성: ${env.BOT_ENABLED !== 'false' ? '예' : '아니오'}\nNexon configured: ${env.NEXON_API_KEY ? '예' : '아니오'}\n주식 configured: ${env.STOCK_ENABLED === 'true' ? '예' : '아니오'}`,
           requestId,
           cache: 'bypass',
         };
