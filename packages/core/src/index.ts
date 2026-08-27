@@ -60,24 +60,26 @@ const helpRows = {
     ['!이벤트', '진행 이벤트'],
     ['!썬데이 / !선데이', '썬데이 메이플'],
     ['!인벤', '인벤 10추글'],
-    ['!웹툰', '네이버 웹툰 추천'],
+    ['!메카베리 <레벨>', '메카베리 경험치'],
+  ],
+  miniGames: [
     ['!부티크', '부티크 기프트'],
     ['!로얄', '로얄스타일'],
     ['!원더베리', '위습의 원더베리'],
     ['!루나스윗', '루나 크리스탈 스윗'],
     ['!루나드림', '루나 크리스탈 드림'],
-    ['!메카베리 <레벨>', '메카베리 경험치'],
   ],
   other: [
     ['!날씨 <지역>', '현재 날씨'],
     ['!가위 / !바위 / !보', '가위바위보'],
     ['!골라 <메뉴들>', '메뉴 선택'],
-    ['!뭐먹지', '메뉴 추천'],
+    ['!뭐먹지 !ㅁㅁㅈ', '메뉴 추천'],
     ['!일본여행', '여행지 추천'],
     ['!운세 <출생연도>', '오늘의 운세'],
     ['!로또', '한·일 번호 추천'],
     ['!넷플', '넷플릭스 추천'],
     ['!애니', '일본 애니 추천'],
+    ['!웹툰', '네이버 웹툰 추천'],
     ['!주식 <이름>', '주식 시세'],
     ['!디코', '디스코드 링크'],
     ['!마빡도로시', '최신 글 3개'],
@@ -99,13 +101,13 @@ export const FORMATTED_HELP = [
   '[봇 도움말]',
   ...formatHelpSection('메이플스토리', helpRows.maple),
   '',
+  ...formatHelpSection('미니 게임', helpRows.miniGames),
+  '',
   ...formatHelpSection('기타 기능', helpRows.other),
 ].join('\n');
 
 const aliases: Record<string, CommandName> = {
   도움말: 'help',
-  명령어: 'help',
-  help: 'help',
   캐릭터: 'character',
   정보: 'character',
   메이플: 'character',
@@ -164,7 +166,8 @@ export function parseCommand(message: string): ParsedCommand | null {
   const [raw, ...args] = value.slice(1).split(/\s+/);
   const normalizedRaw = raw?.toLocaleLowerCase() ?? '';
   const name = aliases[normalizedRaw];
-  if (!name) return { name: 'help', args: [] };
+  if (!name) return null;
+  if (name === 'help' && !value.startsWith('!')) return null;
   return name === 'rps' ? { name, args: [raw ?? '', ...args] } : { name, args };
 }
 

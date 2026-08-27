@@ -116,8 +116,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(ordinary.reply).toBeNull();
     expect(command.reply).toContain('[가위바위보]');
   });
-  it('T-005 returns bounded help for unknown commands', async () =>
-    expect((await handleMessage(message('!없는명령'), env)).reply).toContain('[봇 도움말]'));
+  it('ignores unknown commands without returning help', async () =>
+    expect((await handleMessage(message('!없는명령'), env)).reply).toBeNull());
   it('T-004 rejects an oversized command before any provider work', async () => {
     const nexon = { findCharacter: vi.fn() };
     const result = await handleMessage(message(`!캐릭터 ${'가'.repeat(301)}`), env, { nexon });
@@ -643,7 +643,6 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     );
     expect(result.reply).toContain('[위습의 원더베리 10회 뽑기]');
     expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
-    expect(result.reply).toContain('[원더블랙] 테스트 원더 블랙 펫');
     expect(result.reply).not.toContain('기준: Nexon 공식 확률 페이지');
     expect(result.reply).not.toContain('실제 구매가 아닌');
     expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');

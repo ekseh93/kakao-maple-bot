@@ -34,6 +34,7 @@ import {
 describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   it('keeps help commands grouped and aligned in two sections', () => {
     expect(FORMATTED_HELP).toContain('【메이플스토리】');
+    expect(FORMATTED_HELP).toContain('【미니 게임】');
     expect(FORMATTED_HELP).toContain('【기타 기능】');
     expect(FORMATTED_HELP).toContain('!보스포뻥');
     expect(FORMATTED_HELP).toContain('!주식 <이름>');
@@ -150,9 +151,11 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('출처: https://matsu1207.tistory.com/1052');
     expect(() => formatMaxLevelSymbolEffects(['11'])).toThrow('INVALID_USAGE');
   });
-  it('parses aliases and unknown commands as help', () => {
+  it('parses aliases and ignores unknown commands', () => {
     expect(parseCommand(' !도움말 ')?.name).toBe('help');
-    expect(parseCommand('!unknown')?.name).toBe('help');
+    expect(parseCommand('/도움말')).toBeNull();
+    expect(parseCommand('!명령어')).toBeNull();
+    expect(parseCommand('!unknown')).toBeNull();
     expect(parseCommand('!정보 테스트')).toEqual({ name: 'character', args: ['테스트'] });
     expect(parseCommand('!유챔 테스트')).toEqual({ name: 'unionChampion', args: ['테스트'] });
   });
@@ -325,7 +328,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(playRps('가위', () => 0.8)).toContain('이겼다');
   });
   it('removes the retired maple link command', () =>
-    expect(parseCommand('!메이플링크 닉네임')?.name).toBe('help'));
+    expect(parseCommand('!메이플링크 닉네임')).toBeNull());
   it('supports article-inspired aliases without adding a new provider call', () => {
     expect(parseCommand('!정보 닉네임')).toEqual({ name: 'character', args: ['닉네임'] });
     expect(parseCommand('!심볼계산 기어드락 1 11')).toEqual({
