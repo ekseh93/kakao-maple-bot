@@ -4,6 +4,7 @@ import {
   calculateSymbolCost,
   chooseItems,
   drawRoyalStyles,
+  parseRoyalOptions,
   parseCommand,
   playRps,
   recommendFood,
@@ -34,6 +35,11 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     );
     expect(draws).toHaveLength(10);
     expect(draws.every((item) => item.name === 'B')).toBe(true);
+  });
+  it('parses Royal Style count and result visibility options', () => {
+    expect(parseRoyalOptions(['25', 'false'])).toEqual({ count: 25, showResults: false });
+    expect(() => parseRoyalOptions(['26'])).toThrow('INVALID_USAGE');
+    expect(() => parseRoyalOptions(['5', 'maybe'])).toThrow('INVALID_USAGE');
   });
   it('keeps help examples aligned with registered commands', () =>
     expect(parseCommand('!도움말')).toBeTruthy());

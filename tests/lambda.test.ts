@@ -473,6 +473,24 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(10);
     expect(result.reply).toContain('실제 구매가 아닌');
   });
+  it('supports a custom Royal Style count and hides detailed results', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findRoyalStyles: vi.fn().mockResolvedValue({
+        items: [{ name: '테스트 아이템', probability: 100 }],
+        sourceUrl: 'https://maplestory.nexon.com/Guide/CashShop/Probability',
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('/로얄 25 false'), roomId: 'royal-count-room', senderId: 'royal-count-sender' },
+      { ...env, ALLOWED_ROOMS: 'royal-count-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[로얄스타일 25회 뽑기]');
+    expect(result.reply).toContain('상세 결과: 숨김');
+    expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(0);
+  });
   it('handles ten weighted Wonder Berry draws', async () => {
     const nexon = {
       findCharacter: vi.fn(),

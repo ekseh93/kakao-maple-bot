@@ -294,7 +294,7 @@ export function drawRoyalStyles(
   count = 10,
   random = Math.random,
 ): RoyalStyleItem[] {
-  if (items.length === 0 || !Number.isInteger(count) || count < 1 || count > 10)
+  if (items.length === 0 || !Number.isInteger(count) || count < 1 || count > 25)
     throw new Error('INVALID_USAGE');
   const total = items.reduce((sum, item) => sum + item.probability, 0);
   if (!Number.isFinite(total) || total <= 0) throw new Error('PROVIDER_SCHEMA');
@@ -308,13 +308,35 @@ export function drawRoyalStyles(
   });
 }
 
+export type RoyalDrawOptions = { count: number; showResults: boolean };
+
+export function parseRoyalOptions(args: string[]): RoyalDrawOptions {
+  if (args.length > 2) throw new Error('INVALID_USAGE');
+  const count = args[0] === undefined || args[0] === '' ? 10 : Number(args[0]);
+  if (!Number.isSafeInteger(count) || count < 1 || count > 25) throw new Error('INVALID_USAGE');
+  const showResults = args[1] === undefined ? true : args[1].toLocaleLowerCase() === 'true';
+  if (args[1] !== undefined && !['true', 'false'].includes(args[1].toLocaleLowerCase()))
+    throw new Error('INVALID_USAGE');
+  return { count, showResults };
+}
+
 export function formatRoyalDraw(
   items: RoyalStyleItem[],
   sourceUrl: string,
   fetchedAt: string,
+  count = 10,
+  showResults = true,
   random = Math.random,
 ): string {
-  return formatWeightedDraw('[로얄스타일 10회 뽑기]', items, sourceUrl, fetchedAt, random);
+  return formatWeightedDraw(
+    `[로얄스타일 ${count}회 뽑기]`,
+    items,
+    sourceUrl,
+    fetchedAt,
+    count,
+    showResults,
+    random,
+  );
 }
 
 export function formatWonderBerryDraw(
@@ -323,7 +345,15 @@ export function formatWonderBerryDraw(
   fetchedAt: string,
   random = Math.random,
 ): string {
-  return formatWeightedDraw('[위습의 원더베리 10회 뽑기]', items, sourceUrl, fetchedAt, random);
+  return formatWeightedDraw(
+    '[위습의 원더베리 10회 뽑기]',
+    items,
+    sourceUrl,
+    fetchedAt,
+    10,
+    true,
+    random,
+  );
 }
 
 function formatWeightedDraw(
@@ -331,12 +361,16 @@ function formatWeightedDraw(
   items: RoyalStyleItem[],
   sourceUrl: string,
   fetchedAt: string,
-  random: () => number,
+  count = 10,
+  showResults = true,
+  random = Math.random,
 ): string {
-  const draws = drawRoyalStyles(items, 10, random);
+  const draws = drawRoyalStyles(items, count, random);
   return [
     title,
-    ...draws.map((item, index) => `${index + 1}. ${item.name} (${item.probability.toFixed(1)}%)`),
+    ...(showResults
+      ? draws.map((item, index) => `${index + 1}. ${item.name} (${item.probability.toFixed(1)}%)`)
+      : [`상세 결과: 숨김`, `총 뽑기: ${count}개`]),
     `기준: Nexon 공식 확률 페이지 (${fetchedAt.slice(0, 10)})`,
     sourceUrl,
     '※ 실제 구매가 아닌 확률 기반 미니게임입니다.',

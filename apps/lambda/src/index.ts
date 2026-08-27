@@ -5,6 +5,7 @@ import {
   formatSymbol,
   HELP,
   parseCommand,
+  parseRoyalOptions,
   playRps,
   recommendFood,
   validateCharacterName,
@@ -337,12 +338,15 @@ export async function handleMessage(
         };
       }
       case 'royal': {
+        const options = parseRoyalOptions(parsed.args);
         if (royalCache && royalCache.expiresAt > now)
           return {
             reply: formatRoyalDraw(
               royalCache.value.items,
               royalCache.value.sourceUrl,
               royalCache.value.fetchedAt,
+              options.count,
+              options.showResults,
             ),
             requestId,
             cache: 'hit',
@@ -352,7 +356,13 @@ export async function handleMessage(
         const royal = await client.findRoyalStyles(timeoutSignal());
         royalCache = { value: royal, expiresAt: now + 5 * 60_000 };
         return {
-          reply: formatRoyalDraw(royal.items, royal.sourceUrl, royal.fetchedAt),
+          reply: formatRoyalDraw(
+            royal.items,
+            royal.sourceUrl,
+            royal.fetchedAt,
+            options.count,
+            options.showResults,
+          ),
           requestId,
           cache: 'miss',
         };
