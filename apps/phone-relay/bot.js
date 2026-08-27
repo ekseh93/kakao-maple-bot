@@ -2,7 +2,7 @@
 // Replace only sharedSecret on the phone. Never commit the real value.
 var CONFIG = {
   endpoint: 'https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com',
-  sharedSecret: '',
+  sharedSecret: 'REPLACE_ON_PHONE_ONLY',
   noticeRooms: ['태환', '엘리시움 팔레트'],
 };
 var knownNoticeUrls = [];
@@ -12,7 +12,8 @@ var runtimePolling = false;
 var lastRuntimeAlertAt = 0;
 
 function pollNoticeAlerts() {
-  if (noticePolling || !CONFIG.endpoint || !CONFIG.sharedSecret || !CONFIG.noticeRooms.length) return;
+  if (noticePolling || !CONFIG.endpoint || !CONFIG.sharedSecret || !CONFIG.noticeRooms.length)
+    return;
   noticePolling = true;
   try {
     var known = encodeURIComponent(knownNoticeUrls.join('|'));

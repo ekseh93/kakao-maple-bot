@@ -37,7 +37,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(FORMATTED_HELP).toContain('【기타 기능】');
     expect(FORMATTED_HELP).toContain('!보스포뻥');
     expect(FORMATTED_HELP).toContain('!주식 <이름>');
-    expect(FORMATTED_HELP).toContain('│ 명령어               │ 설명                   │');
+    expect(FORMATTED_HELP).toContain('• !정보 <닉네임>');
+    expect(FORMATTED_HELP).toContain('  └ 캐릭터 조회');
   });
   it('T-001 ignores ordinary chat', () => expect(parseCommand('안녕하세요')).toBeNull());
   it('accepts slash experience history commands', () =>

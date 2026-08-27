@@ -90,13 +90,8 @@ const helpRows = {
 function formatHelpSection(title: string, rows: readonly (readonly [string, string])[]): string[] {
   return [
     `【${title}】`,
-    '┌──────────────────────┬────────────────────────┐',
-    '│ 명령어               │ 설명                   │',
-    '├──────────────────────┼────────────────────────┤',
-    ...rows.map(
-      ([command, description]) => `│ ${command.padEnd(20, ' ')} │ ${description.padEnd(22, ' ')} │`,
-    ),
-    '└──────────────────────┴────────────────────────┘',
+    '────────────',
+    ...rows.flatMap(([command, description]) => [`• ${command}`, `  └ ${description}`]),
   ];
 }
 
