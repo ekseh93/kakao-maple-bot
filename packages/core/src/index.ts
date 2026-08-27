@@ -539,7 +539,12 @@ export function formatRoyalDraw(
     showResults,
     random,
     false,
-    (item) => `[라벨] ${item.name}`,
+    (item) =>
+      item.name.includes('스페셜 라벨')
+        ? item.name.startsWith('[스페셜 라벨]')
+          ? item.name
+          : `[스페셜 라벨] ${item.name}`
+        : item.name,
   );
 }
 

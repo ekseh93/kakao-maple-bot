@@ -89,16 +89,21 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('레드: [마라벨] 마스터 어밴든 세트 선택권 (7.3539%)');
     expect(output).toContain('블랙: [마라벨] 마스터 어밴든 헤어 쿠폰 (5.8135%)');
   });
-  it('adds the requested labels to Royal and Luna results', () => {
+  it('labels only Royal special-label items and Luna petit pets', () => {
     const royal = formatRoyalDraw(
-      [{ name: '로얄 테스트', probability: 100 }],
+      [
+        { name: '테스트 일반 아이템', probability: 50 },
+        { name: '테스트 스페셜 라벨', probability: 50 },
+      ],
       'https://example.com/royal',
       '2026-08-27T00:00:00.000Z',
       1,
       true,
-      () => 0,
+      () => 0.75,
     );
-    expect(royal).toContain('[라벨] 로얄 테스트');
+    expect(royal).toContain('[스페셜 라벨] 테스트 스페셜 라벨');
+    expect(royal).not.toContain('[라벨]');
+    expect(royal).not.toContain('[스페셜 라벨] 테스트 일반 아이템');
     const luna = formatLunaCrystalSweetDraw(
       '일반',
       [{ name: '루나 쁘띠펫 테스트', probability: 100 }],
