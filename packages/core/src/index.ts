@@ -712,12 +712,15 @@ export function formatBossRewards(args: string[] = []): string {
   const lines = [
     '[그란디스·검은 마법사 보스 결정 가격]',
     '단위: 메소',
-    '보스             이지           노말           하드        익스트림',
-    '────────────────────────────────────────────────────────────',
-    ...grandisBossRewards.map(
-      (boss) =>
-        `${boss.name.padEnd(9, ' ')} ${formatMeso(boss.easy).padStart(12, ' ')} ${formatMeso(boss.normal).padStart(12, ' ')} ${formatMeso(boss.hard).padStart(12, ' ')} ${formatMeso(boss.extreme).padStart(12, ' ')}`,
-    ),
+    '────────────',
+    ...grandisBossRewards.flatMap((boss) => [
+      `• ${boss.name}`,
+      `  └ 이지: ${formatMeso(boss.easy)}`,
+      `  └ 노말: ${formatMeso(boss.normal)}`,
+      `  └ 하드: ${formatMeso(boss.hard)}`,
+      `  └ 익스트림: ${formatMeso(boss.extreme)}`,
+      '',
+    ]),
     '※ -는 원문 표에 해당 난이도 값이 없는 항목입니다.',
     '출처: https://matsu1207.tistory.com/757',
   ];
