@@ -17,6 +17,7 @@ export type CommandName =
   | 'equipment'
   | 'notice'
   | 'inven'
+  | 'mabbakDorosi'
   | 'webtoon'
   | 'boutiqueGift'
   | 'event'
@@ -52,6 +53,7 @@ const aliases: Record<string, CommandName> = {
   장비: 'equipment',
   공지: 'notice',
   인벤: 'inven',
+  마빡도로시: 'mabbakDorosi',
   웹툰: 'webtoon',
   부티크: 'boutiqueGift',
   이벤트: 'event',

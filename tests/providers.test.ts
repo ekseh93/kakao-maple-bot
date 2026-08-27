@@ -53,6 +53,23 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     ]);
     expect(result.boardUrl).toBe('https://www.inven.co.kr/board/maple/5974?my=chu');
   });
+  it('maps the three newest Mabbak Dorosi posts with article links', async () => {
+    const html = `
+      <a class="subject-link" href="/board/maple/2304/101">첫 글</a>
+      <a class="subject-link" href="/board/maple/2304/102">둘째 글</a>
+      <a class="subject-link" href="/board/maple/2304/103">셋째 글</a>
+      <a class="subject-link" href="/board/maple/2304/104">넷째 글</a>`;
+    const fetcher = vi.fn().mockResolvedValue(new Response(html, { status: 200 }));
+    const result = await createInvenClient(fetcher).findMabbakDorosiPosts!(
+      new AbortController().signal,
+    );
+    expect(result.posts).toHaveLength(3);
+    expect(result.posts[0]).toEqual({
+      title: '첫 글',
+      url: 'https://www.inven.co.kr/board/maple/2304/101',
+    });
+    expect(result.posts[2]?.url).toBe('https://www.inven.co.kr/board/maple/2304/103');
+  });
   it('maps Nexon character stats and HEXA summary without third-party access', async () => {
     const fetcher = vi
       .fn()

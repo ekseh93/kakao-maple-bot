@@ -89,6 +89,7 @@ const equipmentCache = new Map<string, { value: EquipmentCharacter; expiresAt: n
 const experienceCache = new Map<string, { value: ExperienceHistory; expiresAt: number }>();
 let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
 let invenCache: { value: InvenTopPostList; expiresAt: number } | undefined;
+let mabbakDorosiCache: { value: InvenTopPostList; expiresAt: number } | undefined;
 let webtoonCache: { value: WebtoonList; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
@@ -191,6 +192,7 @@ export async function handleMessage(
     if (entry.expiresAt <= now) stockCandidatesCache.delete(query);
   if (noticeCache && noticeCache.expiresAt <= now) noticeCache = undefined;
   if (invenCache && invenCache.expiresAt <= now) invenCache = undefined;
+  if (mabbakDorosiCache && mabbakDorosiCache.expiresAt <= now) mabbakDorosiCache = undefined;
   if (webtoonCache && webtoonCache.expiresAt <= now) webtoonCache = undefined;
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
@@ -231,7 +233,7 @@ export async function handleMessage(
     switch (parsed.name) {
       case 'help':
         return {
-          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!메카베리 레벨 — 메카베리 경험치`,
+          reply: `${HELP}\n!보스 — 그란디스·검은 마법사 결정 가격표\n!메카베리 레벨 — 메카베리 경험치\n!마빡도로시 — 마빡도로시 최신 글 3개`,
           requestId,
           cache: 'bypass',
         };
@@ -380,6 +382,15 @@ export async function handleMessage(
         const posts = await inven.findTopPosts(timeoutSignal());
         invenCache = { value: posts, expiresAt: now + 60_000 };
         return { reply: formatInven(posts), requestId, cache: 'miss' };
+      }
+      case 'mabbakDorosi': {
+        if (mabbakDorosiCache && mabbakDorosiCache.expiresAt > now)
+          return { reply: formatMabbakDorosi(mabbakDorosiCache.value), requestId, cache: 'hit' };
+        const inven = deps.inven ?? createInvenClient();
+        if (!inven.findMabbakDorosiPosts) throw new Error('NOT_CONFIGURED');
+        const posts = await inven.findMabbakDorosiPosts(timeoutSignal());
+        mabbakDorosiCache = { value: posts, expiresAt: now + 60_000 };
+        return { reply: formatMabbakDorosi(posts), requestId, cache: 'miss' };
       }
       case 'webtoon': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
@@ -780,6 +791,14 @@ function formatInven(c: InvenTopPostList): string {
     ...c.posts.map((post, index) => `${index + 1}. ${post.title}`),
     '',
     `10추 게시판: ${c.boardUrl}`,
+  ]
+    .join('\n')
+    .slice(0, 1000);
+}
+function formatMabbakDorosi(c: InvenTopPostList): string {
+  return [
+    '[마빡도로시 최신 글]',
+    ...c.posts.slice(0, 3).map((post, index) => `${index + 1}. ${post.title}\n   ${post.url}`),
   ]
     .join('\n')
     .slice(0, 1000);

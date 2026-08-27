@@ -79,7 +79,7 @@ export type EquipmentItem = {
 export type EquipmentCharacter = { name: string; items: EquipmentItem[]; fetchedAt: string };
 export type NoticeItem = { title: string; url: string; date?: string };
 export type NoticeList = { notices: NoticeItem[]; fetchedAt: string };
-export type InvenTopPost = { title: string };
+export type InvenTopPost = { title: string; url?: string };
 export type InvenTopPostList = {
   posts: InvenTopPost[];
   boardUrl: string;
@@ -87,6 +87,7 @@ export type InvenTopPostList = {
 };
 export type InvenClient = {
   findTopPosts(signal: AbortSignal): Promise<InvenTopPostList>;
+  findMabbakDorosiPosts?(signal: AbortSignal): Promise<InvenTopPostList>;
 };
 export type WebtoonItem = {
   titleId: number;
@@ -223,7 +224,7 @@ function parseLatestSundayEventPage(html: string): EventItem | null {
   };
 }
 
-function parseInvenTopPosts(html: string, boardUrl: string): InvenTopPostList {
+function parseInvenTopPosts(html: string, boardUrl: string, limit = 5): InvenTopPostList {
   const posts: InvenTopPost[] = [];
   const subjectPattern = /<a\b[^>]*class=["'][^"']*subject-link[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
   for (const match of html.matchAll(subjectPattern)) {
@@ -231,8 +232,14 @@ function parseInvenTopPosts(html: string, boardUrl: string): InvenTopPostList {
       .replace(/^\[[^\]]+\]\s*/, '')
       .trim();
     if (!title || posts.some((post) => post.title === title)) continue;
-    posts.push({ title });
-    if (posts.length === 5) break;
+    const href = match[0].match(/\bhref=["']([^"']+)["']/i)?.[1];
+    const url = href
+      ? href.startsWith('http')
+        ? href
+        : `https://www.inven.co.kr${href.startsWith('/') ? href : `/${href}`}`
+      : undefined;
+    posts.push({ title, ...(url ? { url } : {}) });
+    if (posts.length === limit) break;
   }
   if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
   return { posts, boardUrl, fetchedAt: new Date().toISOString() };
@@ -868,6 +875,8 @@ const yahooPublicHeaders = {
 
 export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
   const boardUrl = 'https://www.inven.co.kr/board/maple/5974?my=chu';
+  const mabbakDorosiUrl =
+    'https://www.inven.co.kr/board/maple/2304?name=nicname&keyword=%EB%A7%88%EB%B9%A1%EB%8F%84%EB%A1%9C%EC%8B%9C&eq=1&iskin=';
   return {
     async findTopPosts(signal) {
       const response = await fetchWithRetry(fetcher, boardUrl, {
@@ -879,6 +888,19 @@ export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
       });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
       return parseInvenTopPosts(await response.text(), boardUrl);
+    },
+    async findMabbakDorosiPosts(signal) {
+      const response = await fetchWithRetry(fetcher, mabbakDorosiUrl, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      const result = parseInvenTopPosts(await response.text(), mabbakDorosiUrl, 3);
+      if (result.posts.some((post) => !post.url)) throw new Error('PROVIDER_SCHEMA');
+      return result;
     },
   };
 }

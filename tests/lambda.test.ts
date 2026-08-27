@@ -60,6 +60,27 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('1. 첫 글');
     expect(result.reply).toContain('10추 게시판: https://www.inven.co.kr/board/maple/5974?my=chu');
   });
+  it('formats the three newest Mabbak Dorosi posts and links', async () => {
+    const inven = {
+      findTopPosts: vi.fn(),
+      findMabbakDorosiPosts: vi.fn().mockResolvedValue({
+        posts: [
+          { title: '첫 글', url: 'https://www.inven.co.kr/board/maple/2304/101' },
+          { title: '둘째 글', url: 'https://www.inven.co.kr/board/maple/2304/102' },
+          { title: '셋째 글', url: 'https://www.inven.co.kr/board/maple/2304/103' },
+        ],
+        boardUrl: 'https://www.inven.co.kr/board/maple/2304',
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage({ ...message('!마빡도로시'), roomId: 'room-a' }, env, {
+      inven,
+    });
+    expect(result.reply).toContain('[마빡도로시 최신 글]');
+    expect(result.reply).toContain('1. 첫 글');
+    expect(result.reply).toContain('https://www.inven.co.kr/board/maple/2304/101');
+    expect(inven.findMabbakDorosiPosts).toHaveBeenCalledTimes(1);
+  });
   it('recommends a random current Naver webtoon', async () => {
     const webtoon = {
       findCurrentWebtoons: vi.fn().mockResolvedValue({
