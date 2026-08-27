@@ -368,22 +368,25 @@ function formatUnion(c: UnionCharacter): string {
     .join('\n');
 }
 function formatEquipment(c: EquipmentCharacter): string {
-  const lines = c.items.map((item) => {
-    const potential = item.potentialGrade ? ` / 잠재 ${item.potentialGrade}` : '';
-    const additional = item.additionalPotentialGrade
-      ? ` / 에디 ${item.additionalPotentialGrade}`
-      : '';
-    return `- ${item.part}: ${item.name} / 스타포스 ${item.starforce}${potential}${additional}`;
-  });
-  return [
+  const lines = [
     '[장비 요약]',
-    c.name,
-    `장비 수: ${c.items.length}`,
-    ...lines,
-    `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`,
-  ]
-    .join('\n')
-    .slice(0, 1000);
+    `캐릭터: ${c.name}`,
+    `장착 장비: ${c.items.length}개`,
+    '────────────',
+  ];
+  for (const item of c.items) {
+    lines.push(`▸ ${item.part}`, `  ${item.name}`, `  ⭐ 스타포스 ${item.starforce}`);
+    const potentials = [
+      item.potentialGrade ? `잠재 ${item.potentialGrade}` : '',
+      item.additionalPotentialGrade ? `에디 ${item.additionalPotentialGrade}` : '',
+    ].filter(Boolean);
+    if (potentials.length > 0) lines.push(`  ${potentials.join(' | ')}`);
+  }
+  lines.push('────────────', `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`);
+  const full = lines.join('\n');
+  if (full.length <= 1000) return full;
+  const footer = `\n… ${c.items.length}개 중 일부만 표시 (응답 제한)`;
+  return full.slice(0, 1000 - footer.length).trimEnd() + footer;
 }
 function formatNotice(c: NoticeList): string {
   return [

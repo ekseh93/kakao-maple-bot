@@ -304,7 +304,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('유니온 레벨: 8,500');
     expect(result.reply).toContain('아티팩트 포인트: 1,200');
   });
-  it('handles equipment lookup with a concise summary', async () => {
+  it('handles equipment lookup with a readable template', async () => {
     const nexon = {
       findCharacter: vi.fn(),
       findEquipment: vi.fn().mockResolvedValue({
@@ -326,8 +326,10 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { ...env, ALLOWED_ROOMS: 'equipment-room' },
       { nexon },
     );
-    expect(result.reply).toContain('테스트 모자 / 스타포스 22');
-    expect(result.reply).toContain('잠재 레전드리 / 에디 에픽');
+    expect(result.reply).toContain('캐릭터: 장비캐릭터');
+    expect(result.reply).toContain('▸ 모자\n  테스트 모자');
+    expect(result.reply).toContain('⭐ 스타포스 22');
+    expect(result.reply).toContain('잠재 레전드리 | 에디 에픽');
   });
   it('handles notice lookup with official links and a bounded list', async () => {
     const nexon = {
