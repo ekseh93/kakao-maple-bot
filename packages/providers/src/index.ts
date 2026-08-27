@@ -25,6 +25,10 @@ export type NexonClient = {
     kind: '일반' | '스페셜',
     signal: AbortSignal,
   ): Promise<LunaCrystalSweetList>;
+  findLunaCrystalDream?(
+    kind: '일반' | '스페셜',
+    signal: AbortSignal,
+  ): Promise<LunaCrystalSweetList>;
 };
 export type ExperienceSnapshot = {
   date: string;
@@ -569,6 +573,18 @@ export function createNexonClient(
         kind === '스페셜'
           ? 'https://maplestory.nexon.com/Guide/CashShop/Probability/SpecialLunaCrystalSweet'
           : 'https://maplestory.nexon.com/Guide/CashShop/Probability/LunaCrystalSweet';
+      const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return {
+        kind,
+        ...parseProbabilityPage(await response.text(), sourceUrl),
+      };
+    },
+    async findLunaCrystalDream(kind, signal) {
+      const sourceUrl =
+        kind === '스페셜'
+          ? 'https://maplestory.nexon.com/Guide/CashShop/Probability/SpecialLunaCrystalDream'
+          : 'https://maplestory.nexon.com/Guide/CashShop/Probability/LunaCrystalDream';
       const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
       return {

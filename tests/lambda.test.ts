@@ -549,6 +549,25 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(25);
     expect(nexon.findLunaCrystalSweet).toHaveBeenCalledWith('스페셜', expect.anything());
   });
+  it('handles normal and special Luna Crystal Dream draws', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findLunaCrystalDream: vi.fn().mockResolvedValue({
+        kind: '일반',
+        items: [{ name: '테스트 드림 펫', probability: 100 }],
+        sourceUrl: 'https://maplestory.nexon.com/Guide/CashShop/Probability/LunaCrystalDream',
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('/루나드림 일반 25 true'), roomId: 'dream-room', senderId: 'dream-sender' },
+      { ...env, ALLOWED_ROOMS: 'dream-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[일반 루나 크리스탈 드림 25회 뽑기]');
+    expect((result.reply?.match(/^\d+\./gm) ?? [])).toHaveLength(25);
+    expect(nexon.findLunaCrystalDream).toHaveBeenCalledWith('일반', expect.anything());
+  });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {
       findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),

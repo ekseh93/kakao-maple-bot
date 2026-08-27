@@ -272,6 +272,20 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result).toMatchObject({ kind: '스페셜', items: [{ name: '테스트 펫', probability: 9.6 }] });
     expect(fetcher.mock.calls[0]?.[0]).toContain('SpecialLunaCrystalSweet');
   });
+  it('maps the selected official Luna Crystal Dream probability table', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        '<table><tr><th>구분</th><th>아이템명</th><th>획득확률</th></tr><tr><td>루나 드림 펫</td><td>테스트 드림 펫</td><td>8.4%</td></tr></table>',
+        { status: 200, headers: { 'content-type': 'text/html' } },
+      ),
+    );
+    const result = await createNexonClient(undefined, fetcher).findLunaCrystalDream?.(
+      '스페셜',
+      new AbortController().signal,
+    );
+    expect(result).toMatchObject({ kind: '스페셜', items: [{ name: '테스트 드림 펫', probability: 8.4 }] });
+    expect(fetcher.mock.calls[0]?.[0]).toContain('SpecialLunaCrystalDream');
+  });
   it('maps eight official experience history snapshots', async () => {
     const fetcher = vi
       .fn()

@@ -3,6 +3,7 @@ import {
   formatRoyalDraw,
   formatWonderBerryDraw,
   formatLunaCrystalSweetDraw,
+  formatLunaCrystalDreamDraw,
   formatSymbol,
   HELP,
   parseCommand,
@@ -72,6 +73,7 @@ let eventCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 let wonderBerryCache: { value: WonderBerryList; expiresAt: number } | undefined;
 const lunaSweetCache = new Map<'일반' | '스페셜', { value: LunaCrystalSweetList; expiresAt: number }>();
+const lunaDreamCache = new Map<'일반' | '스페셜', { value: LunaCrystalSweetList; expiresAt: number }>();
 const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 
 const errorText: Record<string, string> = {
@@ -158,6 +160,7 @@ export async function handleMessage(
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
   if (wonderBerryCache && wonderBerryCache.expiresAt <= now) wonderBerryCache = undefined;
   for (const [kind, entry] of lunaSweetCache) if (entry.expiresAt <= now) lunaSweetCache.delete(kind);
+  for (const [kind, entry] of lunaDreamCache) if (entry.expiresAt <= now) lunaDreamCache.delete(kind);
   if (!message.eventId || seen.has(message.eventId))
     return { reply: null, requestId, cache: 'bypass' };
   seen.set(message.eventId, now);
@@ -425,6 +428,41 @@ export async function handleMessage(
         lunaSweetCache.set(kind, { value: luna, expiresAt: now + 5 * 60_000 });
         return {
           reply: formatLunaCrystalSweetDraw(
+            kind,
+            luna.items,
+            luna.sourceUrl,
+            luna.fetchedAt,
+            options.count,
+            options.showResults,
+          ),
+          requestId,
+          cache: 'miss',
+        };
+      }
+      case 'lunaDream': {
+        const kind = parsed.args[0] as '일반' | '스페셜' | undefined;
+        if (kind !== '일반' && kind !== '스페셜') throw new Error('INVALID_USAGE');
+        const options = parseRoyalOptions(parsed.args.slice(1));
+        const cached = lunaDreamCache.get(kind);
+        if (cached && cached.expiresAt > now)
+          return {
+            reply: formatLunaCrystalDreamDraw(
+              kind,
+              cached.value.items,
+              cached.value.sourceUrl,
+              cached.value.fetchedAt,
+              options.count,
+              options.showResults,
+            ),
+            requestId,
+            cache: 'hit',
+          };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findLunaCrystalDream) throw new Error('NOT_CONFIGURED');
+        const luna = await client.findLunaCrystalDream(kind, timeoutSignal());
+        lunaDreamCache.set(kind, { value: luna, expiresAt: now + 5 * 60_000 });
+        return {
+          reply: formatLunaCrystalDreamDraw(
             kind,
             luna.items,
             luna.sourceUrl,

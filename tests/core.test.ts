@@ -30,6 +30,11 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('/루나스윗 일반 10 true')).toEqual({
       name: 'lunaSweet',
       args: ['일반', '10', 'true'],
+  }));
+  it('parses the Luna Crystal Dream command', () =>
+    expect(parseCommand('/루나드림 스페셜 5 false')).toEqual({
+      name: 'lunaDream',
+      args: ['스페셜', '5', 'false'],
     }));
   it('draws ten royal items using weighted probabilities', () => {
     const draws = drawRoyalStyles(
