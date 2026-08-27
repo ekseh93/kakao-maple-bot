@@ -122,8 +122,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('parses and formats Meka Berry rates for levels 280 through 299', () => {
     expect(parseCommand('!메카베리 280')).toEqual({ name: 'mekaBerry', args: ['280'] });
-    expect(formatMekaBerry(['280'])).toContain('메카베리             │ 9.705%');
-    expect(formatMekaBerry(['280'])).toContain('크림슨 메카베리      │ 15.097%');
+    expect(formatMekaBerry(['280'])).toContain('메카베리 1개당 상승: 9.705%');
+    expect(formatMekaBerry(['280'])).toContain('크림슨 메카베리 1개당 상승: 15.097%');
     expect(formatMekaBerry(['299'])).toContain('0.467%');
     expect(() => formatMekaBerry(['279'])).toThrow('INVALID_USAGE');
     expect(() => formatMekaBerry([])).toThrow('INVALID_USAGE');

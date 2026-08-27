@@ -608,15 +608,8 @@ export function formatMekaBerry(args: string[] = []): string {
   return [
     '[메카베리 경험치]',
     `레벨: ${rate.level}`,
-    '┌──────────────────────┬──────────┐',
-    '│ 항목                 │ 1개당 상승 │',
-    '├──────────────────────┼──────────┤',
-    `│ 메카베리             │ ${rate.meka.toFixed(3)}%   │`,
-    `│ 크림슨 메카베리      │ ${rate.crimson.toFixed(3)}%   │`,
-    '└──────────────────────┴──────────┘',
-    '※ 메카베리 농장 경험치 표 기준의 정적 계산값입니다.',
-    '출처: https://matsu1207.tistory.com/1095',
-    '출처: https://matsu1207.tistory.com/1308',
+    `메카베리 1개당 상승: ${rate.meka.toFixed(3)}%`,
+    `크림슨 메카베리 1개당 상승: ${rate.crimson.toFixed(3)}%`,
   ].join('\n');
 }
 
