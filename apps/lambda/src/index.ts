@@ -1360,13 +1360,23 @@ function formatEquipment(c: EquipmentCharacter): string {
     `장착 장비: ${c.items.length}개`,
     '────────────',
   ];
+  const potentialTotals: string[] = [];
+  const additionalPotentialTotals: string[] = [];
   for (const item of c.items) {
     lines.push(`▸ ${item.part} - ${item.starforce} ${item.name}`);
-    if (item.potentialOptions.length > 0)
+    if (item.potentialOptions.length > 0) {
       lines.push(`  잠재: ${formatPotentialOptions(item.potentialOptions)}`);
-    if (item.additionalPotentialOptions.length > 0)
+      potentialTotals.push(...item.potentialOptions);
+    }
+    if (item.additionalPotentialOptions.length > 0) {
       lines.push(`  에디: ${formatPotentialOptions(item.additionalPotentialOptions)}`);
+      additionalPotentialTotals.push(...item.additionalPotentialOptions);
+    }
   }
+  if (potentialTotals.length > 0)
+    lines.push(`잠재 총합: ${formatPotentialOptions(potentialTotals)}`);
+  if (additionalPotentialTotals.length > 0)
+    lines.push(`에디 총합: ${formatPotentialOptions(additionalPotentialTotals)}`);
   lines.push('────────────', `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`);
   const full = lines.join('\n');
   if (full.length <= 1000) return full;

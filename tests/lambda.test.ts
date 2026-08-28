@@ -553,6 +553,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).not.toContain('⭐ 스타포스 22');
     expect(result.reply).toContain('잠재: INT +21% | 보스 몬스터 공격 시 데미지 +20%');
     expect(result.reply).toContain('에디: INT +12%');
+    expect(result.reply).toContain('잠재 총합: INT +21% | 보스 몬스터 공격 시 데미지 +20%');
+    expect(result.reply).toContain('에디 총합: INT +12%');
   });
   it('handles slash experience history with daily change', async () => {
     const nexon = {
