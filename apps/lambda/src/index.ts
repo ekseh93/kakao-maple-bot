@@ -1097,7 +1097,9 @@ export async function handleMessage(
         experienceCache.set(name, { value: history, expiresAt: now + 5 * 60_000 });
         return { reply: formatExperience(history), requestId, cache: 'miss' };
       }
-      case 'epicDungeon': {
+      case 'nightmare':
+      case 'angler':
+      case 'mountain': {
         const name = validateCharacterName(parsed.args[0]);
         const cached = experienceCache.get(name);
         const history =
@@ -1114,7 +1116,7 @@ export async function handleMessage(
         const current = history.snapshots[0];
         if (!current) throw new Error('NOT_FOUND');
         return {
-          reply: formatEpicDungeon(history.name, current.level, current.experienceRate),
+          reply: formatEpicDungeon(history.name, current.level, current.experienceRate, parsed.name),
           requestId,
           cache: cached && cached.expiresAt > now ? 'hit' : 'miss',
         };

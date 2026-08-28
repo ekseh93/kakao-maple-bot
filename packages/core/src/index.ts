@@ -13,7 +13,9 @@ export type CommandName =
   | 'seedRing'
   | 'blackAccessoryBox'
   | 'sauna'
-  | 'epicDungeon'
+  | 'nightmare'
+  | 'angler'
+  | 'mountain'
   | 'food'
   | 'japanTravel'
   | 'boss'
@@ -72,7 +74,9 @@ const helpRows = {
     ['!유챔 <닉네임>', '유니온 챔피언'],
     ['!장비 <닉네임>', '장비 요약'],
     ['!경험치 <닉네임>', '경험치 이력'],
-    ['!에픽던전 <닉네임>', '악몽선경 1판 경험치·레벨업 예상'],
+    ['!악몽 <닉네임>', '악몽선경 1판 경험치·레벨업 예상'],
+    ['!앵글 <닉네임>', '앵글러 컴퍼니 1판 경험치·레벨업 예상'],
+    ['!마운틴 <닉네임>', '하이마운틴 1판 경험치·레벨업 예상'],
     ['!메카베리 <레벨>', '메카베리/크림슨 경험치'],
     ['!사우나 <레벨>', '사우나 1시간 경험치 상승률'],
     ['!메포효율', '메포 대비 BM 경치 효율표'],
@@ -165,7 +169,9 @@ const aliases: Record<string, CommandName> = {
   보스포뻥: 'bossForceBoost',
   메카베리: 'mekaBerry',
   사우나: 'sauna',
-  에픽던전: 'epicDungeon',
+  악몽: 'nightmare',
+  앵글: 'angler',
+  마운틴: 'mountain',
   무릉: 'dojang',
   유니온: 'union',
   유챔: 'unionChampion',
@@ -714,27 +720,57 @@ export function formatSauna(args: string[] = []): string {
   ].join('\n');
 }
 
-const epicDungeonRates = [
+const nightmareRates = [
   3.0885, 2.8461, 2.6183, 2.4124, 2.2191, 1.2348, 1.1357, 1.0458, 0.9631, 0.8854,
   0.4925, 0.4528, 0.4168, 0.3833, 0.3526, 0.1745, 0.1587, 0.1442, 0.1311, 0.0874,
 ] as const;
 
-export function formatEpicDungeon(name: string, level: number, experienceRate: number): string {
-  if (!name || !Number.isInteger(level) || level < 280 || level > 299) {
+const anglerRates = [
+  9.5335, 9.8864, 9.9135, 10.3506, 10.4026, 5.7879, 5.3277, 4.9142, 4.5219, 4.1658,
+  2.3164, 2.1346, 1.9637, 1.8093, 1.6643, 0.9261, 0.8518, 0.7843, 0.7223, 0.6641,
+  0.3694, 0.3396, 0.3126, 0.2875, 0.2644, 0.1309, 0.119, 0.1082, 0.0984, 0.0656,
+] as const;
+
+const mountainRates = [
+  15.07, 15.1323, 15.1976, 15.2544, 15.342, 13.2783, 13.3286, 13.3765, 13.4429, 13.4862,
+  6.3557, 6.5909, 6.609, 6.9004, 6.9351, 3.8586, 3.5518, 3.2761, 3.0146, 2.7772,
+  1.5442, 1.423, 1.3091, 1.2062, 1.1095, 0.6174, 0.5679, 0.5229, 0.4815, 0.4427,
+  0.2463, 0.2264, 0.2084, 0.1917, 0.1763, 0.0873, 0.0793, 0.0721, 0.0656, 0.0437,
+] as const;
+
+type EpicDungeonKind = 'nightmare' | 'angler' | 'mountain';
+
+const epicDungeonConfigs: Record<
+  EpicDungeonKind,
+  { title: string; minLevel: number; rates: readonly number[] }
+> = {
+  nightmare: { title: '악몽선경', minLevel: 280, rates: nightmareRates },
+  angler: { title: '앵글러 컴퍼니', minLevel: 270, rates: anglerRates },
+  mountain: { title: '하이마운틴', minLevel: 260, rates: mountainRates },
+};
+
+export function formatEpicDungeon(
+  name: string,
+  level: number,
+  experienceRate: number,
+  kind: EpicDungeonKind = 'nightmare',
+): string {
+  const config = epicDungeonConfigs[kind];
+  if (!config || !name || !Number.isInteger(level) || level < config.minLevel || level > 299) {
     throw new Error('INVALID_USAGE');
   }
   if (!Number.isFinite(experienceRate) || experienceRate < 0 || experienceRate >= 100) {
     throw new Error('INVALID_USAGE');
   }
-  const oneRunRate = epicDungeonRates[level - 280]!;
+  const oneRunRate = config.rates[level - config.minLevel]!;
   const remainingRate = 100 - experienceRate;
   const runsToLevelUp = Math.ceil(remainingRate / oneRunRate);
   return [
-    '[에픽던전 경험치]',
+    `[${config.title} 경험치]`,
     `캐릭터: ${name}`,
     `현재 레벨: Lv.${level}`,
     `현재 경험치: ${experienceRate.toFixed(2)}%`,
-    `악몽선경 1판 경험치: ${oneRunRate.toFixed(4)}%`,
+    `${config.title} 1판 경험치: ${oneRunRate.toFixed(4)}%`,
     `레벨업까지: 약 ${runsToLevelUp.toLocaleString('ko-KR')}판`,
   ].join('\n');
 }

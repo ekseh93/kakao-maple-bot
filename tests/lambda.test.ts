@@ -599,11 +599,11 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       }),
     };
     const result = await handleMessage(
-      { ...message('!에픽던전 에픽던전캐릭터'), roomId: 'epic-dungeon-room' },
+      { ...message('!악몽 에픽던전캐릭터'), roomId: 'epic-dungeon-room' },
       { ...env, ALLOWED_ROOMS: 'epic-dungeon-room' },
       { nexon },
     );
-    expect(result.reply).toContain('[에픽던전 경험치]');
+    expect(result.reply).toContain('[악몽선경 경험치]');
     expect(result.reply).toContain('현재 경험치: 97.75%');
     expect(result.reply).toContain('레벨업까지: 약 13판');
     expect(nexon.findExperienceHistory).toHaveBeenCalledWith(

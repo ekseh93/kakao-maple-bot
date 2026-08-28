@@ -209,8 +209,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(() => formatSauna([])).toThrow('INVALID_USAGE');
   });
   it('parses and formats Epic Dungeon Nightmare Sanctuary level-up estimates', () => {
-    expect(parseCommand('!에픽던전 비쓰킷')).toEqual({
-      name: 'epicDungeon',
+    expect(parseCommand('!악몽 비쓰킷')).toEqual({
+      name: 'nightmare',
       args: ['비쓰킷'],
     });
     const output = formatEpicDungeon('비쓰킷', 295, 97.75);
@@ -220,6 +220,14 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('레벨업까지: 약 13판');
     expect(() => formatEpicDungeon('비쓰킷', 279, 50)).toThrow('INVALID_USAGE');
     expect(() => formatEpicDungeon('비쓰킷', 295, 100)).toThrow('INVALID_USAGE');
+    expect(parseCommand('!앵글 비쓰킷')).toEqual({ name: 'angler', args: ['비쓰킷'] });
+    expect(formatEpicDungeon('비쓰킷', 295, 97.75, 'angler')).toContain(
+      '앵글러 컴퍼니 1판 경험치: 0.1309%',
+    );
+    expect(parseCommand('!마운틴 비쓰킷')).toEqual({ name: 'mountain', args: ['비쓰킷'] });
+    expect(formatEpicDungeon('비쓰킷', 295, 97.75, 'mountain')).toContain(
+      '하이마운틴 1판 경험치: 0.0873%',
+    );
   });
   it('parses and formats meso-point experience efficiency in descending order', () => {
     expect(parseCommand('!메포효율')).toEqual({ name: 'mepoEfficiency', args: [] });
