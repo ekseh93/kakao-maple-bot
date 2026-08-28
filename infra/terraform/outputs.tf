@@ -10,3 +10,7 @@ output "lambda_function_name" {
 output "aws_account_id" {
   value = data.aws_caller_identity.current.account_id
 }
+
+output "usage_stats_table_name" {
+  value = aws_dynamodb_table.usage_stats.name
+}

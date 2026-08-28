@@ -30,6 +30,7 @@ import {
   formatLotto,
   formatHotDeals,
   formatHotDealSections,
+  formatUsageStats,
   FORMATTED_HELP,
 } from '@kakao-maple-bot/core';
 
@@ -55,6 +56,10 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(FORMATTED_HELP.indexOf('• !다이소 <상품>')).toBeLessThan(
       FORMATTED_HELP.indexOf('• !상태'),
     );
+    expect(FORMATTED_HELP).toContain('• !통계');
+  });
+  it('formats the anonymous total command count', () => {
+    expect(formatUsageStats(1234)).toBe('[봇 사용 통계]\n현재까지 명령어 호출: 1,234회');
   });
   it('keeps only the Quasar Zone hot-deal board link', () => {
     const output = formatHotDeals(
@@ -90,6 +95,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).not.toContain('/views/');
   });
   it('T-001 ignores ordinary chat', () => expect(parseCommand('안녕하세요')).toBeNull());
+  it('parses the usage statistics command', () =>
+    expect(parseCommand('!통계')).toEqual({ name: 'usageStats', args: [] }));
   it('accepts slash experience history commands', () =>
     expect(parseCommand('/경험치 테스트')).toEqual({ name: 'experience', args: ['테스트'] }));
   it('accepts both Sunday Maple command spellings', () => {

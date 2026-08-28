@@ -41,11 +41,13 @@ Probability-based commands are simulations only. They do not purchase or grant c
 
 ### General features
 
-`!날씨 <location>`, `!주식 <name>`, `!환율`, `!기름`, `!유가`, `!주유소 <region>`, `!골라 <items>`, `!뭐먹지`, `!ㅁㅁㅈ`, `!운세 <birth date> <gender> <calendar>`, `!로또`, `!넷플`, `!애니`, `!만화`, `!웹툰`, `!웹소설`, `!일본여행`, `!일본여행기`, `!일본음식점`, `!핫딜`, `!글카`, `!모니터`, `!금주의신상`, `!다이소 <product>`, and `!상태`.
+`!날씨 <location>`, `!주식 <name>`, `!환율`, `!기름`, `!유가`, `!주유소 <region>`, `!골라 <items>`, `!뭐먹지`, `!ㅁㅁㅈ`, `!운세 <birth date> <gender> <calendar>`, `!로또`, `!넷플`, `!애니`, `!만화`, `!웹툰`, `!웹소설`, `!일본여행`, `!일본여행기`, `!일본음식점`, `!핫딜`, `!글카`, `!모니터`, `!금주의신상`, `!다이소 <product>`, `!통계`, and `!상태`.
 
 `!핫딜` shows six Quasar Zone titles numbered from 0 with the listed time, plus up to five titles each from Arca Live and FMKorea in compact mobile-friendly sections.
 
 The Lambda emits anonymous command-usage audit records only. A local script aggregates daily totals and a separate deterministic synthetic report is available for portfolio use; raw chat data is never committed.
+
+`!통계` reads an anonymous aggregate counter stored as one encrypted, on-demand DynamoDB item in Tokyo. It does not store room names, sender names, or message text. The counter starts when the DynamoDB resource is deployed; earlier CloudWatch records are not retroactively imported.
 
 `!주식` is informational only and does not place orders or access accounts. `!운세` is a deterministic entertainment feature based on date, gender, calendar type, and Korea Standard Time; it does not call an LLM or a remote fortune MCP server.
 
@@ -53,6 +55,7 @@ The Lambda emits anonymous command-usage audit records only. A local script aggr
 
 - AWS is fixed to Tokyo, `ap-northeast-1`, for a single-region cost boundary.
 - The project is designed for a personal, zero-cash-cost portfolio scope. Free Tier does not guarantee a zero bill; budgets and usage monitoring are still required.
+- The usage counter uses DynamoDB on-demand billing. It has no fixed monthly table fee, but read/write request charges can apply after free allowances.
 - API keys, shared secrets, Kakao identifiers, room names, and chat logs are never committed.
 - Public-board providers use timeouts, caching, error isolation, and permitted stale fallback. The bot does not use proxy rotation, IP changes, or other access-control bypasses.
 - The phone relay contains only a placeholder. Replace `sharedSecret` and the consented room placeholder in the private phone copy only.

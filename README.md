@@ -70,6 +70,7 @@
 | 전국 평균 유가              | !기름 / !유가                         | 한국석유공사 오피넷 전국 평균                         |
 | 지역 최저가 주유소          | !주유소 <지역>                        | 한국석유공사 오피넷 지역 최저가 3곳                   |
 | 달러·엔화 환율              | !환율                                 | 무료 공개 환율 조회                                   |
+| 익명 누적 호출 수           | !통계                                 | DynamoDB 단일 집계 항목                               |
 
 전체 명령 계약은 [명령어 명세](docs/04-command-specification.md)에 있습니다.
 
@@ -86,7 +87,8 @@
         ├─ Maple adapter ─ Nexon Open API
         ├─ Stock adapter ─ Yahoo Finance / Tiingo
         ├─ calculators / random / food
-        └─ cache, timeout, audit-safe logs
+        ├─ cache, timeout, audit-safe logs
+        └─ anonymous total counter ─ DynamoDB (Tokyo)
 
 ## 문서
 
@@ -122,6 +124,7 @@
 - 배포, API 키 등록, 공기계 설치는 별도 승인과 실제 계정 준비 후 수행합니다.
 - 포트폴리오용 인증 이미지에는 명령어·봇 응답 영역만 남기고, 대화 상대·방 식별자·아바타·시각·URL 등은 모자이크 또는 비공개 처리합니다.
 - 명령어 사용 통계는 도쿄 기준 날짜·내부 명령어·결과·응답시간만 집계하며, 원문·방·발신자 정보는 저장하지 않습니다. 포트폴리오 샘플은 가상 데이터로만 생성합니다.
+- `!통계`는 허용된 명령 요청이 처리될 때마다 익명 누적 횟수를 1 증가시켜 현재 총 호출 수만 보여줍니다. DynamoDB에는 `TOTAL` 단일 항목의 숫자와 갱신 시각만 저장합니다.
 
 ## 구현 시작
 

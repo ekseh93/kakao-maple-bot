@@ -56,6 +56,7 @@ export type CommandName =
   | 'fuel'
   | 'fuelStations'
   | 'exchangeRate'
+  | 'usageStats'
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
@@ -113,6 +114,7 @@ const helpRows = {
     ['!모니터', '디시인사이드 모니터 최신 글 10개'],
     ['!금주의신상', '금주의 신상'],
     ['!다이소 <상품>', '다이소 상품 검색'],
+    ['!통계', '명령어 누적 호출 수'],
     ['!상태', '관리자 전용'],
   ],
 } as const;
@@ -205,8 +207,14 @@ const aliases: Record<string, CommandName> = {
   유가: 'fuel',
   주유소: 'fuelStations',
   환율: 'exchangeRate',
+  통계: 'usageStats',
   상태: 'status',
 };
+
+export function formatUsageStats(total: number): string {
+  if (!Number.isSafeInteger(total) || total < 0) throw new Error('INVALID_USAGE');
+  return `[봇 사용 통계]\n현재까지 명령어 호출: ${total.toLocaleString('ko-KR')}회`;
+}
 
 export function parseCommand(message: string): ParsedCommand | null {
   const value = message.trim();

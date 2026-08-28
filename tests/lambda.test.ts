@@ -48,6 +48,17 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('생년월일: 2000-01-01 (남자 / 양력)');
   });
 
+  it('returns the persistent anonymous usage total', async () => {
+    const usageStats = { increment: vi.fn().mockResolvedValue(42) };
+    const result = await handleMessage(
+      { ...message('!통계'), roomId: 'usage-stats-room' },
+      { ...env, ALLOWED_ROOMS: 'usage-stats-room' },
+      { usageStats, now: () => new Date(Date.now() + 120_000) },
+    );
+    expect(result.reply).toBe('[봇 사용 통계]\n현재까지 명령어 호출: 42회');
+    expect(usageStats.increment).toHaveBeenCalledTimes(1);
+  });
+
   it('formats Inven 10-recommendation titles and board link', async () => {
     const inven = {
       findTopPosts: vi.fn().mockResolvedValue({

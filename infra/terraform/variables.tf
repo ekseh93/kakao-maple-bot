@@ -102,3 +102,14 @@ variable "tmdb_region" {
     error_message = "tmdb_region must be a two-letter uppercase ISO country code, such as KR or JP."
   }
 }
+
+variable "usage_stats_table_name" {
+  description = "DynamoDB table for the anonymous aggregate command counter."
+  type        = string
+  default     = "kakao-maple-bot-usage-stats"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9_.-]{3,255}$", var.usage_stats_table_name))
+    error_message = "usage_stats_table_name must be 3-255 characters using letters, numbers, dot, underscore, or hyphen."
+  }
+}

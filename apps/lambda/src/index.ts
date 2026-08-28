@@ -30,6 +30,7 @@ import {
   formatNationalFuelPrices,
   formatLowestFuelStations,
   formatExchangeRates,
+  formatUsageStats,
   validateCharacterName,
   validateRegion,
 } from '@kakao-maple-bot/core';
@@ -78,6 +79,7 @@ import {
   type ExchangeRateClient,
 } from '@kakao-maple-bot/providers';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
+import { createDynamoUsageStatsStore, type UsageStatsStore } from './usage-stats.js';
 
 export interface Env {
   BOT_SHARED_SECRET?: string;
@@ -92,6 +94,7 @@ export interface Env {
   TMDB_REGION?: string;
   NOTICE_ALERT_ENABLED?: string;
   NOTICE_ALERT_KEYWORDS?: string;
+  USAGE_STATS_TABLE_NAME?: string;
 }
 export type Message = {
   eventId: string;
@@ -112,6 +115,7 @@ type Dependencies = {
   netflix?: NetflixClient;
   retail?: McpRetailClient;
   exchange?: ExchangeRateClient;
+  usageStats?: UsageStatsStore;
   now?: () => Date;
   seen?: Set<string>;
 };
@@ -180,6 +184,7 @@ const errorText: Record<string, string> = {
   RATE_LIMITED: '요청이 많습니다. 잠시 후 다시 시도해 주세요.',
   BOT_PAUSED: '봇 점검 중입니다.',
   PROVIDER_SCHEMA: '외부 응답을 확인할 수 없습니다.',
+  USAGE_STATS_UNAVAILABLE: '사용 통계를 잠시 조회할 수 없습니다.',
 };
 
 function allowed(value: string | undefined, configured: string | undefined): boolean {
@@ -378,6 +383,15 @@ export async function handleMessage(
   roomRequests.set(message.roomId, [...recent, now]);
   senderRequests.set(message.senderId, [...senderRecent, now]);
   globalRequests = [...globalRequests, now];
+  let usageTotal: number | undefined;
+  let usageStatsFailed = false;
+  if (deps.usageStats) {
+    try {
+      usageTotal = await deps.usageStats.increment();
+    } catch {
+      usageStatsFailed = true;
+    }
+  }
   try {
     switch (parsed.name) {
       case 'help':
@@ -394,6 +408,11 @@ export async function handleMessage(
           requestId,
           cache: 'bypass',
         };
+      case 'usageStats':
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        if (usageTotal === undefined)
+          throw new Error(usageStatsFailed ? 'USAGE_STATS_UNAVAILABLE' : 'NOT_CONFIGURED');
+        return { reply: formatUsageStats(usageTotal), requestId, cache: 'bypass' };
       case 'rps':
         return {
           reply: playRps(
@@ -1574,7 +1593,9 @@ export async function httpHandler(request: Request, env: Env): Promise<Response>
   )
     return new Response('Invalid request', { status: 400 });
   const startedAt = Date.now();
-  const result = await handleMessage(body, env);
+  const result = await handleMessage(body, env, {
+    usageStats: createDynamoUsageStatsStore(env.USAGE_STATS_TABLE_NAME, 'ap-northeast-1'),
+  });
   writeAnonymousCommandAudit(body.message, result, startedAt);
   return Response.json(result);
 }

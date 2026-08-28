@@ -28,6 +28,37 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+resource "aws_dynamodb_table" "usage_stats" {
+  name         = var.usage_stats_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  server_side_encryption {
+    enabled = true
+  }
+
+  tags = local.tags
+}
+
+resource "aws_iam_role_policy" "usage_stats" {
+  name = "${var.project_name}-usage-stats"
+  role = aws_iam_role.lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["dynamodb:UpdateItem"]
+      Resource = aws_dynamodb_table.usage_stats.arn
+    }]
+  })
+}
+
 resource "aws_lambda_function" "bot" {
   function_name    = var.project_name
   filename         = var.lambda_zip_path
@@ -52,12 +83,13 @@ resource "aws_lambda_function" "bot" {
       TIINGO_TOKEN           = var.tiingo_token
       TMDB_READ_ACCESS_TOKEN = var.tmdb_read_access_token
       TMDB_REGION            = var.tmdb_region
+      USAGE_STATS_TABLE_NAME = var.usage_stats_table_name
     }
   }
 
   tags = local.tags
 
-  depends_on = [aws_iam_role_policy_attachment.lambda_logs]
+  depends_on = [aws_iam_role_policy_attachment.lambda_logs, aws_iam_role_policy.usage_stats]
 }
 
 resource "aws_apigatewayv2_api" "http" {
