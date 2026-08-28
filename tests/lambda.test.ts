@@ -719,7 +719,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
   });
   it('handles the static Black Accessory Box draw', async () => {
     const result = await handleMessage(
-      { ...message('!칠흑'), roomId: 'black-box-room', senderId: 'black-box-sender' },
+      { ...message('!칠흑깡'), roomId: 'black-box-room', senderId: 'black-box-sender' },
       { ...env, ALLOWED_ROOMS: 'black-box-room' },
     );
     expect(result.reply).toMatch(
