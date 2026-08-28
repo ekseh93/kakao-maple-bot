@@ -1294,8 +1294,8 @@ const blackAccessoryBoxItems = [
 export function formatBlackAccessoryBoxDraw(random = Math.random): string {
   const item = choose([...blackAccessoryBoxItems], random);
   return item === '루즈 컨트롤 머신 마크'
-    ? `축하합니다! ${item} 나왔습니다\n운이 제일 싼거에 먹혔네요`
-    : `축하합니다! ${item} 나왔습니다`;
+    ? `축하합니다! ${item} 나왔습니다\n쟌넨-, 떠도 이게뜨네 ㅋ`
+    : `축하합니다! ${item} 나왔습니다\n올ㅋ 이게뜨네 ㅋ`;
 }
 
 export type RoyalStyleItem = { name: string; probability: number; category?: string };
