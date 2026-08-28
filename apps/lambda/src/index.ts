@@ -1362,17 +1362,41 @@ function formatEquipment(c: EquipmentCharacter): string {
   ];
   for (const item of c.items) {
     lines.push(`▸ ${item.part} - ${item.starforce} ${item.name}`);
-    const potentials = [
-      item.potentialGrade ? `잠재 ${item.potentialGrade}` : '',
-      item.additionalPotentialGrade ? `에디 ${item.additionalPotentialGrade}` : '',
-    ].filter(Boolean);
-    if (potentials.length > 0) lines.push(`  ${potentials.join(' | ')}`);
+    if (item.potentialOptions.length > 0)
+      lines.push(`  잠재: ${formatPotentialOptions(item.potentialOptions)}`);
+    if (item.additionalPotentialOptions.length > 0)
+      lines.push(`  에디: ${formatPotentialOptions(item.additionalPotentialOptions)}`);
   }
   lines.push('────────────', `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`);
   const full = lines.join('\n');
   if (full.length <= 1000) return full;
   const footer = `\n… ${c.items.length}개 중 일부만 표시 (응답 제한)`;
   return full.slice(0, 1000 - footer.length).trimEnd() + footer;
+}
+function formatPotentialOptions(options: readonly string[]): string {
+  const totals = new Map<string, { value: number; percent: boolean; raw?: string }>();
+  for (const option of options) {
+    const match = option.trim().match(/^(.*?)([+-]?\d+(?:\.\d+)?)(%)?$/);
+    if (!match) {
+      totals.set(option, { value: 0, percent: false, raw: option });
+      continue;
+    }
+    const label = match[1]!
+      .trim()
+      .replace(/[:：]$/, '')
+      .trim();
+    const current = totals.get(label) ?? { value: 0, percent: Boolean(match[3]) };
+    current.value += Number(match[2]);
+    current.percent = current.percent || Boolean(match[3]);
+    totals.set(label, current);
+  }
+  return [...totals.entries()]
+    .map(([label, total]) => {
+      if (total.raw) return total.raw;
+      const value = Number.isInteger(total.value) ? String(total.value) : total.value.toFixed(2);
+      return `${label} ${total.value >= 0 ? '+' : ''}${value}${total.percent ? '%' : ''}`;
+    })
+    .join(' | ');
 }
 function formatNotice(c: NoticeList): string {
   return [

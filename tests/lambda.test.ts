@@ -536,8 +536,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
             part: '모자',
             name: '테스트 모자',
             starforce: 22,
-            potentialGrade: '레전드리',
-            additionalPotentialGrade: '에픽',
+            potentialOptions: ['INT +9%', 'INT +12%', '보스 몬스터 공격 시 데미지 +20%'],
+            additionalPotentialOptions: ['INT +6%', 'INT +6%'],
           },
         ],
         fetchedAt: '2026-08-27T00:00:00.000Z',
@@ -551,7 +551,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('캐릭터: 장비캐릭터');
     expect(result.reply).toContain('▸ 모자 - 22 테스트 모자');
     expect(result.reply).not.toContain('⭐ 스타포스 22');
-    expect(result.reply).toContain('잠재 레전드리 | 에디 에픽');
+    expect(result.reply).toContain('잠재: INT +21% | 보스 몬스터 공격 시 데미지 +20%');
+    expect(result.reply).toContain('에디: INT +12%');
   });
   it('handles slash experience history with daily change', async () => {
     const nexon = {

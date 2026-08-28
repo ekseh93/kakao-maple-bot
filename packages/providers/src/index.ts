@@ -74,8 +74,8 @@ export type EquipmentItem = {
   part: string;
   name: string;
   starforce: number;
-  potentialGrade?: string;
-  additionalPotentialGrade?: string;
+  potentialOptions: string[];
+  additionalPotentialOptions: string[];
 };
 export type EquipmentCharacter = { name: string; items: EquipmentItem[]; fetchedAt: string };
 export type NoticeItem = { title: string; url: string; date?: string };
@@ -981,8 +981,12 @@ export function createNexonClient(
           item_equipment_part?: string;
           item_name?: string;
           starforce?: string;
-          potential_option_grade?: string | null;
-          additional_potential_option_grade?: string | null;
+          potential_option_1?: string | null;
+          potential_option_2?: string | null;
+          potential_option_3?: string | null;
+          additional_potential_option_1?: string | null;
+          additional_potential_option_2?: string | null;
+          additional_potential_option_3?: string | null;
         }> | null;
       };
       if (!Array.isArray(body.item_equipment)) throw new Error('PROVIDER_SCHEMA');
@@ -994,14 +998,22 @@ export function createNexonClient(
           !/^\d+$/.test(item.starforce)
         )
           throw new Error('PROVIDER_SCHEMA');
-        const potentialGrade = optionalString(item.potential_option_grade);
-        const additionalPotentialGrade = optionalString(item.additional_potential_option_grade);
+        const potentialOptions = [
+          item.potential_option_1,
+          item.potential_option_2,
+          item.potential_option_3,
+        ].filter((value): value is string => typeof value === 'string' && value.trim() !== '');
+        const additionalPotentialOptions = [
+          item.additional_potential_option_1,
+          item.additional_potential_option_2,
+          item.additional_potential_option_3,
+        ].filter((value): value is string => typeof value === 'string' && value.trim() !== '');
         return {
           part: item.item_equipment_part,
           name: item.item_name,
           starforce: Number(item.starforce),
-          ...(potentialGrade ? { potentialGrade } : {}),
-          ...(additionalPotentialGrade ? { additionalPotentialGrade } : {}),
+          potentialOptions,
+          additionalPotentialOptions,
         };
       });
       return { name, items, fetchedAt: body.date ?? new Date().toISOString() };
