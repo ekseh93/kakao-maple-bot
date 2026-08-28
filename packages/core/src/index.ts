@@ -707,6 +707,7 @@ export function formatSauna(args: string[] = []): string {
     `레벨: ${level}`,
     `1시간: ${rate.toFixed(3)}%`,
     `1업: 약 ${levelUpHours.toLocaleString('ko-KR')}시간`,
+    '[*단, API 최신 기록 시점에 따라 실제 경험치와 약간 차이 날 수 있습니다]',
   ].join('\n');
 }
 
