@@ -1416,7 +1416,33 @@ function formatCombatPower(value: number): string {
 function formatPotentialLines(options: readonly string[]): string[] {
   return formatPotentialOptions(options)
     .split(' | ')
+    .sort(comparePotentialOptions)
     .map((option) => `  ${option}`);
+}
+function comparePotentialOptions(left: string, right: string): number {
+  const leftRank = potentialOptionRank(left);
+  const rightRank = potentialOptionRank(right);
+  if (leftRank !== rightRank) return leftRank - rightRank;
+  const leftValue = potentialOptionValue(left);
+  const rightValue = potentialOptionValue(right);
+  if (leftRank >= 5 && leftValue !== rightValue) return rightValue - leftValue;
+  return left.localeCompare(right, 'ko');
+}
+function potentialOptionRank(option: string): number {
+  if (option.includes('스킬 재사용 대기시간')) return 0;
+  if (option.includes('공격력') && !option.includes('보스')) return 1;
+  if (option.includes('보스 몬스터') && option.includes('데미지')) return 2;
+  if (option.includes('몬스터 방어율 무시')) return 3;
+  if (option.includes('올스탯')) return 4;
+  if (option.includes('캐릭터 기준 9레벨 당')) return 6;
+  if (option.includes('아이템 드롭률')) return 7;
+  if (option.includes('메소 획득량')) return 8;
+  if (option.endsWith('%')) return 5;
+  return 9;
+}
+function potentialOptionValue(option: string): number {
+  const match = option.match(/([+-]?\d+(?:\.\d+)?)(?:%|초)?$/);
+  return match ? Math.abs(Number(match[1])) : 0;
 }
 function formatPotentialOptions(options: readonly string[]): string {
   const totals = new Map<string, { value: number; percent: boolean; raw?: string }>();
