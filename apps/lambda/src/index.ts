@@ -1379,10 +1379,7 @@ function formatEquipment(c: EquipmentCharacter): string {
   if (additionalPotentialTotals.length > 0)
     lines.push(`에디 총합: ${formatPotentialOptions(additionalPotentialTotals)}`);
   lines.push('────────────', `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`);
-  const full = lines.join('\n');
-  if (full.length <= 1000) return full;
-  const footer = `\n… ${c.items.length}개 중 일부만 표시 (응답 제한)`;
-  return full.slice(0, 1000 - footer.length).trimEnd() + footer;
+  return lines.join('\n');
 }
 function formatPotentialOptions(options: readonly string[]): string {
   const totals = new Map<string, { value: number; percent: boolean; raw?: string }>();

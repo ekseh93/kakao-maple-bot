@@ -16,6 +16,20 @@ var knownSundayUrl = '';
 var runtimePolling = false;
 var lastRuntimeAlertAt = 0;
 
+// Kakao chat has a per-message length limit. Preserve the complete backend
+// reply by sending newline-aligned chunks instead of truncating it.
+function replyInChunks(replier, text) {
+  var maxLength = 950;
+  var remaining = String(text);
+  while (remaining.length > maxLength) {
+    var splitAt = remaining.lastIndexOf('\n', maxLength);
+    if (splitAt <= 0) splitAt = maxLength;
+    replier.reply(remaining.slice(0, splitAt));
+    remaining = remaining.slice(splitAt).replace(/^\n+/, '');
+  }
+  if (remaining.length > 0) replier.reply(remaining);
+}
+
 function pollNoticeAlerts() {
   if (noticePolling || !CONFIG.endpoint || !CONFIG.sharedSecret || !CONFIG.noticeRooms.length)
     return;
@@ -172,7 +186,7 @@ function response(room, message, sender, isGroupChat, replier, imageDB, packageN
     var body = JSON.parse(result.body());
 
     if (body.reply) {
-      replier.reply(body.reply);
+      replyInChunks(replier, body.reply);
     }
   } catch (error) {
     void error;
