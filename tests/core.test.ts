@@ -278,11 +278,13 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('!칠흑깡')).toEqual({ name: 'blackAccessoryBox', args: [] });
     expect(parseCommand('!칠흑')).toBeNull();
     expect(formatBlackAccessoryBoxDraw(() => 0)).toBe(
-      '축하합니다! 루즈 컨트롤 머신 마크 나왔습니다\n쟌넨-, 떠도 이게뜨네 ㅋ',
+      '축하합니다! ***루즈 컨트롤 머신 마크*** 나왔습니다\n쟌넨-, 떠도 이게뜨네 ㅋ',
     );
     expect(formatBlackAccessoryBoxDraw(() => 0.99)).toBe(
-      '축하합니다! 고통의 근원 나왔습니다\n올ㅋ 이게뜨네 ㅋ',
+      '축하합니다! ***고통의 근원*** 나왔습니다\n올ㅋ 이게뜨네 ㅋ',
     );
+    expect(formatBlackAccessoryBoxDraw(() => 0.2)).toContain('***마력이 깃든 안대***');
+    expect(formatBlackAccessoryBoxDraw(() => 0.8)).toContain('***커맨더 포스 이어링***');
   });
   it('labels rare Wonder Berry results and omits metadata', () => {
     const output = formatWonderBerryDraw(

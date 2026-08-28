@@ -1317,20 +1317,26 @@ export function choose<T>(items: T[], random = Math.random): T {
 }
 
 const blackAccessoryBoxItems = [
-  '루즈 컨트롤 머신 마크',
-  '마력이 깃든 안대',
-  '몽환의 벨트',
-  '저주받은 마도서 선택 상자',
-  '거대한 공포',
-  '커맨더 포스 이어링',
-  '고통의 근원',
+  { name: '루즈 컨트롤 머신 마크', weight: 1.3 },
+  { name: '마력이 깃든 안대', weight: 1.2 },
+  { name: '몽환의 벨트', weight: 1 },
+  { name: '저주받은 마도서 선택 상자', weight: 1 },
+  { name: '거대한 공포', weight: 1 },
+  { name: '커맨더 포스 이어링', weight: 1.3 },
+  { name: '고통의 근원', weight: 1 },
 ] as const;
 
 export function formatBlackAccessoryBoxDraw(random = Math.random): string {
-  const item = choose([...blackAccessoryBoxItems], random);
+  const totalWeight = blackAccessoryBoxItems.reduce((sum, item) => sum + item.weight, 0);
+  let cursor = random() * totalWeight;
+  const selected = blackAccessoryBoxItems.find((item) => {
+    cursor -= item.weight;
+    return cursor < 0;
+  });
+  const item = selected?.name ?? blackAccessoryBoxItems[blackAccessoryBoxItems.length - 1]!.name;
   return item === '루즈 컨트롤 머신 마크'
-    ? `축하합니다! ${item} 나왔습니다\n쟌넨-, 떠도 이게뜨네 ㅋ`
-    : `축하합니다! ${item} 나왔습니다\n올ㅋ 이게뜨네 ㅋ`;
+    ? `축하합니다! ***${item}*** 나왔습니다\n쟌넨-, 떠도 이게뜨네 ㅋ`
+    : `축하합니다! ***${item}*** 나왔습니다\n올ㅋ 이게뜨네 ㅋ`;
 }
 
 export type RoyalStyleItem = { name: string; probability: number; category?: string };
