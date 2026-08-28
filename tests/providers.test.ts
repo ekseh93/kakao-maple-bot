@@ -2,9 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createInvenClient,
   createNaverWebtoonClient,
+  createWebNovelClient,
   createNexonClient,
   createNaverBlogClient,
-  createNamuMangaClient,
+  createRidiMangaClient,
   createExchangeRateClient,
   createStockClient,
   createTmdbNetflixClient,
@@ -87,26 +88,44 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(fetcher).toHaveBeenCalledTimes(7);
   });
 
-  it('maps NamuWiki Japanese manga links from all list pages', async () => {
+  it('maps web novel candidates from KakaoPage, Munpia, and Novelpia', async () => {
+    const fetcher = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      const body = url.includes('kakao')
+        ? '<a href="/content/1"><span>카카오 소설</span></a>'
+        : url.includes('munpia')
+          ? '<a href="/novel/2">문피아 소설</a>'
+          : '<a href="/novel/3">노벨피아 소설</a>';
+      return Promise.resolve(new Response(body, { status: 200 }));
+    });
+    const result = await createWebNovelClient(fetcher).findWebNovels(new AbortController().signal);
+    expect(result.items).toEqual([
+      { title: '카카오 소설', source: '카페', url: 'https://page.kakao.com/content/1' },
+      { title: '문피아 소설', source: '문피아', url: 'https://www.munpia.com/novel/2' },
+      { title: '노벨피아 소설', source: '노벨피아', url: 'https://novelpia.com/novel/3' },
+    ]);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it('maps Ridi Japanese manga links', async () => {
     const fetcher = vi
       .fn()
-      .mockImplementation(() =>
-        Promise.resolve(
-          new Response(
-            '<a href="/w/작품A"><span>일본 만화 작품</span></a>' +
-              '<a href="/w/작품B">다른 작품</a>',
-            { status: 200 },
-          ),
+      .mockResolvedValue(
+        new Response(
+          '<a href="/books/123"><span>리디 만화 A</span></a>' +
+            '<a href="/books/456?utm_source=test">리디 만화 B</a>',
+          { status: 200 },
         ),
       );
-    const result = await createNamuMangaClient(fetcher).findJapaneseManga(
+    const result = await createRidiMangaClient(fetcher).findJapaneseManga(
       new AbortController().signal,
     );
     expect(result.items).toEqual([
-      { title: '일본 만화 작품', url: 'https://namu.wiki/w/작품A' },
-      { title: '다른 작품', url: 'https://namu.wiki/w/작품B' },
+      { title: '리디 만화 A', url: 'https://ridibooks.com/books/123' },
+      { title: '리디 만화 B', url: 'https://ridibooks.com/books/456' },
     ]);
-    expect(fetcher).toHaveBeenCalledTimes(16);
+    expect(result.sourceUrl).toBe('https://ridibooks.com/comics/ebook');
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
   it('maps the latest Quasar Zone hot-deal titles and links', async () => {
@@ -115,7 +134,11 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       .mockResolvedValue(
         new Response(
           '<a href="/bbs/qb_saleinfo/views/1?_method=GET&sort=num"><h3>[쿠팡] 상품 A</h3></a>' +
-            '<a href="/bbs/qb_saleinfo/views/2">상품 B</a>',
+            '<a href="/bbs/qb_saleinfo/views/2">상품 B</a>' +
+            '<a href="/bbs/qb_saleinfo/views/3">상품 C</a>' +
+            '<a href="/bbs/qb_saleinfo/views/4">상품 D</a>' +
+            '<a href="/bbs/qb_saleinfo/views/5">상품 E</a>' +
+            '<a href="/bbs/qb_saleinfo/views/6">상품 F</a>',
           { status: 200 },
         ),
       );
@@ -123,6 +146,9 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result?.posts).toEqual([
       { title: '[쿠팡] 상품 A', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/1' },
       { title: '상품 B', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/2' },
+      { title: '상품 C', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/3' },
+      { title: '상품 D', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/4' },
+      { title: '상품 E', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/5' },
     ]);
   });
 
@@ -146,13 +172,17 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     ]);
   });
 
-  it('maps ten DCInside monitor titles and links', async () => {
+  it('maps five DCInside monitor titles and links', async () => {
     const fetcher = vi
       .fn()
       .mockResolvedValue(
         new Response(
           '<a href="/mgallery/board/view/?id=mnt&no=101"><em>모니터 글 A</em></a>' +
-            '<a href="/mgallery/board/view/?id=mnt&no=102">모니터 글 B</a>',
+            '<a href="/mgallery/board/view/?id=mnt&no=102">모니터 글 B</a>' +
+            '<a href="/mgallery/board/view/?id=mnt&no=103">모니터 글 C</a>' +
+            '<a href="/mgallery/board/view/?id=mnt&no=104">모니터 글 D</a>' +
+            '<a href="/mgallery/board/view/?id=mnt&no=105">모니터 글 E</a>' +
+            '<a href="/mgallery/board/view/?id=mnt&no=106">모니터 글 F</a>',
           { status: 200 },
         ),
       );
@@ -168,16 +198,33 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
         title: '모니터 글 B',
         url: 'https://gall.dcinside.com/mgallery/board/view/?id=mnt&no=102',
       },
+      {
+        title: '모니터 글 C',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=mnt&no=103',
+      },
+      {
+        title: '모니터 글 D',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=mnt&no=104',
+      },
+      {
+        title: '모니터 글 E',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=mnt&no=105',
+      },
     ]);
+    expect(result?.boardUrl).toBe(
+      'https://gall.dcinside.com/mgallery/board/lists/?id=mnt&sort_type=N&search_head=70&page=1',
+    );
   });
 
-  it('maps five DCInside Japan-travel titles and links', async () => {
+  it('maps three DCInside Japan-travel titles and links', async () => {
     const fetcher = vi
       .fn()
       .mockResolvedValue(
         new Response(
           '<a href="/mgallery/board/view/?id=nokanto&no=201"><em>여행기 A</em></a>' +
-            '<a href="/mgallery/board/view/?id=nokanto&no=202">여행기 B</a>',
+            '<a href="/mgallery/board/view/?id=nokanto&no=202">여행기 B</a>' +
+            '<a href="/mgallery/board/view/?id=nokanto&no=203">여행기 C</a>' +
+            '<a href="/mgallery/board/view/?id=nokanto&no=204">여행기 D</a>',
           { status: 200 },
         ),
       );
@@ -193,12 +240,19 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
         title: '여행기 B',
         url: 'https://gall.dcinside.com/mgallery/board/view/?id=nokanto&no=202',
       },
+      {
+        title: '여행기 C',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=nokanto&no=203',
+      },
     ]);
+    expect(result?.boardUrl).toBe(
+      'https://gall.dcinside.com/mgallery/board/lists/?id=nokanto&sort_type=N&search_head=10&page=1',
+    );
   });
-  it('falls back to the mobile DCInside page when the desktop page is unavailable', async () => {
+  it('falls back to the mobile DCInside page on a temporary server failure', async () => {
     const fetcher = vi
       .fn()
-      .mockResolvedValueOnce(new Response('', { status: 403 }))
+      .mockResolvedValueOnce(new Response('', { status: 500 }))
       .mockResolvedValueOnce(
         new Response('<a href="/mgallery/board/view/?id=nokanto&no=401">모바일 여행기</a>', {
           status: 200,
@@ -212,14 +266,23 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       url: 'https://gall.dcinside.com/mgallery/board/view/?id=nokanto&no=401',
     });
   });
+  it('does not retry a DCInside access block on another endpoint', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response('', { status: 403 }));
+    await expect(
+      createInvenClient(fetcher).findJapanTravelPosts?.(new AbortController().signal),
+    ).rejects.toThrow('PROVIDER_UNAVAILABLE');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
 
-  it('maps five DCInside Japan-restaurant titles and links', async () => {
+  it('maps three DCInside Japan-restaurant titles and links', async () => {
     const fetcher = vi
       .fn()
       .mockResolvedValue(
         new Response(
           '<a href="/mgallery/board/view/?id=nokanto&no=301"><em>맛집 A</em></a>' +
-            '<a href="/mgallery/board/view/?id=nokanto&no=302">맛집 B</a>',
+            '<a href="/mgallery/board/view/?id=nokanto&no=302">맛집 B</a>' +
+            '<a href="/mgallery/board/view/?id=nokanto&no=303">맛집 C</a>' +
+            '<a href="/mgallery/board/view/?id=nokanto&no=304">맛집 D</a>',
           { status: 200 },
         ),
       );
@@ -235,7 +298,14 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
         title: '맛집 B',
         url: 'https://gall.dcinside.com/mgallery/board/view/?id=nokanto&no=302',
       },
+      {
+        title: '맛집 C',
+        url: 'https://gall.dcinside.com/mgallery/board/view/?id=nokanto&no=303',
+      },
     ]);
+    expect(result?.boardUrl).toBe(
+      'https://gall.dcinside.com/mgallery/board/lists/?id=nokanto&sort_type=N&search_head=100&page=1',
+    );
   });
   it('uses representative Japanese prefecture cities for weather geocoding', async () => {
     const fetcher = vi
@@ -337,10 +407,12 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
   });
   it('maps the three newest Mabbak Dorosi posts with article links', async () => {
     const html = `
-      <a class="subject-link" href="/board/maple/2304/101">첫 글</a>
-      <a class="subject-link" href="/board/maple/2304/102">둘째 글</a>
-      <a class="subject-link" href="/board/maple/2304/103">셋째 글</a>
-      <a class="subject-link" href="/board/maple/2304/104">넷째 글</a>`;
+      <tr class="notice all"><a class="subject-link" href="/board/maple/2304/90">공지 하나</a></tr>
+      <tr class="notice all"><a class="subject-link" href="/board/maple/2304/91">공지 둘</a></tr>
+      <tr><a class="subject-link" href="/board/maple/2304/101">첫 글</a></tr>
+      <tr><a class="subject-link" href="/board/maple/2304/102">둘째 글</a></tr>
+      <tr><a class="subject-link" href="/board/maple/2304/103">셋째 글</a></tr>
+      <tr><a class="subject-link" href="/board/maple/2304/104">넷째 글</a></tr>`;
     const fetcher = vi.fn().mockResolvedValue(new Response(html, { status: 200 }));
     const result = await createInvenClient(fetcher).findMabbakDorosiPosts!(
       new AbortController().signal,
@@ -351,6 +423,8 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       url: 'https://www.inven.co.kr/board/maple/2304/101',
     });
     expect(result.posts[2]?.url).toBe('https://www.inven.co.kr/board/maple/2304/103');
+    expect(result.posts.map((post) => post.title)).not.toContain('공지 하나');
+    expect(result.posts.map((post) => post.title)).not.toContain('공지 둘');
   });
   it('maps Nexon character stats and HEXA summary without third-party access', async () => {
     const fetcher = vi
@@ -587,23 +661,37 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result?.notices[0]).toMatchObject({ title: '첫 공지', date: '2026-08-27' });
     expect(fetcher.mock.calls[0]?.[0]).toBe('https://open.api.nexon.com/maplestory/v1/notice');
   });
-  it('maps the official ongoing event list', async () => {
+  it('maps the five latest events from the official event board', async () => {
     const fetcher = vi
       .fn()
       .mockResolvedValue(
         new Response(
-          '<a href="/News/Event/Ongoing/1"><span>테스트 이벤트</span></a>' +
-            '<dd class="date"><p>2026.08.01 ~ 2026.08.31</p></dd>',
+          '<dt><a href="/News/Event/1">첫 번째 이벤트</a></dt>' +
+            '<dd><a href="/News/Event/1">2026.08.01 ~ 2026.08.31</a></dd>' +
+            '<dt><a href="/News/Event/2">두 번째 이벤트</a></dt>' +
+            '<dd><a href="/News/Event/2">2026.08.02 ~ 2026.08.30</a></dd>' +
+            '<dt><a href="/News/Event/3">세 번째 이벤트</a></dt>' +
+            '<dd><a href="/News/Event/3">2026.08.03 ~ 2026.08.29</a></dd>' +
+            '<dt><a href="/News/Event/4">네 번째 이벤트</a></dt>' +
+            '<dd><a href="/News/Event/4">2026.08.04 ~ 2026.08.28</a></dd>' +
+            '<dt><a href="/News/Event/5">다섯 번째 이벤트</a></dt>' +
+            '<dd><a href="/News/Event/5">2026.08.05 ~ 2026.08.27</a></dd>' +
+            '<dt><a href="/News/Event/6">여섯 번째 이벤트</a></dt>' +
+            '<dd><a href="/News/Event/6">2026.08.06 ~ 2026.08.26</a></dd>',
           { status: 200 },
         ),
       );
     const result = await createNexonClient('fixture-key', fetcher).findEvents?.(
       new AbortController().signal,
     );
-    expect(result?.events).toMatchObject([
-      { title: '테스트 이벤트', startDate: '2026-08-01', endDate: '2026-08-31' },
-    ]);
-    expect(fetcher.mock.calls[0]?.[0]).toBe('https://maplestory.nexon.com/News/Event/Ongoing');
+    expect(result?.events).toHaveLength(5);
+    expect(result?.events[0]).toMatchObject({
+      title: '첫 번째 이벤트',
+      startDate: '2026-08-01',
+      endDate: '2026-08-31',
+    });
+    expect(result?.events[4]?.title).toBe('다섯 번째 이벤트');
+    expect(fetcher.mock.calls[0]?.[0]).toBe('https://maplestory.nexon.com/News/Event');
   });
   it('finds the latest Sunday Maple notice from the official notice API', async () => {
     const fetcher = vi.fn().mockResolvedValue(

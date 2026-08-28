@@ -3,7 +3,9 @@
 var CONFIG = {
   endpoint: 'https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com',
   sharedSecret: 'REPLACE_ON_PHONE_ONLY',
-  noticeRooms: ['태환', '엘리시움 팔레트'],
+  // Replace this local-only placeholder with the one consented room name.
+  fixedRoomName: 'YOUR_CONSENTED_ROOM_NAME',
+  noticeRooms: ['YOUR_CONSENTED_ROOM_NAME']
 };
 var knownNoticeUrls = [];
 var noticeInitialized = false;
@@ -46,6 +48,7 @@ function pollNoticeAlerts() {
     knownNoticeUrls = knownNoticeUrls.slice(-20);
   } catch (error) {
     void error;
+    return;
   } finally {
     noticePolling = false;
   }
@@ -71,13 +74,14 @@ function checkBackendRuntime() {
       CONFIG.noticeRooms.forEach(function (roomName) {
         Api.replyRoom(
           roomName,
-          '[봇 런타임 점검]\n백엔드 상태 확인에 실패했습니다. 공기계에서 MessengerBot R 실행 상태를 확인해 주세요.',
+          '[봇 런타임 점검]\n백엔드 상태 확인에 실패했습니다. 공기계에서 MessengerBot R 실행 상태를 확인해 주세요.'
         );
       });
       lastRuntimeAlertAt = Date.now();
     }
   } catch (error) {
     void error;
+    return;
   } finally {
     runtimePolling = false;
   }
@@ -96,10 +100,10 @@ function response(room, message, sender, isGroupChat, replier, imageDB, packageN
   try {
     var payload = JSON.stringify({
       eventId: eventId,
-      roomId: room,
+      roomId: CONFIG.fixedRoomName,
       senderId: sender,
       message: message,
-      sentAt: new Date().toISOString(),
+      sentAt: new Date().toISOString()
     });
 
     var connection = org.jsoup.Jsoup.connect(CONFIG.endpoint + '/v1/messages');

@@ -7,7 +7,7 @@ const roots = ['apps', 'packages', 'tests'];
 const forbiddenFetch =
   /(?:fetch|axios|got|https?:\/\/[^\s'"`]+)\([^)]*(?:maple\.gg|maplescouter\.com)/i;
 const secretAssignment =
-  /(?:NEXON_API_KEY|KIS_APP_SECRET|BOT_SHARED_SECRET)\s*=\s*['"`]\s*[^\s'"`]{8,}/;
+  /(?:NEXON_API_KEY|KIS_APP_SECRET|BOT_SHARED_SECRET)\s*=\s*['"`]\s*[^\s'"`]{8,}|sharedSecret\s*:\s*['"`]\s*(?!REPLACE_ON_PHONE_ONLY)[A-Za-z0-9_-]{20,}/;
 const violations = [];
 
 function walk(directory) {

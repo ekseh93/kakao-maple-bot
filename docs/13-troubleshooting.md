@@ -1,6 +1,6 @@
 # 트러블슈팅 기록
 
-이 문서는 AWS 전환 과정에서 실제로 관찰한 오류와 해결 결과를 구현 변경과 분리해 기록합니다. 날짜는 2026-08-27 기준입니다.
+이 문서는 AWS 전환·공기계 연동 과정에서 실제로 관찰한 오류와 해결 결과를 구현 변경과 분리해 기록합니다. 비밀값·카카오톡 대화 원문·개인 식별 정보는 기록하지 않습니다. 날짜는 2026-08-28 기준입니다.
 
 ## 구현 변경
 
@@ -88,11 +88,113 @@ aws sts get-caller-identity
 
 이 프로젝트는 도쿄 리전(`ap-northeast-1`)만 허용합니다. Terraform의 `aws_region` 변수에 다른 값을 넣으면 validation 단계에서 중단되며, AWS CLI 배포 스크립트도 CloudFormation·S3·STS 요청에 도쿄 리전을 강제합니다. 사용자의 거주 지역과 비용 관리 범위를 문서화하기 위한 정책입니다.
 
+### 8. Terraform이 `Too many command line arguments`를 반환
+
+증상:
+
+```text
+Error: Too many command line arguments
+```
+
+원인: Terraform 프로젝트 디렉터리가 아닌 `System32`, 저장소 루트 또는 잘못된 경로에서 실행했거나, `-var-file` 인자를 현재 셸에서 파일명과 분리해 해석한 경우입니다.
+
+해결:
+
+```powershell
+Set-Location "C:\path\to\채팅 봇\infra\terraform"
+terraform plan -var-file="terraform.tfvars"
+```
+
+또는 저장소 루트에서 전역 `-chdir`를 사용합니다.
+
+```powershell
+terraform -chdir="C:\path\to\채팅 봇\infra\terraform" plan -var-file="terraform.tfvars"
+```
+
+`terraform.tfvars`는 `.gitignore` 대상이며, `terraform.tfvars.example`를 복사해 로컬에서만 작성합니다.
+
+### 9. AWS SSO 프로필 이름 불일치
+
+증상:
+
+```text
+The config profile (kakao-maple) could not be found
+```
+
+원인: `aws configure sso`에서 저장한 프로필과 `aws sso login --profile`에 입력한 프로필 이름이 달랐습니다.
+
+해결: 설정 완료 화면에 표시된 정확한 프로필 이름을 사용합니다. 이 프로젝트의 예시는 `kakao-maple-bot`입니다.
+
+```powershell
+aws sso login --profile kakao-maple-bot
+aws sts get-caller-identity --profile kakao-maple-bot
+```
+
+SSO 결과가 `assumed-role/AWSReservedSSO_...`이면 역할 기반 인증이 된 상태입니다. root ARN은 배포용 인증으로 사용하지 않습니다.
+
+### 10. SSO 세션 만료
+
+증상:
+
+```text
+failed to refresh cached credentials
+The SSO session has expired or is invalid
+```
+
+해결: 새 배포마다 같은 프로필로 `aws sso login`을 다시 실행하고, `get-caller-identity`가 도쿄 계정의 권한 역할을 반환하는지 확인합니다. SSO 만료는 이미 배포된 Lambda를 자동으로 중지시키는 것이 아니라, 로컬 CLI의 다음 AWS 작업을 막는 인증 문제입니다.
+
+### 11. MessengerBot R 컴파일 오류
+
+관찰된 오류:
+
+- `Trailing comma is not legal in an ECMA-262 object initializer`
+- `invalid object initializer`
+- `missing } after function body`
+- `BotManager is not defined`
+
+원인: MessengerBot R 레거시 엔진에서 객체 마지막 trailing comma·Markdown 코드 펜스·누락된 중괄호를 그대로 붙여 넣었거나, API2 전용 `BotManager` 코드를 레거시 `response(room, msg, ...)` 스크립트에 섞었습니다.
+
+해결: 저장소의 `apps/phone-relay/bot.js`는 레거시 콜백 전용 순수 JavaScript로 유지하고, Markdown 코드 펜스 표시는 제거한 뒤 파일 전체를 복사합니다. 마지막 객체 속성 뒤 쉼표를 넣지 않고 `node --check apps/phone-relay/bot.js` 또는 MessengerBot R 컴파일로 확인합니다. API2 코드는 별도 호환 스크립트로 취급하며 레거시 파일에 함께 붙이지 않습니다.
+
+### 12. HTTP 200인데 reply가 비어 있음
+
+증상:
+
+```text
+HTTP 200이지만 응답 내용이 없습니다.
+```
+
+원인: 릴레이가 보낸 `roomId`가 Lambda의 `ALLOWED_ROOMS`와 일치하지 않았습니다. 특히 레거시 오픈채팅 콜백에서 `room`이 실제 방 이름이 아니라 발신자 이름처럼 전달되는 사례가 있었습니다.
+
+해결: 한 개 방을 사용하는 경우 릴레이의 비공개 설정에 `fixedRoomName`을 실제 동의한 방 이름으로 넣고, Terraform의 `allowed_rooms`와 동일하게 맞춥니다. 저장소 공개 파일에는 방 이름을 넣지 않습니다. `!방테스트`는 진단용이며, `isGroupChat=false`만으로 오픈채팅 여부를 판정하지 않습니다.
+
+### 13. 방 하나는 되지만 다른 오픈채팅방은 무응답
+
+원인: MessengerBot R 레거시 콜백의 `room` 값과 카카오톡 오픈채팅 표시명이 환경별로 다를 수 있습니다. `Api.replyRoom`도 앱 버전·권한에 따라 안정적인 방 식별자를 보장하지 않습니다.
+
+해결: 현재 레거시 경로는 동의된 단일 방을 `fixedRoomName`으로 고정하는 제한적 호환 방식입니다. 여러 오픈채팅방을 안정적으로 운영하려면 실제 `channelId`를 제공하는 API2 호환 환경과 별도 어댑터가 필요합니다. 방 이름을 무작정 늘리거나 발신자 닉네임을 허용 목록에 넣는 방식은 사용하지 않습니다.
+
+### 14. 공개 게시판 명령의 외부 응답 오류
+
+`!핫딜`, `!모니터`, `!일본여행기`, `!일본음식점`, `!만화` 등은 외부 사이트의 구조 변경·429·403·일시 장애에 영향을 받습니다. 정상 결과는 캐시하고, 허용된 stale fallback이 있으면 마지막 정상 결과를 표시하며, 없으면 표준 외부 서비스 오류를 반환합니다. User-Agent 로테이션·프록시·IP 변경 등 차단 우회는 사용하지 않습니다. Maple.GG와 Maplescouter에는 자동 HTTP 요청을 하지 않고 링크만 생성합니다.
+
+## 현재 관측 상태
+
+- Terraform을 통한 도쿄 리전 Lambda/API Gateway 구성 변경 및 no-op plan 결과를 확인했습니다.
+- 인증된 API smoke test에서 `/health` HTTP 200과 `!도움말` reply 필드를 확인했습니다.
+- 사용자는 공기계 MessengerBot R과 카카오톡에서 봇을 사용 중이라고 보고했습니다. 이 문서는 사용자 보고를 Codex의 직접 기기 관측과 구분합니다.
+
+## 공개 전 보안 차단 조건
+
+- 현재 파일의 phone relay는 secret·실제 방 이름을 placeholder로만 보관합니다.
+- 실제 공유 secret은 과거 Git 커밋에 포함된 이력이 발견되었습니다. 따라서 새 일반 커밋만으로는 GitHub의 전체 이력이 안전해지지 않습니다.
+- GitHub 공개 전에는 운영 secret 회전 후, 승인된 범위에서 해당 이력을 제거하고 원격 브랜치를 force-push하거나, 기존 원격 저장소를 폐기하고 비밀이 없는 새 저장소로 이전해야 합니다.
+- 이력 재작성은 기존 commit SHA와 협업자 clone을 무효화할 수 있는 파괴적 작업이므로 별도 확인 없이는 실행하지 않습니다.
+
 ## 현재 미수행 항목
 
-- 실제 Lambda/API Gateway 리소스 생성·갱신
-- S3 artifact 버킷 업로드
 - API 키·GitHub secret 등록
-- 공기계와 카카오 비공개 시험방 E2E
+- 공기계 MessengerBot R 컴파일과 카카오톡 E2E의 Codex 독립 재현
+- 운영 secret 회전 및 과거 Git 이력 정리
 
 위 항목은 승인과 준비가 된 뒤에도 관측한 결과만 기록합니다.

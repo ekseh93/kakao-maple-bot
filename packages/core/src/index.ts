@@ -1,15 +1,9 @@
 import { calculateDailyFortune } from './fortune-mcp-adapter.js';
 export { formatExchangeRates, type ExchangeRateView } from './exchange.js';
 export {
-  formatCinemaTheaters,
-  formatComparedProducts,
-  formatDaisoInventory,
   formatDaisoProducts,
-  formatStores,
   formatNationalFuelPrices,
   formatLowestFuelStations,
-  formatNearbyPlaces,
-  formatDaisoProductDetail,
 } from './retail.js';
 
 export type CommandName =
@@ -46,6 +40,7 @@ export type CommandName =
   | 'discord'
   | 'symbolMax'
   | 'webtoon'
+  | 'webNovel'
   | 'boutiqueGift'
   | 'event'
   | 'sunday'
@@ -58,15 +53,9 @@ export type CommandName =
   | 'character'
   | 'stock'
   | 'daiso'
-  | 'productCompare'
-  | 'stores'
-  | 'inventory'
-  | 'cinema'
   | 'fuel'
   | 'fuelStations'
   | 'exchangeRate'
-  | 'nearbyPlaces'
-  | 'daisoProductDetail'
   | 'status';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
@@ -90,6 +79,7 @@ const helpRows = {
     ['!이벤트', '진행 이벤트'],
     ['!썬데이 / !선데이', '썬데이 메이플'],
     ['!인벤', '인벤 10추글'],
+    ['!마빡도로시', '최신 글 3개'],
     ['!디코', '디스코드 링크'],
   ],
   miniGames: [
@@ -98,39 +88,32 @@ const helpRows = {
     ['!원더베리', '위습의 원더베리'],
     ['!루나스윗', '루나 크리스탈 스윗'],
     ['!루나드림', '루나 크리스탈 드림'],
+    ['!가위 / !바위 / !보', '가위바위보'],
   ],
   other: [
     ['!날씨 <지역>', '현재 날씨'],
+    ['!주식 <이름>', '주식 시세'],
+    ['!환율', '달러·엔화 환율'],
     ['!기름 / !유가', '전국 평균 유가'],
     ['!주유소', '전국 최저가 주유소 TOP 3'],
-    ['!환율', '달러·엔화 환율'],
-    ['!주변 <지역> [카테고리]', '주변 음식점·카페 검색'],
-    ['!상품상세 <다이소상품ID>', '다이소 상품 상세'],
-    ['!주변 <지역> [카테고리]', '주변 음식점·카페 검색'],
-    ['!상품상세 <다이소상품ID>', '다이소 상품 상세'],
-    ['!가위 / !바위 / !보', '가위바위보'],
     ['!골라 <메뉴들>', '메뉴 선택'],
     ['!뭐먹지 !ㅁㅁㅈ', '메뉴 추천'],
-    ['!일본여행', '여행지 추천'],
-    ['!운세 <생년월일> <성별> <양력/음력>', '출생시간 없는 운세'],
+    ['!운세 <생년월일> <성별> <양력/음력>', '예: 931201 남성 양력'],
     ['!로또', '한·일 번호 추천'],
     ['!넷플', '넷플릭스 추천'],
     ['!애니', '일본 애니 추천'],
-    ['!만화', '나무위키 일본 만화 목록 랜덤 추천'],
+    ['!만화', '리디 일본 만화 목록 랜덤 추천'],
     ['!웹툰', '네이버 웹툰 추천'],
+    ['!웹소설', '웹소설 랜덤 추천'],
+    ['!일본여행', '여행지 추천'],
     ['!일본여행기', '디시인사이드 일본여행 최신 글 5개'],
     ['!일본음식점', '디시인사이드 일본 음식점 최신 글 5개'],
     ['!핫딜', '퀘이사존 최신 핫딜 5개'],
     ['!글카', '퀘이사존 그래픽카드 최신 글 5개'],
     ['!모니터', '디시인사이드 모니터 최신 글 10개'],
-    ['!주식 <이름>', '주식 시세'],
     ['!금주의신상', '금주의 신상'],
-    ['!상태', '관리자 전용'],
     ['!다이소 <상품>', '다이소 상품 검색'],
-    ['!상품비교 <상품>', '상품 가격 후보 비교'],
-    ['!매장 <브랜드> <지역>', '주변 매장 검색'],
-    ['!재고 다이소 <상품> <지역>', '다이소 재고 확인'],
-    ['!영화관 <지역>', '영화관 검색'],
+    ['!상태', '관리자 전용'],
   ],
 } as const;
 
@@ -138,7 +121,11 @@ function formatHelpSection(title: string, rows: readonly (readonly [string, stri
   return [
     `【${title}】`,
     '────────────',
-    ...rows.flatMap(([command, description]) => [`• ${command}`, `  └ ${description}`]),
+    ...rows.flatMap(([command, description]) => [
+      ...(command === '!상태' ? [''] : []),
+      `• ${command}`,
+      `  └ ${description}`,
+    ]),
   ];
 }
 
@@ -184,6 +171,7 @@ const aliases: Record<string, CommandName> = {
   디코: 'discord',
   심볼만렙: 'symbolMax',
   웹툰: 'webtoon',
+  웹소설: 'webNovel',
   부티크: 'boutiqueGift',
   이벤트: 'event',
   썬데이: 'sunday',
@@ -213,16 +201,10 @@ const aliases: Record<string, CommandName> = {
   로또: 'lotto',
   주식: 'stock',
   다이소: 'daiso',
-  상품비교: 'productCompare',
-  매장: 'stores',
-  재고: 'inventory',
-  영화관: 'cinema',
   기름: 'fuel',
   유가: 'fuel',
   주유소: 'fuelStations',
   환율: 'exchangeRate',
-  주변: 'nearbyPlaces',
-  상품상세: 'daisoProductDetail',
   상태: 'status',
 };
 
@@ -1117,7 +1099,7 @@ export function formatHotDeals(
   if (posts.length === 0) throw new Error('NOT_FOUND');
   return [
     '[퀘이사존 최신 핫딜]',
-    ...posts.slice(0, 5).map((post, index) => `${index + 1}. ${post.title}\n   ${post.url ?? ''}`),
+    ...posts.slice(0, 5).map((post, index) => `${index + 1}. ${post.title}`),
     '',
     `게시판: ${boardUrl}`,
   ]
@@ -1145,32 +1127,42 @@ export function formatMangaRecommendation(
 }
 
 export function formatFortune(args: string[] = [], now = new Date()): string {
-  if (
-    args.length !== 3 ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(args[0]!) ||
-    !/^(?:남자|여자|남|여)$/.test(args[1]!) ||
-    !/^(?:양력|음력)$/.test(args[2]!)
-  )
-    throw new Error('INVALID_USAGE');
-  const birthDate = new Date(`${args[0]}T00:00:00Z`);
-  if (Number.isNaN(birthDate.getTime()) || birthDate.toISOString().slice(0, 10) !== args[0])
-    throw new Error('INVALID_USAGE');
-  const birthYear = Number(args[0]!.slice(0, 4));
+  const birthDateInput = args[0] ?? '';
   const currentYear = Number(
     new Intl.DateTimeFormat('en', { timeZone: 'Asia/Seoul', year: 'numeric' }).format(now),
   );
+  const shortYear = Number(birthDateInput.slice(0, 2));
+  const birthDateText = /^\d{6}$/.test(birthDateInput)
+    ? `${shortYear <= currentYear % 100 ? 2000 + shortYear : 1900 + shortYear}-${birthDateInput.slice(2, 4)}-${birthDateInput.slice(4, 6)}`
+    : birthDateInput;
+  const normalizedGender =
+    args[1] === '남' || args[1] === '남성'
+      ? '남자'
+      : args[1] === '여' || args[1] === '여성'
+        ? '여자'
+        : args[1];
+  if (
+    args.length !== 3 ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(birthDateText) ||
+    !/^(?:남자|여자)$/.test(normalizedGender ?? '') ||
+    !/^(?:양력|음력)$/.test(args[2]!)
+  )
+    throw new Error('INVALID_USAGE');
+  const birthDate = new Date(`${birthDateText}T00:00:00Z`);
+  if (Number.isNaN(birthDate.getTime()) || birthDate.toISOString().slice(0, 10) !== birthDateText)
+    throw new Error('INVALID_USAGE');
+  const birthYear = Number(birthDateText.slice(0, 4));
   if (birthYear < 1900 || birthYear > currentYear) throw new Error('INVALID_USAGE');
   const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(now);
-  const gender = args[1] === '남' ? '남자' : args[1] === '여' ? '여자' : args[1]!;
   const result = calculateDailyFortune({
-    birthDate: args[0]!,
-    gender: gender as '남자' | '여자',
+    birthDate: birthDateText,
+    gender: normalizedGender as '남자' | '여자',
     calendar: args[2] as '양력' | '음력',
     targetDate: date,
   });
   return [
     '[오늘의 운세]',
-    `생년월일: ${args[0]} (${args[1]} / ${args[2]})`,
+    `생년월일: ${birthDateText} (${normalizedGender} / ${args[2]})`,
     '출생시간: 미입력',
     `기준일: ${date}`,
     `총운: ${result.scores.overall}점 / ${result.overall}`,

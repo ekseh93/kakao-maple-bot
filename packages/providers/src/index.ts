@@ -105,6 +105,12 @@ export type WebtoonList = { items: WebtoonItem[]; fetchedAt: string };
 export type WebtoonClient = {
   findCurrentWebtoons(signal: AbortSignal): Promise<WebtoonList>;
 };
+export type WebNovelSource = '카페' | '문피아' | '노벨피아';
+export type WebNovelItem = { title: string; source: WebNovelSource; url: string };
+export type WebNovelList = { items: WebNovelItem[]; fetchedAt: string };
+export type WebNovelClient = {
+  findWebNovels(signal: AbortSignal): Promise<WebNovelList>;
+};
 export type MangaItem = { title: string; url: string };
 export type MangaList = { items: MangaItem[]; sourceUrl: string; fetchedAt: string };
 export type MangaClient = { findJapaneseManga(signal: AbortSignal): Promise<MangaList> };
@@ -117,24 +123,6 @@ export type RetailProduct = {
   pickupAvailable?: boolean;
   brand?: string;
 };
-export type RetailStore = {
-  name: string;
-  address?: string;
-  distanceKm?: number;
-  service: string;
-};
-export type RetailInventoryItem = {
-  storeName: string;
-  address?: string;
-  available?: boolean;
-  quantity?: number;
-};
-export type CinemaTheater = {
-  name: string;
-  address?: string;
-  distanceKm?: number;
-  service: string;
-};
 export type FuelPrice = { productName: string; price: number; diff?: number; tradeDate?: string };
 export type FuelStation = {
   name: string;
@@ -143,36 +131,10 @@ export type FuelStation = {
   address?: string;
   roadAddress?: string;
 };
-export type NearbyPlace = {
-  name: string;
-  category?: string;
-  address?: string;
-  roadAddress?: string;
-  phone?: string;
-  link?: string;
-};
-export type DaisoProductDetail = RetailProduct & { isNew?: boolean; imageUrl?: string };
 export type McpRetailClient = {
   searchDaisoProducts(query: string, signal: AbortSignal): Promise<RetailProduct[]>;
-  compareProducts(query: string, signal: AbortSignal): Promise<RetailProduct[]>;
-  findStores(brand: string, location: string, signal: AbortSignal): Promise<RetailStore[]>;
-  checkDaisoInventory(
-    query: string,
-    location: string,
-    signal: AbortSignal,
-  ): Promise<RetailInventoryItem[]>;
-  findCinemaTheaters(location: string, signal: AbortSignal): Promise<CinemaTheater[]>;
   findNationalFuelPrices(signal: AbortSignal): Promise<FuelPrice[]>;
-  findLowestFuelStations(signal: AbortSignal): Promise<FuelStation[]>;
-  findNearbyPlaces(
-    location: string,
-    category: string | undefined,
-    signal: AbortSignal,
-  ): Promise<NearbyPlace[]>;
-  findDaisoProductDetail(
-    productId: string,
-    signal: AbortSignal,
-  ): Promise<DaisoProductDetail | null>;
+  findLowestFuelStations(areaCode: string | undefined, signal: AbortSignal): Promise<FuelStation[]>;
 };
 export type ExchangeRate = { usdKrw: number; jpyKrw: number; updatedAt?: string };
 export type ExchangeRateClient = {
@@ -366,14 +328,14 @@ function parseLatestSundayEventPage(html: string): EventItem | null {
   };
 }
 
-function parseOngoingEventPage(html: string, limit = 10): EventList['events'] {
+function parseLatestEventPage(html: string, limit = 5): EventList['events'] {
   const events: EventList['events'] = [];
   const pattern =
-    /<a\s+href=["'](\/News\/Event\/Ongoing\/\d+(?:\?[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>([\s\S]{0,500})/gi;
+    /<dt>\s*<a\s+href=["'](\/News\/Event\/\d+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/dt>\s*<dd>\s*<a\s+href=["'][^"']+["'][^>]*>([\s\S]*?)<\/a>\s*<\/dd>/gi;
   for (const match of html.matchAll(pattern)) {
     const title = decodeHtml(match[2] ?? '');
     const dateText = decodeHtml(match[3] ?? '');
-    if (!title || !dateText || events.some((event) => event.title === title)) continue;
+    if (!title || events.some((event) => event.title === title)) continue;
     const dates = [...dateText.matchAll(/(\d{4})[.\-/](\d{2})[.\-/](\d{2})/g)].map(
       (date) => `${date[1]}-${date[2]}-${date[3]}`,
     );
@@ -389,10 +351,22 @@ function parseOngoingEventPage(html: string, limit = 10): EventList['events'] {
   return events;
 }
 
-function parseInvenTopPosts(html: string, boardUrl: string, limit = 5): InvenTopPostList {
+function parseInvenTopPosts(
+  html: string,
+  boardUrl: string,
+  limit = 5,
+  excludeNoticeRows = false,
+): InvenTopPostList {
   const posts: InvenTopPost[] = [];
   const subjectPattern = /<a\b[^>]*class=["'][^"']*subject-link[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
   for (const match of html.matchAll(subjectPattern)) {
+    if (excludeNoticeRows) {
+      const matchIndex = match.index ?? 0;
+      const rowStart = html.lastIndexOf('<tr', matchIndex);
+      const rowEnd = html.indexOf('</tr>', matchIndex);
+      const row = rowStart >= 0 && rowEnd >= rowStart ? html.slice(rowStart, rowEnd + 5) : '';
+      if (/<tr\b[^>]*class=["'][^"']*\bnotice\b/i.test(row)) continue;
+    }
     const title = decodeHtml(match[1] ?? '')
       .replace(/^\[[^\]]+\]\s*/, '')
       .trim();
@@ -449,7 +423,7 @@ function parseQuasarZonePosts(html: string, boardUrl: string, limit: number): In
   return { posts, boardUrl, fetchedAt: new Date().toISOString() };
 }
 
-function parseDcinsideMonitorPosts(html: string, boardUrl: string): InvenTopPostList {
+function parseDcinsideMonitorPosts(html: string, boardUrl: string, limit = 5): InvenTopPostList {
   const posts: InvenTopPost[] = [];
   const pattern =
     /<a\b[^>]*href=["']([^"']*\/mgallery\/board\/view\/[^"']*?[?&]id=mnt[&]no=\d+)["'][^>]*>([\s\S]*?)<\/a>/gi;
@@ -461,7 +435,7 @@ function parseDcinsideMonitorPosts(html: string, boardUrl: string): InvenTopPost
       title,
       url: href.startsWith('http') ? href : `https://gall.dcinside.com${href}`,
     });
-    if (posts.length === 10) break;
+    if (posts.length === limit) break;
   }
   if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
   return { posts, boardUrl, fetchedAt: new Date().toISOString() };
@@ -505,6 +479,7 @@ async function fetchDcinsideHtml(
   for (const url of [primaryUrl, mobileUrl]) {
     const response = await fetchWithRetry(fetcher, url, { headers, signal });
     if (response.ok) return response.text();
+    if (response.status === 403 || response.status === 429) throw new Error('PROVIDER_UNAVAILABLE');
   }
   throw new Error('PROVIDER_UNAVAILABLE');
 }
@@ -935,7 +910,7 @@ export function createNexonClient(
       return { notices, fetchedAt: new Date().toISOString() };
     },
     async findEvents(signal) {
-      const sourceUrl = 'https://maplestory.nexon.com/News/Event/Ongoing';
+      const sourceUrl = 'https://maplestory.nexon.com/News/Event';
       const response = await fetchWithRetry(fetcher, sourceUrl, {
         headers: {
           Accept: 'text/html,application/xhtml+xml',
@@ -946,7 +921,7 @@ export function createNexonClient(
       if (!response.ok)
         throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
       return {
-        events: parseOngoingEventPage(await response.text(), 10),
+        events: parseLatestEventPage(await response.text(), 5),
         fetchedAt: new Date().toISOString(),
       };
     },
@@ -1221,7 +1196,7 @@ export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
         signal,
       });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
-      const result = parseInvenTopPosts(await response.text(), mabbakDorosiUrl, 3);
+      const result = parseInvenTopPosts(await response.text(), mabbakDorosiUrl, 3, true);
       if (result.posts.some((post) => !post.url)) throw new Error('PROVIDER_SCHEMA');
       return result;
     },
@@ -1258,7 +1233,7 @@ export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
         'https://m.dcinside.com/board/mnt',
         signal,
       );
-      return parseDcinsideMonitorPosts(html, boardUrl);
+      return parseDcinsideMonitorPosts(html, boardUrl, 5);
     },
     async findJapanTravelPosts(signal) {
       const boardUrl =
@@ -1269,7 +1244,7 @@ export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
         'https://m.dcinside.com/board/nokanto',
         signal,
       );
-      return parseDcinsideBoardPosts(html, boardUrl, 'nokanto', 5);
+      return parseDcinsideBoardPosts(html, boardUrl, 'nokanto', 3);
     },
     async findJapanRestaurantPosts(signal) {
       const boardUrl =
@@ -1280,7 +1255,7 @@ export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
         'https://m.dcinside.com/board/nokanto',
         signal,
       );
-      return parseDcinsideBoardPosts(html, boardUrl, 'nokanto', 5);
+      return parseDcinsideBoardPosts(html, boardUrl, 'nokanto', 3);
     },
   };
 }
@@ -1593,7 +1568,7 @@ export function createRidiMangaClient(fetcher: typeof fetch = fetch): MangaClien
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
       const html = await response.text();
       const items: MangaItem[] = [];
-      const pattern = /<a\b[^>]*href=["'](\/books\/\d+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+      const pattern = /<a\b[^>]*href=["'](\/books\/\d+)(?:[?#][^"']*)?["'][^>]*>([\s\S]*?)<\/a>/gi;
       for (const match of html.matchAll(pattern)) {
         const title = decodeHtml(match[2] ?? '').trim();
         const href = match[1] ?? '';
@@ -1606,31 +1581,50 @@ export function createRidiMangaClient(fetcher: typeof fetch = fetch): MangaClien
   };
 }
 
-const namuJapaneseMangaListUrls = [
-  'https://namu.wiki/w/일본%20만화/목록/ㄱ',
-  'https://namu.wiki/w/일본%20만화/목록/ㄴ',
-  'https://namu.wiki/w/일본%20만화/목록/ㄷ',
-  'https://namu.wiki/w/일본%20만화/목록/ㄹ',
-  'https://namu.wiki/w/일본%20만화/목록/ㅁ',
-  'https://namu.wiki/w/일본%20만화/목록/ㅂ',
-  'https://namu.wiki/w/일본%20만화/목록/ㅅ',
-  'https://namu.wiki/w/일본%20만화/목록/ㅇ',
-  'https://namu.wiki/w/일본%20만화/목록/ㅈ',
-  'https://namu.wiki/w/일본%20만화/목록/ㅊ',
-  'https://namu.wiki/w/일본%20만화/목록/ㅋ',
-  'https://namu.wiki/w/일본%20만화/목록/ㅌ',
-  'https://namu.wiki/w/일본%20만화/목록/ㅍ',
-  'https://namu.wiki/w/일본%20만화/목록/ㅎ',
-  'https://namu.wiki/w/일본%20만화/목록/숫자',
-  'https://namu.wiki/w/일본%20만화/목록/라틴%20문자',
-] as const;
+const webNovelSources: readonly {
+  source: WebNovelSource;
+  url: string;
+  pathPattern: RegExp;
+}[] = [
+  { source: '카페', url: 'https://page.kakao.com/menu/10011/', pathPattern: /^\/content\// },
+  { source: '문피아', url: 'https://www.munpia.com/', pathPattern: /^\/novel\// },
+  { source: '노벨피아', url: 'https://novelpia.com/', pathPattern: /^\/novel\// },
+];
 
-export function createNamuMangaClient(fetcher: typeof fetch = fetch): MangaClient {
+function parseWebNovelLinks(
+  html: string,
+  source: (typeof webNovelSources)[number],
+): WebNovelItem[] {
+  const items: WebNovelItem[] = [];
+  const pattern = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  for (const match of html.matchAll(pattern)) {
+    const href = match[1] ?? '';
+    let url: URL;
+    try {
+      url = new URL(href, source.url);
+    } catch {
+      continue;
+    }
+    if (url.host !== new URL(source.url).host || !source.pathPattern.test(url.pathname)) continue;
+    const title = decodeHtml(match[2] ?? '');
+    if (
+      !title ||
+      title.length > 120 ||
+      /^(홈|웹툰|웹소설|추천|랭킹|검색|로그인|회원가입|더보기|이용약관|공지사항)$/i.test(title) ||
+      items.some((item) => item.title === title)
+    )
+      continue;
+    items.push({ title, source: source.source, url: url.toString() });
+  }
+  return items;
+}
+
+export function createWebNovelClient(fetcher: typeof fetch = fetch): WebNovelClient {
   return {
-    async findJapaneseManga(signal) {
-      const pages = await Promise.all(
-        namuJapaneseMangaListUrls.map(async (sourceUrl) => {
-          const response = await fetchWithRetry(fetcher, sourceUrl, {
+    async findWebNovels(signal) {
+      const results = await Promise.allSettled(
+        webNovelSources.map(async (source) => {
+          const response = await fetchWithRetry(fetcher, source.url, {
             headers: {
               Accept: 'text/html,application/xhtml+xml',
               'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
@@ -1638,26 +1632,14 @@ export function createNamuMangaClient(fetcher: typeof fetch = fetch): MangaClien
             signal,
           });
           if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
-          return await response.text();
+          return parseWebNovelLinks(await response.text(), source);
         }),
       );
-      const items: MangaItem[] = [];
-      const pattern = /<a\b[^>]*href=["'](\/w\/[^"]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-      for (const html of pages) {
-        for (const match of html.matchAll(pattern)) {
-          const title = decodeHtml(match[2] ?? '').trim();
-          const href = match[1] ?? '';
-          if (!title || title.length > 120 || /^일본 만화\/목록/.test(title)) continue;
-          if (items.some((item) => item.title === title)) continue;
-          items.push({ title, url: `https://namu.wiki${href}` });
-        }
-      }
+      const items = results.flatMap((result) =>
+        result.status === 'fulfilled' ? result.value : [],
+      );
       if (items.length === 0) throw new Error('PROVIDER_SCHEMA');
-      return {
-        items,
-        sourceUrl: 'https://namu.wiki/w/일본%20만화/목록',
-        fetchedAt: new Date().toISOString(),
-      };
+      return { items, fetchedAt: new Date().toISOString() };
     },
   };
 }
@@ -1774,40 +1756,6 @@ function productFromRecord(item: JsonRecord): RetailProduct | null {
   };
 }
 
-function storeFromRecord(item: JsonRecord, service: string): RetailStore | null {
-  const name = asString(item.name) ?? asString(item.storeName) ?? asString(item.theaterName);
-  if (!name) return null;
-  const address = asString(item.address) ?? asString(item.roadAddress);
-  const distanceKm = asNumber(item.distanceKm) ?? asNumber(item.distance);
-  return {
-    name,
-    service,
-    ...(address ? { address } : {}),
-    ...(distanceKm !== undefined ? { distanceKm } : {}),
-  };
-}
-
-function inventoryFromRecord(item: JsonRecord): RetailInventoryItem | null {
-  const storeName = asString(item.storeName) ?? asString(item.name) ?? asString(item.store);
-  if (!storeName) return null;
-  const address = asString(item.address) ?? asString(item.roadAddress);
-  const quantity = asNumber(item.quantity) ?? asNumber(item.stock);
-  const available =
-    typeof item.available === 'boolean'
-      ? item.available
-      : typeof item.inStock === 'boolean'
-        ? item.inStock
-        : quantity !== undefined
-          ? quantity > 0
-          : undefined;
-  return {
-    storeName,
-    ...(address ? { address } : {}),
-    ...(available !== undefined ? { available } : {}),
-    ...(quantity !== undefined ? { quantity } : {}),
-  };
-}
-
 export function createMcpRetailClient(
   fetcher: typeof fetch = fetch,
   baseUrl = 'https://mcp.aka.page',
@@ -1847,79 +1795,6 @@ export function createMcpRetailClient(
       if (products.length === 0) throw new Error('NOT_FOUND');
       return products;
     },
-    async compareProducts(query, signal) {
-      const data = await call('compareProducts', { keyword: query, limit: '5' }, signal);
-      const products = firstArray(data, ['products', 'items', 'comparisons'])
-        .map(productFromRecord)
-        .filter((item): item is RetailProduct => item !== null);
-      if (products.length === 0) throw new Error('NOT_FOUND');
-      return products;
-    },
-    async findStores(brand, location, signal) {
-      const brands: Record<string, { action: string; service: string }> = {
-        다이소: { action: 'daisoFindStores', service: '다이소' },
-        올리브영: { action: 'oliveyoungFindStores', service: '올리브영' },
-        CU: { action: 'cuFindStores', service: 'CU' },
-        씨유: { action: 'cuFindStores', service: 'CU' },
-        이마트24: { action: 'emart24FindStores', service: '이마트24' },
-        롯데마트: { action: 'lottemartFindStores', service: '롯데마트' },
-        GS25: { action: 'gs25FindStores', service: 'GS25' },
-        지에스25: { action: 'gs25FindStores', service: 'GS25' },
-        세븐일레븐: { action: 'sevenelevenSearchStores', service: '세븐일레븐' },
-      };
-      const key = Object.keys(brands).find(
-        (value) => value.toLocaleLowerCase() === brand.toLocaleLowerCase(),
-      );
-      const selected = key ? brands[key] : undefined;
-      if (!selected) throw new Error('INVALID_USAGE');
-      const data = await call(selected.action, { keyword: location, limit: '5' }, signal);
-      const stores = firstArray(data, ['stores', 'theaters', 'items'])
-        .map((item) => storeFromRecord(item, selected.service))
-        .filter((item): item is RetailStore => item !== null);
-      if (stores.length === 0) throw new Error('NOT_FOUND');
-      return stores;
-    },
-    async checkDaisoInventory(query, location, signal) {
-      const products = await this.searchDaisoProducts(query, signal);
-      const productId = products[0]?.id;
-      if (!productId) throw new Error('PROVIDER_SCHEMA');
-      const data = await call(
-        'daisoCheckInventory',
-        { productId, keyword: location, pageSize: '5' },
-        signal,
-      );
-      const inventory = firstArray(data, ['stores', 'inventory', 'items'])
-        .map(inventoryFromRecord)
-        .filter((item): item is RetailInventoryItem => item !== null);
-      if (inventory.length === 0) throw new Error('NOT_FOUND');
-      return inventory;
-    },
-    async findCinemaTheaters(location, signal) {
-      const actions = [
-        { action: 'megaboxFindTheaters', service: '메가박스' },
-        { action: 'lottecinemaFindTheaters', service: '롯데시네마' },
-        { action: 'cgvFindTheaters', service: 'CGV' },
-      ];
-      const results = await Promise.allSettled(
-        actions.map(async ({ action, service }) => {
-          const data = await call(action, { keyword: location, limit: '3' }, signal);
-          return firstArray(data, ['theaters', 'stores', 'items'])
-            .map((item) => storeFromRecord(item, service))
-            .filter((item): item is RetailStore => item !== null)
-            .map((item) => ({
-              name: item.name,
-              service: item.service,
-              ...(item.address ? { address: item.address } : {}),
-              ...(item.distanceKm !== undefined ? { distanceKm: item.distanceKm } : {}),
-            }));
-        }),
-      );
-      const theaters = results.flatMap((result) =>
-        result.status === 'fulfilled' ? result.value : [],
-      );
-      if (theaters.length === 0) throw new Error('PROVIDER_UNAVAILABLE');
-      return theaters;
-    },
     async findNationalFuelPrices(signal) {
       const response = await fetchWithRetry(fetcher, `${baseUrl}/api/opinet/average`, {
         headers: {
@@ -1950,8 +1825,9 @@ export function createMcpRetailClient(
       if (body?.success !== true || result.length === 0) throw new Error('PROVIDER_SCHEMA');
       return result;
     },
-    async findLowestFuelStations(signal) {
+    async findLowestFuelStations(areaCode, signal) {
       const search = new URLSearchParams({ fuelCode: 'B027', count: '3' });
+      if (areaCode) search.set('areaCode', areaCode);
       const response = await fetchWithRetry(
         fetcher,
         `${baseUrl}/api/opinet/lowest?${search.toString()}`,
@@ -1987,82 +1863,6 @@ export function createMcpRetailClient(
       });
       if (body?.success !== true || result.length === 0) throw new Error('PROVIDER_SCHEMA');
       return result.sort((left, right) => left.price - right.price).slice(0, 3);
-    },
-    async findNearbyPlaces(location, category, signal) {
-      const search = new URLSearchParams({ location, limit: '5' });
-      if (category) search.set('category', category);
-      const response = await fetchWithRetry(
-        fetcher,
-        `${baseUrl}/api/places/search?${search.toString()}`,
-        {
-          headers: {
-            Accept: 'application/json',
-            'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
-          },
-          signal,
-        },
-      );
-      if (!response.ok)
-        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
-      const body = asRecord(await response.json());
-      const data = body ? asRecord(body.data) : null;
-      const places = data ? firstArray(data, ['places', 'items']) : [];
-      const result = places.flatMap((item) => {
-        const name = asString(item.name) ?? asString(item.title);
-        if (!name) return [];
-        const categoryValue = asString(item.category);
-        const address = asString(item.address);
-        const roadAddress = asString(item.roadAddress);
-        const phone = asString(item.phone) ?? asString(item.telephone);
-        const link = asString(item.link);
-        return [
-          {
-            name,
-            ...(categoryValue ? { category: categoryValue } : {}),
-            ...(address ? { address } : {}),
-            ...(roadAddress ? { roadAddress } : {}),
-            ...(phone ? { phone } : {}),
-            ...(link ? { link } : {}),
-          },
-        ];
-      });
-      if (body?.success !== true || result.length === 0) throw new Error('NOT_FOUND');
-      return result.slice(0, 5);
-    },
-    async findDaisoProductDetail(productId, signal) {
-      const response = await fetchWithRetry(
-        fetcher,
-        `${baseUrl}/api/daiso/products/${encodeURIComponent(productId)}`,
-        {
-          headers: {
-            Accept: 'application/json',
-            'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
-          },
-          signal,
-        },
-      );
-      if (response.status === 404) return null;
-      if (!response.ok)
-        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
-      const body = asRecord(await response.json());
-      const product = body ? asRecord(body.data) : null;
-      if (body?.success !== true || !product) throw new Error('PROVIDER_SCHEMA');
-      const name = asString(product.name);
-      if (!name) throw new Error('PROVIDER_SCHEMA');
-      const price = asNumber(product.price);
-      const currency = asString(product.currency);
-      const brand = asString(product.brand);
-      const imageUrl = asString(product.imageUrl);
-      return {
-        name,
-        ...(asString(product.id) ? { id: asString(product.id) } : { id: productId }),
-        ...(price !== undefined ? { price } : {}),
-        ...(currency ? { currency } : {}),
-        ...(brand ? { brand } : {}),
-        ...(typeof product.soldOut === 'boolean' ? { soldOut: product.soldOut } : {}),
-        ...(typeof product.isNew === 'boolean' ? { isNew: product.isNew } : {}),
-        ...(imageUrl ? { imageUrl } : {}),
-      };
     },
   };
 }

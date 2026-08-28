@@ -26,15 +26,9 @@ import {
   formatFortune,
   formatLotto,
   formatDaisoProducts,
-  formatComparedProducts,
-  formatStores,
-  formatDaisoInventory,
-  formatCinemaTheaters,
   formatNationalFuelPrices,
   formatLowestFuelStations,
   formatExchangeRates,
-  formatNearbyPlaces,
-  formatDaisoProductDetail,
   validateCharacterName,
   validateRegion,
 } from '@kakao-maple-bot/core';
@@ -42,12 +36,13 @@ import {
   createNexonClient,
   createInvenClient,
   createNaverWebtoonClient,
-  createNamuMangaClient,
+  createRidiMangaClient,
   createNaverBlogClient,
   createStockClient,
   createTmdbNetflixClient,
   createMcpRetailClient,
   createExchangeRateClient,
+  createWebNovelClient,
   type Character,
   type DojangCharacter,
   type EquipmentCharacter,
@@ -65,6 +60,8 @@ import {
   type InvenClient,
   type WebtoonClient,
   type WebtoonList,
+  type WebNovelClient,
+  type WebNovelList,
   type MangaClient,
   type MangaList,
   type NaverBlogClient,
@@ -78,8 +75,6 @@ import {
   type FuelPrice,
   type ExchangeRate,
   type ExchangeRateClient,
-  type NearbyPlace,
-  type DaisoProductDetail,
 } from '@kakao-maple-bot/providers';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
@@ -109,6 +104,7 @@ type Dependencies = {
   nexon?: NexonClient;
   inven?: InvenClient;
   webtoon?: WebtoonClient;
+  webNovel?: WebNovelClient;
   manga?: MangaClient;
   naverBlog?: NaverBlogClient;
   stock?: StockClient;
@@ -131,12 +127,18 @@ const experienceCache = new Map<string, { value: ExperienceHistory; expiresAt: n
 let noticeCache: { value: NoticeList; expiresAt: number } | undefined;
 let invenCache: { value: InvenTopPostList; expiresAt: number } | undefined;
 let mabbakDorosiCache: { value: InvenTopPostList; expiresAt: number } | undefined;
-let hotDealsCache: { value: InvenTopPostList; expiresAt: number } | undefined;
-let graphicsCardCache: { value: InvenTopPostList; expiresAt: number } | undefined;
-let monitorCache: { value: InvenTopPostList; expiresAt: number } | undefined;
-let japanTravelPostsCache: { value: InvenTopPostList; expiresAt: number } | undefined;
-let japanRestaurantPostsCache: { value: InvenTopPostList; expiresAt: number } | undefined;
+type ResilientPostCache = {
+  value: InvenTopPostList;
+  expiresAt: number;
+  staleUntil: number;
+};
+let hotDealsCache: ResilientPostCache | undefined;
+let graphicsCardCache: ResilientPostCache | undefined;
+let monitorCache: ResilientPostCache | undefined;
+let japanTravelPostsCache: ResilientPostCache | undefined;
+let japanRestaurantPostsCache: ResilientPostCache | undefined;
 let webtoonCache: { value: WebtoonList; expiresAt: number } | undefined;
+let webNovelCache: { value: WebNovelList; expiresAt: number } | undefined;
 let mangaCache: { value: MangaList; expiresAt: number } | undefined;
 let netflixCache:
   { value: Array<{ title: string; country?: string }>; expiresAt: number } | undefined;
@@ -157,8 +159,13 @@ const stockCache = new Map<string, { value: StockQuote; expiresAt: number }>();
 const stockCandidatesCache = new Map<string, { value: StockQuote[]; expiresAt: number }>();
 const weatherCache = new Map<string, { value: WeatherSnapshot; expiresAt: number }>();
 const retailCache = new Map<string, { value: unknown; expiresAt: number }>();
+const dcInsideCacheTtlMs = 5 * 60_000;
+const publicPostStaleTtlMs = 6 * 60 * 60_000;
 let fuelCache: { value: FuelPrice[]; expiresAt: number } | undefined;
-let lowestFuelStationsCache: { value: FuelStation[]; expiresAt: number } | undefined;
+const lowestFuelStationsCache = new Map<
+  string,
+  { value: FuelStation[]; expiresAt: number; region?: string }
+>();
 let exchangeRateCache: { value: ExchangeRate; expiresAt: number } | undefined;
 
 const errorText: Record<string, string> = {
@@ -198,6 +205,15 @@ function errorMessage(error: unknown, requestId: string): string {
   return errorText[key] ?? `처리 중 오류가 발생했습니다. 요청 ID: ${requestId}`;
 }
 
+function stalePostReply(
+  cache: ResilientPostCache | undefined,
+  now: number,
+  format: (value: InvenTopPostList) => string,
+): string | null {
+  if (!cache || cache.staleUntil <= now) return null;
+  return `${format(cache.value)}\n※ 원문 일시 접근 제한으로 최근 정상 조회 결과를 표시합니다.`;
+}
+
 export function createAuditLog(input: {
   requestId: string;
   command: string;
@@ -221,7 +237,11 @@ export async function handleMessage(
   message: Message,
   env: Env,
   deps: Dependencies = {},
-): Promise<{ reply: string | null; requestId: string; cache: 'hit' | 'miss' | 'bypass' }> {
+): Promise<{
+  reply: string | null;
+  requestId: string;
+  cache: 'hit' | 'miss' | 'stale' | 'bypass';
+}> {
   const requestId = crypto.randomUUID();
   const now = (deps.now ?? (() => new Date()))().getTime();
   for (const [id, created] of seen) if (now - created > 120_000) seen.delete(id);
@@ -247,7 +267,15 @@ export async function handleMessage(
   if (noticeCache && noticeCache.expiresAt <= now) noticeCache = undefined;
   if (invenCache && invenCache.expiresAt <= now) invenCache = undefined;
   if (mabbakDorosiCache && mabbakDorosiCache.expiresAt <= now) mabbakDorosiCache = undefined;
+  if (hotDealsCache && hotDealsCache.staleUntil <= now) hotDealsCache = undefined;
+  if (graphicsCardCache && graphicsCardCache.staleUntil <= now) graphicsCardCache = undefined;
+  if (monitorCache && monitorCache.staleUntil <= now) monitorCache = undefined;
+  if (japanTravelPostsCache && japanTravelPostsCache.staleUntil <= now)
+    japanTravelPostsCache = undefined;
+  if (japanRestaurantPostsCache && japanRestaurantPostsCache.staleUntil <= now)
+    japanRestaurantPostsCache = undefined;
   if (webtoonCache && webtoonCache.expiresAt <= now) webtoonCache = undefined;
+  if (webNovelCache && webNovelCache.expiresAt <= now) webNovelCache = undefined;
   if (weeklyNewProductCache && weeklyNewProductCache.expiresAt <= now)
     weeklyNewProductCache = undefined;
   if (eventCache && eventCache.expiresAt <= now) eventCache = undefined;
@@ -262,8 +290,8 @@ export async function handleMessage(
     if (entry.expiresAt <= now) weatherCache.delete(region);
   for (const [key, entry] of retailCache) if (entry.expiresAt <= now) retailCache.delete(key);
   if (fuelCache && fuelCache.expiresAt <= now) fuelCache = undefined;
-  if (lowestFuelStationsCache && lowestFuelStationsCache.expiresAt <= now)
-    lowestFuelStationsCache = undefined;
+  for (const [key, entry] of lowestFuelStationsCache)
+    if (entry.expiresAt <= now) lowestFuelStationsCache.delete(key);
   if (exchangeRateCache && exchangeRateCache.expiresAt <= now) exchangeRateCache = undefined;
   if (!message.eventId || seen.has(message.eventId))
     return { reply: null, requestId, cache: 'bypass' };
@@ -392,7 +420,7 @@ export async function handleMessage(
             requestId,
             cache: 'hit',
           };
-        const client = deps.manga ?? createNamuMangaClient();
+        const client = deps.manga ?? createRidiMangaClient();
         const manga = await client.findJapaneseManga(timeoutSignal());
         mangaCache = { value: manga, expiresAt: now + 10 * 60_000 };
         return {
@@ -513,9 +541,21 @@ export async function handleMessage(
           };
         const client = deps.inven ?? createInvenClient();
         if (!client.findHotDeals) throw new Error('NOT_CONFIGURED');
-        const deals = await client.findHotDeals(timeoutSignal());
-        hotDealsCache = { value: deals, expiresAt: now + 60_000 };
-        return { reply: formatHotDeals(deals.posts, deals.boardUrl), requestId, cache: 'miss' };
+        try {
+          const deals = await client.findHotDeals(timeoutSignal());
+          hotDealsCache = {
+            value: deals,
+            expiresAt: now + dcInsideCacheTtlMs,
+            staleUntil: now + publicPostStaleTtlMs,
+          };
+          return { reply: formatHotDeals(deals.posts, deals.boardUrl), requestId, cache: 'miss' };
+        } catch (error) {
+          const stale = stalePostReply(hotDealsCache, now, (value) =>
+            formatHotDeals(value.posts, value.boardUrl),
+          );
+          if (stale) return { reply: stale, requestId, cache: 'stale' };
+          throw error;
+        }
       }
       case 'graphicsCard': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
@@ -527,9 +567,19 @@ export async function handleMessage(
           };
         const client = deps.inven ?? createInvenClient();
         if (!client.findGraphicsCardPosts) throw new Error('NOT_CONFIGURED');
-        const posts = await client.findGraphicsCardPosts(timeoutSignal());
-        graphicsCardCache = { value: posts, expiresAt: now + 60_000 };
-        return { reply: formatGraphicsCardPosts(posts), requestId, cache: 'miss' };
+        try {
+          const posts = await client.findGraphicsCardPosts(timeoutSignal());
+          graphicsCardCache = {
+            value: posts,
+            expiresAt: now + dcInsideCacheTtlMs,
+            staleUntil: now + publicPostStaleTtlMs,
+          };
+          return { reply: formatGraphicsCardPosts(posts), requestId, cache: 'miss' };
+        } catch (error) {
+          const stale = stalePostReply(graphicsCardCache, now, formatGraphicsCardPosts);
+          if (stale) return { reply: stale, requestId, cache: 'stale' };
+          throw error;
+        }
       }
       case 'monitor': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
@@ -541,9 +591,19 @@ export async function handleMessage(
           };
         const client = deps.inven ?? createInvenClient();
         if (!client.findMonitorPosts) throw new Error('NOT_CONFIGURED');
-        const posts = await client.findMonitorPosts(timeoutSignal());
-        monitorCache = { value: posts, expiresAt: now + 60_000 };
-        return { reply: formatMonitorPosts(posts), requestId, cache: 'miss' };
+        try {
+          const posts = await client.findMonitorPosts(timeoutSignal());
+          monitorCache = {
+            value: posts,
+            expiresAt: now + dcInsideCacheTtlMs,
+            staleUntil: now + publicPostStaleTtlMs,
+          };
+          return { reply: formatMonitorPosts(posts), requestId, cache: 'miss' };
+        } catch (error) {
+          const stale = stalePostReply(monitorCache, now, formatMonitorPosts);
+          if (stale) return { reply: stale, requestId, cache: 'stale' };
+          throw error;
+        }
       }
       case 'japanTravelPosts': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
@@ -555,9 +615,19 @@ export async function handleMessage(
           };
         const client = deps.inven ?? createInvenClient();
         if (!client.findJapanTravelPosts) throw new Error('NOT_CONFIGURED');
-        const posts = await client.findJapanTravelPosts(timeoutSignal());
-        japanTravelPostsCache = { value: posts, expiresAt: now + 60_000 };
-        return { reply: formatJapanTravelPosts(posts), requestId, cache: 'miss' };
+        try {
+          const posts = await client.findJapanTravelPosts(timeoutSignal());
+          japanTravelPostsCache = {
+            value: posts,
+            expiresAt: now + dcInsideCacheTtlMs,
+            staleUntil: now + publicPostStaleTtlMs,
+          };
+          return { reply: formatJapanTravelPosts(posts), requestId, cache: 'miss' };
+        } catch (error) {
+          const stale = stalePostReply(japanTravelPostsCache, now, formatJapanTravelPosts);
+          if (stale) return { reply: stale, requestId, cache: 'stale' };
+          throw error;
+        }
       }
       case 'japanRestaurantPosts': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
@@ -569,9 +639,19 @@ export async function handleMessage(
           };
         const client = deps.inven ?? createInvenClient();
         if (!client.findJapanRestaurantPosts) throw new Error('NOT_CONFIGURED');
-        const posts = await client.findJapanRestaurantPosts(timeoutSignal());
-        japanRestaurantPostsCache = { value: posts, expiresAt: now + 60_000 };
-        return { reply: formatJapanRestaurantPosts(posts), requestId, cache: 'miss' };
+        try {
+          const posts = await client.findJapanRestaurantPosts(timeoutSignal());
+          japanRestaurantPostsCache = {
+            value: posts,
+            expiresAt: now + dcInsideCacheTtlMs,
+            staleUntil: now + publicPostStaleTtlMs,
+          };
+          return { reply: formatJapanRestaurantPosts(posts), requestId, cache: 'miss' };
+        } catch (error) {
+          const stale = stalePostReply(japanRestaurantPostsCache, now, formatJapanRestaurantPosts);
+          if (stale) return { reply: stale, requestId, cache: 'stale' };
+          throw error;
+        }
       }
       case 'mabbakDorosi': {
         if (mabbakDorosiCache && mabbakDorosiCache.expiresAt > now)
@@ -595,6 +675,20 @@ export async function handleMessage(
         const webtoons = await client.findCurrentWebtoons(timeoutSignal());
         webtoonCache = { value: webtoons, expiresAt: now + 10 * 60_000 };
         return { reply: formatWebtoon(webtoons, Math.random), requestId, cache: 'miss' };
+      }
+      case 'webNovel': {
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        const client = deps.webNovel ?? createWebNovelClient();
+        if (webNovelCache && webNovelCache.expiresAt > now) {
+          return {
+            reply: formatWebNovel(webNovelCache.value, Math.random),
+            requestId,
+            cache: 'hit',
+          };
+        }
+        const novels = await client.findWebNovels(timeoutSignal());
+        webNovelCache = { value: novels, expiresAt: now + 10 * 60_000 };
+        return { reply: formatWebNovel(novels, Math.random), requestId, cache: 'miss' };
       }
       case 'weeklyNewProduct': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
@@ -878,133 +972,6 @@ export async function handleMessage(
         retailCache.set(key, { value: products, expiresAt: now + 60_000 });
         return { reply: formatDaisoProducts(query, products), requestId, cache: 'miss' };
       }
-      case 'productCompare': {
-        if (parsed.args.length < 1) throw new Error('INVALID_USAGE');
-        const query = parsed.args.join(' ');
-        const key = `compare:${query.toLocaleLowerCase()}`;
-        const cached = retailCache.get(key);
-        if (cached && cached.expiresAt > now)
-          return {
-            reply: formatComparedProducts(
-              query,
-              cached.value as Parameters<typeof formatComparedProducts>[1],
-            ),
-            requestId,
-            cache: 'hit',
-          };
-        const client = deps.retail ?? createMcpRetailClient();
-        const products = await client.compareProducts(query, timeoutSignal());
-        retailCache.set(key, { value: products, expiresAt: now + 60_000 });
-        return { reply: formatComparedProducts(query, products), requestId, cache: 'miss' };
-      }
-      case 'stores': {
-        if (parsed.args.length < 2) throw new Error('INVALID_USAGE');
-        const [brand, ...locationParts] = parsed.args;
-        const location = locationParts.join(' ');
-        const key = `stores:${brand}:${location}`.toLocaleLowerCase();
-        const cached = retailCache.get(key);
-        if (cached && cached.expiresAt > now)
-          return {
-            reply: formatStores(
-              brand!,
-              location,
-              cached.value as Parameters<typeof formatStores>[2],
-            ),
-            requestId,
-            cache: 'hit',
-          };
-        const client = deps.retail ?? createMcpRetailClient();
-        const stores = await client.findStores(brand!, location, timeoutSignal());
-        retailCache.set(key, { value: stores, expiresAt: now + 60_000 });
-        return { reply: formatStores(brand!, location, stores), requestId, cache: 'miss' };
-      }
-      case 'inventory': {
-        if (parsed.args.length < 3 || parsed.args[0]?.toLocaleLowerCase() !== '다이소')
-          throw new Error('INVALID_USAGE');
-        const query = parsed.args.slice(1, -1).join(' ');
-        const location = parsed.args.at(-1)!;
-        const key = `inventory:${query}:${location}`.toLocaleLowerCase();
-        const cached = retailCache.get(key);
-        if (cached && cached.expiresAt > now)
-          return {
-            reply: formatDaisoInventory(
-              query,
-              location,
-              cached.value as Parameters<typeof formatDaisoInventory>[2],
-            ),
-            requestId,
-            cache: 'hit',
-          };
-        const client = deps.retail ?? createMcpRetailClient();
-        const inventory = await client.checkDaisoInventory(query, location, timeoutSignal());
-        retailCache.set(key, { value: inventory, expiresAt: now + 30_000 });
-        return {
-          reply: formatDaisoInventory(query, location, inventory),
-          requestId,
-          cache: 'miss',
-        };
-      }
-      case 'cinema': {
-        if (parsed.args.length < 1) throw new Error('INVALID_USAGE');
-        const location = parsed.args.join(' ');
-        const key = `cinema:${location}`.toLocaleLowerCase();
-        const cached = retailCache.get(key);
-        if (cached && cached.expiresAt > now)
-          return {
-            reply: formatCinemaTheaters(
-              location,
-              cached.value as Parameters<typeof formatCinemaTheaters>[1],
-            ),
-            requestId,
-            cache: 'hit',
-          };
-        const client = deps.retail ?? createMcpRetailClient();
-        const theaters = await client.findCinemaTheaters(location, timeoutSignal(5000));
-        retailCache.set(key, { value: theaters, expiresAt: now + 60_000 });
-        return { reply: formatCinemaTheaters(location, theaters), requestId, cache: 'miss' };
-      }
-      case 'nearbyPlaces': {
-        if (parsed.args.length < 1) throw new Error('INVALID_USAGE');
-        const category = parsed.args.length > 1 ? parsed.args.at(-1) : undefined;
-        const location =
-          parsed.args.length > 1 ? parsed.args.slice(0, -1).join(' ') : parsed.args[0]!;
-        const key = `nearby:${location}:${category ?? ''}`.toLocaleLowerCase();
-        const cached = retailCache.get(key);
-        if (cached && cached.expiresAt > now)
-          return {
-            reply: formatNearbyPlaces(
-              location,
-              category,
-              cached.value as Parameters<typeof formatNearbyPlaces>[2],
-            ),
-            requestId,
-            cache: 'hit',
-          };
-        const client = deps.retail ?? createMcpRetailClient();
-        const places = await client.findNearbyPlaces(location, category, timeoutSignal(5000));
-        retailCache.set(key, { value: places, expiresAt: now + 60_000 });
-        return { reply: formatNearbyPlaces(location, category, places), requestId, cache: 'miss' };
-      }
-      case 'daisoProductDetail': {
-        if (parsed.args.length !== 1 || !/^\d{4,20}$/.test(parsed.args[0]!))
-          throw new Error('INVALID_USAGE');
-        const productId = parsed.args[0]!;
-        const key = `daiso-detail:${productId}`;
-        const cached = retailCache.get(key);
-        if (cached && cached.expiresAt > now)
-          return {
-            reply: formatDaisoProductDetail(
-              productId,
-              cached.value as Parameters<typeof formatDaisoProductDetail>[1],
-            ),
-            requestId,
-            cache: 'hit',
-          };
-        const client = deps.retail ?? createMcpRetailClient();
-        const product = await client.findDaisoProductDetail(productId, timeoutSignal());
-        retailCache.set(key, { value: product, expiresAt: now + 10 * 60_000 });
-        return { reply: formatDaisoProductDetail(productId, product), requestId, cache: 'miss' };
-      }
       case 'fuel': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
         if (fuelCache && fuelCache.expiresAt > now)
@@ -1015,17 +982,50 @@ export async function handleMessage(
         return { reply: formatNationalFuelPrices(prices), requestId, cache: 'miss' };
       }
       case 'fuelStations': {
-        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
-        if (lowestFuelStationsCache && lowestFuelStationsCache.expiresAt > now)
+        if (parsed.args.length !== 1 || !parsed.args[0]?.trim()) throw new Error('INVALID_USAGE');
+        const requestedRegion = parsed.args[0].trim();
+        const regionCodes: Record<string, { label?: string; code?: string }> = {
+          전국: {},
+          서울: { label: '서울', code: '01' },
+          부산: { label: '부산', code: '02' },
+          대구: { label: '대구', code: '03' },
+          인천: { label: '인천', code: '04' },
+          광주: { label: '광주', code: '05' },
+          대전: { label: '대전', code: '06' },
+          울산: { label: '울산', code: '07' },
+          경기: { label: '경기', code: '08' },
+          강원: { label: '강원', code: '09' },
+          충북: { label: '충북', code: '10' },
+          충남: { label: '충남', code: '11' },
+          전북: { label: '전북', code: '12' },
+          전남: { label: '전남', code: '13' },
+          경북: { label: '경북', code: '14' },
+          경남: { label: '경남', code: '15' },
+          제주: { label: '제주', code: '16' },
+          세종: { label: '세종', code: '17' },
+        };
+        const selected = regionCodes[requestedRegion];
+        if (!selected) throw new Error('INVALID_USAGE');
+        const cacheKey = selected.code ?? 'nationwide';
+        const cached = lowestFuelStationsCache.get(cacheKey);
+        if (cached && cached.expiresAt > now)
           return {
-            reply: formatLowestFuelStations(lowestFuelStationsCache.value),
+            reply: formatLowestFuelStations(cached.region, cached.value),
             requestId,
             cache: 'hit',
           };
         const client = deps.retail ?? createMcpRetailClient();
-        const stations = await client.findLowestFuelStations(timeoutSignal());
-        lowestFuelStationsCache = { value: stations, expiresAt: now + 10 * 60_000 };
-        return { reply: formatLowestFuelStations(stations), requestId, cache: 'miss' };
+        const stations = await client.findLowestFuelStations(selected.code, timeoutSignal());
+        lowestFuelStationsCache.set(cacheKey, {
+          value: stations,
+          region: selected.label,
+          expiresAt: now + 10 * 60_000,
+        });
+        return {
+          reply: formatLowestFuelStations(selected.label, stations),
+          requestId,
+          cache: 'miss',
+        };
       }
       case 'exchangeRate': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
@@ -1036,6 +1036,8 @@ export async function handleMessage(
         exchangeRateCache = { value: rates, expiresAt: now + 60_000 };
         return { reply: formatExchangeRates(rates), requestId, cache: 'miss' };
       }
+      default:
+        return { reply: null, requestId, cache: 'bypass' };
     }
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError')
@@ -1206,9 +1208,7 @@ function formatGraphicsCardPosts(c: InvenTopPostList): string {
 function formatMonitorPosts(c: InvenTopPostList): string {
   return [
     '[디시인사이드 모니터 최신 글]',
-    ...c.posts
-      .slice(0, 10)
-      .map((post, index) => `${index + 1}. ${post.title}\n   ${post.url ?? ''}`),
+    ...c.posts.slice(0, 5).map((post, index) => `${index + 1}. ${post.title}`),
     '',
     `게시판: ${c.boardUrl}`,
   ]
@@ -1218,9 +1218,7 @@ function formatMonitorPosts(c: InvenTopPostList): string {
 function formatJapanTravelPosts(c: InvenTopPostList): string {
   return [
     '[디시인사이드 일본여행 최신 글]',
-    ...c.posts
-      .slice(0, 5)
-      .map((post, index) => `${index + 1}. ${post.title}\n   ${post.url ?? ''}`),
+    ...c.posts.slice(0, 3).map((post, index) => `${index + 1}. ${post.title}`),
     '',
     `게시판: ${c.boardUrl}`,
   ]
@@ -1230,9 +1228,7 @@ function formatJapanTravelPosts(c: InvenTopPostList): string {
 function formatJapanRestaurantPosts(c: InvenTopPostList): string {
   return [
     '[디시인사이드 일본 음식점 최신 글]',
-    ...c.posts
-      .slice(0, 5)
-      .map((post, index) => `${index + 1}. ${post.title}\n   ${post.url ?? ''}`),
+    ...c.posts.slice(0, 3).map((post, index) => `${index + 1}. ${post.title}`),
     '',
     `게시판: ${c.boardUrl}`,
   ]
@@ -1257,6 +1253,11 @@ function formatWebtoon(c: WebtoonList, random: () => number): string {
     `연재 요일: ${item.weekday}요일`,
     item.url,
   ].join('\n');
+}
+function formatWebNovel(c: WebNovelList, random: () => number): string {
+  const item = c.items[Math.floor(random() * c.items.length)];
+  if (!item) throw new Error('NOT_FOUND');
+  return ['[웹소설 랜덤 추천]', `작품: [${item.source}] ${item.title}`, item.url].join('\n');
 }
 function formatWeeklyNewProduct(post: NaverBlogPost | null): string {
   if (!post) throw new Error('NOT_FOUND');
@@ -1307,15 +1308,16 @@ function formatSignedPercent(value: number): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 }
 function formatEvents(c: EventList): string {
-  const lines = c.events.slice(0, 10).map((event) => {
+  const events = c.events.slice(0, 5);
+  const lines = events.map((event, index) => {
     const period =
       event.startDate || event.endDate
         ? ` (${event.startDate?.slice(0, 10) ?? '?'}~${event.endDate?.slice(0, 10) ?? '?'})`
         : '';
-    return `- ${event.title}${period}\n  ${event.url}`;
+    return `${index + 1}. ${event.title}${period}`;
   });
-  const header = `[메이플스토리 진행 중 이벤트]\n최신 ${Math.min(c.events.length, 10)}개`;
-  const footer = `출처: https://maplestory.nexon.com/News/Event/Ongoing`;
+  const header = `[메이플스토리 최신 이벤트]\n최신 ${events.length}개`;
+  const footer = '공식 이벤트 게시판: https://maplestory.nexon.com/News/Event';
   const output = [header, ...lines, footer].join('\n');
   if (output.length <= 1000) return output;
   let result = `${header}\n`;
@@ -1325,7 +1327,7 @@ function formatEvents(c: EventList): string {
     result += `${line}\n`;
     included += 1;
   }
-  return `${result}${footer}\n(응답 제한으로 ${Math.min(c.events.length, 10) - included}건은 생략)`;
+  return `${result}${footer}\n(응답 제한으로 ${events.length - included}건은 생략)`;
 }
 function formatSunday(c: EventList): string | null {
   const event = c.events.find(

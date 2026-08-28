@@ -28,6 +28,7 @@ import {
   formatLunaCrystalDreamDraw,
   drawLottoNumbers,
   formatLotto,
+  formatHotDeals,
   FORMATTED_HELP,
 } from '@kakao-maple-bot/core';
 
@@ -38,8 +39,30 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(FORMATTED_HELP).toContain('【기타 기능】');
     expect(FORMATTED_HELP).toContain('!보스포뻥');
     expect(FORMATTED_HELP).toContain('!주식 <이름>');
+    expect(FORMATTED_HELP).toContain('• !마빡도로시');
+    expect(FORMATTED_HELP).toContain('• !가위 / !바위 / !보');
+    expect(FORMATTED_HELP).toContain('• !주유소');
+    expect(FORMATTED_HELP).toContain('  └ 예: 931201 남성 양력');
     expect(FORMATTED_HELP).toContain('• !정보 <닉네임>');
     expect(FORMATTED_HELP).toContain('  └ 캐릭터 조회');
+    expect(FORMATTED_HELP.indexOf('• !날씨 <지역>')).toBeLessThan(
+      FORMATTED_HELP.indexOf('• !주식 <이름>'),
+    );
+    expect(FORMATTED_HELP.indexOf('• !주식 <이름>')).toBeLessThan(
+      FORMATTED_HELP.indexOf('• !환율'),
+    );
+    expect(FORMATTED_HELP.indexOf('• !다이소 <상품>')).toBeLessThan(
+      FORMATTED_HELP.indexOf('• !상태'),
+    );
+  });
+  it('keeps only the Quasar Zone hot-deal board link', () => {
+    const output = formatHotDeals(
+      [{ title: '상품 A', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/1' }],
+      'https://quasarzone.com/bbs/qb_saleinfo',
+    );
+    expect(output).toContain('1. 상품 A');
+    expect(output).toContain('게시판: https://quasarzone.com/bbs/qb_saleinfo');
+    expect(output).not.toContain('/views/1');
   });
   it('T-001 ignores ordinary chat', () => expect(parseCommand('안녕하세요')).toBeNull());
   it('accepts slash experience history commands', () =>
@@ -50,6 +73,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('parses the Naver webtoon recommendation command', () =>
     expect(parseCommand('!웹툰')).toEqual({ name: 'webtoon', args: [] }));
+  it('parses the web novel recommendation command', () =>
+    expect(parseCommand('!웹소설')).toEqual({ name: 'webNovel', args: [] }));
   it('parses and formats the Korean and Japanese lotto command', () => {
     expect(parseCommand('!로또')).toEqual({ name: 'lotto', args: [] });
     let randomValue = 0;
@@ -421,6 +446,9 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(first).toContain('생년월일: 2000-01-01 (남자 / 양력)');
     expect(first).toBe(formatFortune(['2000-01-01', '남자', '양력'], now));
     expect(formatFortune(['1993-08-15', '여자', '음력'], now)).toContain('출생시간: 미입력');
+    expect(formatFortune(['931201', '남성', '양력'], now)).toContain(
+      '생년월일: 1993-12-01 (남자 / 양력)',
+    );
   });
   it('rejects the retired food category argument', () =>
     expect(() => formatFoodRecommendation(['한식'])).toThrow('INVALID_USAGE'));

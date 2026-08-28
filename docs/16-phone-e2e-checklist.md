@@ -6,19 +6,20 @@
 
 PC의 `apps/phone-relay/bot.js` 전체 내용을 공기계 MessengerBot R의 새 스크립트에 복사합니다.
 
-다음 설정은 그대로 유지합니다.
+엔드포인트는 도쿄 리전의 배포 URL을 사용합니다. 공개 저장소의 예시 파일에는 실제 방 이름과 secret을 넣지 않습니다.
 
 ```javascript
 endpoint: 'https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com';
+fixedRoomName: '동의한-방-이름';
 ```
 
-다음 항목만 Terraform에 입력했던 동일한 secret으로 교체합니다.
+다음 항목은 Terraform에 입력했던 동일한 secret으로 교체합니다. 실제 값은 공기계에만 입력합니다.
 
 ```javascript
 sharedSecret: '여기에만 직접 입력';
 ```
 
-자동 공지 알림을 사용할 경우 `noticeRoom`을 실제 허용 방 이름과 동일하게 입력합니다. 릴레이는 약 60초마다 알림 피드를 확인하며, `NOTICE_ALERT_ENABLED=true`가 아니면 메시지를 보내지 않습니다.
+한 개 방만 사용할 경우 `fixedRoomName`과 `noticeRooms`의 방 이름을 실제 허용 방 이름과 동일하게 입력합니다. 레거시 콜백에서 `room`이 발신자 이름으로 전달되는 환경에서도 백엔드의 허용 방 판정이 일관되도록 하는 설정입니다. 릴레이는 약 60초마다 알림 피드를 확인하며, `NOTICE_ALERT_ENABLED=true`가 아니면 메시지를 보내지 않습니다.
 
 secret은 GitHub에 커밋하지 말고, 다른 사람에게 전송하지 않습니다.
 
@@ -30,7 +31,7 @@ MessengerBot R에서 저장한 뒤 컴파일합니다. `Compile Error`가 표시
 
 ## 3. 테스트 방
 
-Terraform의 `ALLOWED_ROOMS`가 `태환`으로 설정되어 있으므로, 실제 카카오톡 방 이름이 정확히 `태환`이어야 합니다. 다른 방에서는 정상적으로 응답하지 않습니다.
+Terraform의 `ALLOWED_ROOMS`와 공기계의 `fixedRoomName`은 같은 한 개 방 이름을 사용해야 합니다. 공개 문서에는 실제 방 이름을 기록하지 않습니다. 다른 방에서는 정상적으로 응답하지 않습니다.
 
 다음 순서로 테스트합니다.
 
@@ -53,7 +54,7 @@ Terraform의 `ALLOWED_ROOMS`가 `태환`으로 설정되어 있으므로, 실제
 1. 스크립트가 컴파일되어 활성화되어 있는지 확인합니다.
 2. `endpoint`의 오탈자가 없는지 확인합니다.
 3. `sharedSecret`의 앞뒤 공백과 따옴표 위치를 확인합니다.
-4. 카카오톡 방 이름이 `태환`인지 확인합니다.
+4. 카카오톡 방 이름과 `fixedRoomName`·`ALLOWED_ROOMS`가 일치하는지 확인합니다.
 5. MessengerBot R의 배터리 최적화 제외·접근성 권한·알림 권한을 확인합니다.
 6. 컴파일 오류 또는 로그의 오류 문구와 줄 번호를 확인합니다.
 

@@ -107,6 +107,28 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('연재 요일: 월요일');
     expect(result.reply).toContain('https://comic.naver.com/webtoon/list?titleId=1');
   });
+  it('recommends a random web novel with its source label', async () => {
+    const webNovel = {
+      findWebNovels: vi.fn().mockResolvedValue({
+        items: [
+          {
+            title: '문피아 작품',
+            source: '문피아',
+            url: 'https://www.munpia.com/novel/2',
+          },
+        ],
+        fetchedAt: '2026-08-28T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!웹소설'), roomId: 'web-novel-room' },
+      { ...env, ALLOWED_ROOMS: 'web-novel-room' },
+      { webNovel },
+    );
+    expect(result.reply).toContain('[웹소설 랜덤 추천]');
+    expect(result.reply).toContain('작품: [문피아] 문피아 작품');
+    expect(result.reply).toContain('https://www.munpia.com/novel/2');
+  });
   it('T-001 does not spend command rate budget on ordinary chat', async () => {
     const roomEnv = { ...env, ALLOWED_ROOMS: 'chat-room' };
     const ordinary = await handleMessage(
@@ -538,17 +560,22 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('[메이플스토리 공지]');
     expect(result.reply).toContain('https://maplestory.nexon.com/News/Notice/1');
   });
-  it('handles ongoing event lookup with dates and official links', async () => {
+  it('handles latest event lookup with dates and only the official board link', async () => {
     const nexon = {
       findCharacter: vi.fn(),
       findEvents: vi.fn().mockResolvedValue({
         events: [
           {
-            title: '진행 이벤트',
+            title: '첫 번째 이벤트',
             url: 'https://maplestory.nexon.com/News/Event/1',
             startDate: '2026-08-01T00:00:00.000Z',
             endDate: '2026-08-31T00:00:00.000Z',
           },
+          { title: '두 번째 이벤트', url: 'https://maplestory.nexon.com/News/Event/2' },
+          { title: '세 번째 이벤트', url: 'https://maplestory.nexon.com/News/Event/3' },
+          { title: '네 번째 이벤트', url: 'https://maplestory.nexon.com/News/Event/4' },
+          { title: '다섯 번째 이벤트', url: 'https://maplestory.nexon.com/News/Event/5' },
+          { title: '여섯 번째 이벤트', url: 'https://maplestory.nexon.com/News/Event/6' },
         ],
         fetchedAt: '2026-08-27T00:00:00.000Z',
       }),
@@ -558,9 +585,13 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { ...env, ALLOWED_ROOMS: 'event-room' },
       { nexon },
     );
-    expect(result.reply).toContain('[메이플스토리 진행 중 이벤트]');
+    expect(result.reply).toContain('[메이플스토리 최신 이벤트]');
+    expect(result.reply).toContain('최신 5개');
+    expect(result.reply).toContain('다섯 번째 이벤트');
     expect(result.reply).toContain('2026-08-01~2026-08-31');
-    expect(result.reply).toContain('https://maplestory.nexon.com/News/Event/1');
+    expect(result.reply).toContain('https://maplestory.nexon.com/News/Event');
+    expect(result.reply).not.toContain('https://maplestory.nexon.com/News/Event/1');
+    expect(result.reply).not.toContain('여섯 번째 이벤트');
   });
   it('handles the latest Sunday Maple event', async () => {
     const nexon = {
@@ -778,6 +809,126 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toMatch(/일본 로또7: (?:\d{2}, ){6}\d{2}/);
     expect(result.cache).toBe('bypass');
   });
+  it('serves a recent successful public-post result while the source is temporarily blocked', async () => {
+    const successful = {
+      findHotDeals: vi.fn().mockResolvedValue({
+        posts: [{ title: '최근 핫딜', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/1' }],
+        boardUrl: 'https://quasarzone.com/bbs/qb_saleinfo',
+        fetchedAt: '2026-08-28T00:00:00.000Z',
+      }),
+    };
+    const first = await handleMessage(
+      { ...message('!핫딜'), roomId: 'stale-hotdeal-room' },
+      { ...env, ALLOWED_ROOMS: 'stale-hotdeal-room' },
+      { inven: successful },
+    );
+    expect(first.cache).toBe('miss');
+
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.now() + 6 * 60_000);
+    const blocked = {
+      findHotDeals: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE')),
+    };
+    const second = await handleMessage(
+      { ...message('!핫딜'), roomId: 'stale-hotdeal-room-2' },
+      { ...env, ALLOWED_ROOMS: 'stale-hotdeal-room-2' },
+      { inven: blocked },
+    );
+    vi.useRealTimers();
+
+    expect(second.cache).toBe('stale');
+    expect(second.reply).toContain('최근 핫딜');
+    expect(second.reply).toContain('최근 정상 조회 결과');
+    expect(blocked.findHotDeals).toHaveBeenCalledOnce();
+  });
+  it('shows only three Japan-travel titles and the board link', async () => {
+    const inven = {
+      findJapanTravelPosts: vi.fn().mockResolvedValue({
+        posts: [
+          { title: '여행기 A', url: 'https://gall.dcinside.com/mgallery/board/view/?no=1' },
+          { title: '여행기 B', url: 'https://gall.dcinside.com/mgallery/board/view/?no=2' },
+          { title: '여행기 C', url: 'https://gall.dcinside.com/mgallery/board/view/?no=3' },
+          { title: '여행기 D', url: 'https://gall.dcinside.com/mgallery/board/view/?no=4' },
+        ],
+        boardUrl:
+          'https://gall.dcinside.com/mgallery/board/lists/?id=nokanto&sort_type=N&search_head=10&page=1',
+        fetchedAt: '2026-08-28T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!일본여행기'), roomId: 'japan-travel-posts-room' },
+      { ...env, ALLOWED_ROOMS: 'japan-travel-posts-room' },
+      { inven },
+    );
+
+    expect(result.reply).toContain('1. 여행기 A');
+    expect(result.reply).toContain('2. 여행기 B');
+    expect(result.reply).toContain('3. 여행기 C');
+    expect(result.reply).not.toContain('여행기 D');
+    expect(result.reply).not.toContain('https://gall.dcinside.com/mgallery/board/view/?no=1');
+    expect(result.reply).toContain(
+      'https://gall.dcinside.com/mgallery/board/lists/?id=nokanto&sort_type=N&search_head=10&page=1',
+    );
+  });
+  it('shows only three Japan-restaurant titles and the board link', async () => {
+    const inven = {
+      findJapanRestaurantPosts: vi.fn().mockResolvedValue({
+        posts: [
+          { title: '맛집 A', url: 'https://gall.dcinside.com/mgallery/board/view/?no=11' },
+          { title: '맛집 B', url: 'https://gall.dcinside.com/mgallery/board/view/?no=12' },
+          { title: '맛집 C', url: 'https://gall.dcinside.com/mgallery/board/view/?no=13' },
+          { title: '맛집 D', url: 'https://gall.dcinside.com/mgallery/board/view/?no=14' },
+        ],
+        boardUrl:
+          'https://gall.dcinside.com/mgallery/board/lists/?id=nokanto&sort_type=N&search_head=100&page=1',
+        fetchedAt: '2026-08-28T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!일본음식점'), roomId: 'japan-restaurant-posts-room' },
+      { ...env, ALLOWED_ROOMS: 'japan-restaurant-posts-room' },
+      { inven },
+    );
+
+    expect(result.reply).toContain('1. 맛집 A');
+    expect(result.reply).toContain('2. 맛집 B');
+    expect(result.reply).toContain('3. 맛집 C');
+    expect(result.reply).not.toContain('맛집 D');
+    expect(result.reply).not.toContain('https://gall.dcinside.com/mgallery/board/view/?no=11');
+    expect(result.reply).toContain(
+      'https://gall.dcinside.com/mgallery/board/lists/?id=nokanto&sort_type=N&search_head=100&page=1',
+    );
+  });
+  it('shows only five monitor titles and the board link', async () => {
+    const inven = {
+      findMonitorPosts: vi.fn().mockResolvedValue({
+        posts: [
+          { title: '모니터 A', url: 'https://gall.dcinside.com/mgallery/board/view/?no=21' },
+          { title: '모니터 B', url: 'https://gall.dcinside.com/mgallery/board/view/?no=22' },
+          { title: '모니터 C', url: 'https://gall.dcinside.com/mgallery/board/view/?no=23' },
+          { title: '모니터 D', url: 'https://gall.dcinside.com/mgallery/board/view/?no=24' },
+          { title: '모니터 E', url: 'https://gall.dcinside.com/mgallery/board/view/?no=25' },
+          { title: '모니터 F', url: 'https://gall.dcinside.com/mgallery/board/view/?no=26' },
+        ],
+        boardUrl:
+          'https://gall.dcinside.com/mgallery/board/lists/?id=mnt&sort_type=N&search_head=70&page=1',
+        fetchedAt: '2026-08-28T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!모니터'), roomId: 'monitor-posts-room' },
+      { ...env, ALLOWED_ROOMS: 'monitor-posts-room' },
+      { inven },
+    );
+
+    expect(result.reply).toContain('1. 모니터 A');
+    expect(result.reply).toContain('5. 모니터 E');
+    expect(result.reply).not.toContain('모니터 F');
+    expect(result.reply).not.toContain('https://gall.dcinside.com/mgallery/board/view/?no=21');
+    expect(result.reply).toContain(
+      'https://gall.dcinside.com/mgallery/board/lists/?id=mnt&sort_type=N&search_head=70&page=1',
+    );
+  });
   it('T-008 maps provider failures without leaking details', async () => {
     const nexon = {
       findCharacter: vi.fn().mockRejectedValue(new Error('PROVIDER_UNAVAILABLE secret-key')),
@@ -827,18 +978,6 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       searchDaisoProducts: vi
         .fn()
         .mockResolvedValue([{ id: 'p1', name: '수납박스', price: 5000, pickupAvailable: true }]),
-      compareProducts: vi
-        .fn()
-        .mockResolvedValue([{ name: '물티슈', price: 1000, brand: '다이소' }]),
-      findStores: vi
-        .fn()
-        .mockResolvedValue([{ name: '다이소 강남점', address: '서울 강남구', service: '다이소' }]),
-      checkDaisoInventory: vi
-        .fn()
-        .mockResolvedValue([{ storeName: '다이소 강남점', available: true, quantity: 3 }]),
-      findCinemaTheaters: vi
-        .fn()
-        .mockResolvedValue([{ name: 'CGV 강남', address: '서울 강남구', service: 'CGV' }]),
       findNationalFuelPrices: vi
         .fn()
         .mockResolvedValue([{ productName: '휘발유', price: 1800.5, tradeDate: '20260828' }]),
@@ -850,19 +989,6 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
           roadAddress: '경북 칠곡군 약목면 칠곡대로 504',
         },
       ]),
-      findNearbyPlaces: vi
-        .fn()
-        .mockResolvedValue([
-          { name: '테스트 카페', category: '카페', roadAddress: '서울 강남구 테스트길 1' },
-        ]),
-      findDaisoProductDetail: vi.fn().mockResolvedValue({
-        id: '123456',
-        name: '수납박스',
-        price: 5000,
-        currency: 'KRW',
-        soldOut: false,
-        isNew: true,
-      }),
     };
     const exchange = {
       findUsdAndJpyRates: vi.fn().mockResolvedValue({
@@ -877,59 +1003,27 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       retailEnv,
       { retail },
     );
-    const compare = await handleMessage(
-      { ...message('!상품비교 물티슈'), roomId: 'retail-room' },
-      retailEnv,
-      { retail },
-    );
-    const stores = await handleMessage(
-      { ...message('!매장 다이소 강남'), roomId: 'retail-room' },
-      retailEnv,
-      { retail },
-    );
-    const inventory = await handleMessage(
-      { ...message('!재고 다이소 수납박스 강남'), roomId: 'retail-room' },
-      retailEnv,
-      { retail },
-    );
-    const cinema = await handleMessage(
-      { ...message('!영화관 강남'), roomId: 'retail-room' },
-      retailEnv,
-      { retail },
-    );
     const fuel = await handleMessage(
       { ...message('!유가'), roomId: 'fuel-room' },
       { ...env, ALLOWED_ROOMS: 'fuel-room' },
       { retail },
     );
     expect(product.reply).toContain('[다이소 상품 검색: 수납박스]');
-    expect(compare.reply).toContain('[통합 상품 비교: 물티슈]');
-    expect(stores.reply).toContain('다이소 강남점');
-    expect(inventory.reply).toContain('재고: 있음');
-    expect(cinema.reply).toContain('[CGV] CGV 강남');
     expect(fuel.reply).toContain('[전국 평균 유가]');
     expect(fuel.reply).toContain('휘발유: 1,800.50원');
     const stations = await handleMessage(
-      { ...message('!주유소'), roomId: 'fuel-station-room' },
+      { ...message('!주유소 대구'), roomId: 'fuel-station-room' },
       { ...env, ALLOWED_ROOMS: 'fuel-station-room' },
       { retail },
     );
-    expect(stations.reply).toContain('[전국 최저가 주유소 TOP 3]');
+    expect(stations.reply).toContain('[대구 최저가 주유소 TOP 3]');
     expect(stations.reply).toContain('행운에너지');
-    const nearby = await handleMessage(
-      { ...message('!주변 강남역 카페'), roomId: 'nearby-room', senderId: 'nearby-sender' },
-      { ...env, ALLOWED_ROOMS: 'nearby-room' },
+    const invalidStations = await handleMessage(
+      { ...message('!주유소'), roomId: 'fuel-invalid-room', senderId: 'fuel-invalid-sender' },
+      { ...env, ALLOWED_ROOMS: 'fuel-invalid-room' },
       { retail },
     );
-    expect(nearby.reply).toContain('[주변 장소: 강남역 / 카페]');
-    expect(nearby.reply).toContain('테스트 카페');
-    const detail = await handleMessage(
-      { ...message('!상품상세 123456'), roomId: 'detail-room', senderId: 'detail-sender' },
-      { ...env, ALLOWED_ROOMS: 'detail-room' },
-      { retail },
-    );
-    expect(detail.reply).toContain('[다이소 상품 상세: 123456]');
-    expect(detail.reply).toContain('가격: 5,000원');
+    expect(invalidStations.reply).toBe('사용법을 확인해 주세요.');
     const exchangeResult = await handleMessage(
       { ...message('!환율'), roomId: 'exchange-room', senderId: 'exchange-sender' },
       { ...env, ALLOWED_ROOMS: 'exchange-room' },
