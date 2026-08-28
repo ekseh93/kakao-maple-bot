@@ -25,6 +25,7 @@ import {
   formatBossForceBoost,
   formatMekaBerry,
   formatSauna,
+  formatEpicDungeon,
   formatMepoEfficiency,
   formatMaxLevelSymbolEffects,
   formatFortune,
@@ -1095,6 +1096,28 @@ export async function handleMessage(
         if (!history) throw new Error('NOT_FOUND');
         experienceCache.set(name, { value: history, expiresAt: now + 5 * 60_000 });
         return { reply: formatExperience(history), requestId, cache: 'miss' };
+      }
+      case 'epicDungeon': {
+        const name = validateCharacterName(parsed.args[0]);
+        const cached = experienceCache.get(name);
+        const history =
+          cached && cached.expiresAt > now
+            ? cached.value
+            : await (async () => {
+                const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+                if (!client.findExperienceHistory) throw new Error('NOT_CONFIGURED');
+                const value = await client.findExperienceHistory(name, timeoutSignal());
+                if (!value) throw new Error('NOT_FOUND');
+                experienceCache.set(name, { value, expiresAt: now + 5 * 60_000 });
+                return value;
+              })();
+        const current = history.snapshots[0];
+        if (!current) throw new Error('NOT_FOUND');
+        return {
+          reply: formatEpicDungeon(history.name, current.level, current.experienceRate),
+          requestId,
+          cache: cached && cached.expiresAt > now ? 'hit' : 'miss',
+        };
       }
       case 'stock': {
         if (env.STOCK_ENABLED !== 'true') throw new Error('NOT_CONFIGURED');

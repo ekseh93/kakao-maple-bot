@@ -13,6 +13,7 @@ export type CommandName =
   | 'seedRing'
   | 'blackAccessoryBox'
   | 'sauna'
+  | 'epicDungeon'
   | 'food'
   | 'japanTravel'
   | 'boss'
@@ -71,6 +72,7 @@ const helpRows = {
     ['!유챔 <닉네임>', '유니온 챔피언'],
     ['!장비 <닉네임>', '장비 요약'],
     ['!경험치 <닉네임>', '경험치 이력'],
+    ['!에픽던전 <닉네임>', '악몽선경 1판 경험치·레벨업 예상'],
     ['!메카베리 <레벨>', '메카베리/크림슨 경험치'],
     ['!사우나 <레벨>', '사우나 1시간 경험치 상승률'],
     ['!메포효율', '메포 대비 BM 경치 효율표'],
@@ -163,6 +165,7 @@ const aliases: Record<string, CommandName> = {
   보스포뻥: 'bossForceBoost',
   메카베리: 'mekaBerry',
   사우나: 'sauna',
+  에픽던전: 'epicDungeon',
   무릉: 'dojang',
   유니온: 'union',
   유챔: 'unionChampion',
@@ -708,6 +711,31 @@ export function formatSauna(args: string[] = []): string {
     `1시간: ${rate.toFixed(3)}%`,
     `1업: 약 ${levelUpHours.toLocaleString('ko-KR')}시간`,
     '[*단, API 최신 기록 시점에 따라 실제 경험치와 약간 차이 날 수 있습니다]',
+  ].join('\n');
+}
+
+const epicDungeonRates = [
+  3.0885, 2.8461, 2.6183, 2.4124, 2.2191, 1.2348, 1.1357, 1.0458, 0.9631, 0.8854,
+  0.4925, 0.4528, 0.4168, 0.3833, 0.3526, 0.1745, 0.1587, 0.1442, 0.1311, 0.0874,
+] as const;
+
+export function formatEpicDungeon(name: string, level: number, experienceRate: number): string {
+  if (!name || !Number.isInteger(level) || level < 280 || level > 299) {
+    throw new Error('INVALID_USAGE');
+  }
+  if (!Number.isFinite(experienceRate) || experienceRate < 0 || experienceRate >= 100) {
+    throw new Error('INVALID_USAGE');
+  }
+  const oneRunRate = epicDungeonRates[level - 280]!;
+  const remainingRate = 100 - experienceRate;
+  const runsToLevelUp = Math.ceil(remainingRate / oneRunRate);
+  return [
+    '[에픽던전 경험치]',
+    `캐릭터: ${name}`,
+    `현재 레벨: Lv.${level}`,
+    `현재 경험치: ${experienceRate.toFixed(2)}%`,
+    `악몽선경 1판 경험치: ${oneRunRate.toFixed(4)}%`,
+    `레벨업까지: 약 ${runsToLevelUp.toLocaleString('ko-KR')}판`,
   ].join('\n');
 }
 

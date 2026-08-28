@@ -20,6 +20,7 @@ import {
   formatBossForceBoost,
   formatMekaBerry,
   formatSauna,
+  formatEpicDungeon,
   formatMepoEfficiency,
   formatMaxLevelSymbolEffects,
   formatFortune,
@@ -206,6 +207,19 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(formatSauna(['280'])).toContain('1시간: 0.931%');
     expect(() => formatSauna(['199'])).toThrow('INVALID_USAGE');
     expect(() => formatSauna([])).toThrow('INVALID_USAGE');
+  });
+  it('parses and formats Epic Dungeon Nightmare Sanctuary level-up estimates', () => {
+    expect(parseCommand('!에픽던전 비쓰킷')).toEqual({
+      name: 'epicDungeon',
+      args: ['비쓰킷'],
+    });
+    const output = formatEpicDungeon('비쓰킷', 295, 97.75);
+    expect(output).toContain('현재 레벨: Lv.295');
+    expect(output).toContain('현재 경험치: 97.75%');
+    expect(output).toContain('악몽선경 1판 경험치: 0.1745%');
+    expect(output).toContain('레벨업까지: 약 13판');
+    expect(() => formatEpicDungeon('비쓰킷', 279, 50)).toThrow('INVALID_USAGE');
+    expect(() => formatEpicDungeon('비쓰킷', 295, 100)).toThrow('INVALID_USAGE');
   });
   it('parses and formats meso-point experience efficiency in descending order', () => {
     expect(parseCommand('!메포효율')).toEqual({ name: 'mepoEfficiency', args: [] });

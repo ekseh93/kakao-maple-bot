@@ -588,6 +588,29 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('일평균: 1.00%');
     expect(result.reply).toContain('1업(100%)까지 예상: 87.50일');
   });
+  it('handles Epic Dungeon level-up estimates from the latest experience snapshot', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findExperienceHistory: vi.fn().mockResolvedValue({
+        name: '에픽던전캐릭터',
+        snapshots: [
+          { date: '2026-08-29', level: 295, experience: 0, experienceRate: 97.75 },
+        ],
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!에픽던전 에픽던전캐릭터'), roomId: 'epic-dungeon-room' },
+      { ...env, ALLOWED_ROOMS: 'epic-dungeon-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[에픽던전 경험치]');
+    expect(result.reply).toContain('현재 경험치: 97.75%');
+    expect(result.reply).toContain('레벨업까지: 약 13판');
+    expect(nexon.findExperienceHistory).toHaveBeenCalledWith(
+      '에픽던전캐릭터',
+      expect.anything(),
+    );
+  });
   it('handles notice lookup with official links and a bounded list', async () => {
     const nexon = {
       findCharacter: vi.fn(),
