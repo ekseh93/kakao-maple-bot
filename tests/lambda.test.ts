@@ -549,12 +549,37 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply).toContain('캐릭터: 장비캐릭터');
-    expect(result.reply).toContain('▸ 모자 - 22 테스트 모자');
+    expect(result.reply).toContain('▸ 모자 - *22 테스트 모자');
     expect(result.reply).not.toContain('⭐ 스타포스 22');
     expect(result.reply).toContain('잠재: INT +21% | 보스 몬스터 공격 시 데미지 +20%');
     expect(result.reply).toContain('에디: INT +12%');
     expect(result.reply).toContain('잠재 총합: INT +21% | 보스 몬스터 공격 시 데미지 +20%');
     expect(result.reply).toContain('에디 총합: INT +12%');
+  });
+  it('omits zero starforce while prefixing displayed starforce', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findEquipment: vi.fn().mockResolvedValue({
+        name: '제로스타포스캐릭터',
+        items: [
+          {
+            part: '무기',
+            name: '제로 스타포스 무기',
+            starforce: 0,
+            potentialOptions: [],
+            additionalPotentialOptions: [],
+          },
+        ],
+        fetchedAt: '2026-08-27T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!장비 제로스타포스캐릭터'), roomId: 'equipment-zero-room' },
+      { ...env, ALLOWED_ROOMS: 'equipment-zero-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('▸ 무기 - 제로 스타포스 무기');
+    expect(result.reply).not.toContain('*0');
   });
   it('handles slash experience history with daily change', async () => {
     const nexon = {

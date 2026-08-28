@@ -1363,7 +1363,8 @@ function formatEquipment(c: EquipmentCharacter): string {
   const potentialTotals: string[] = [];
   const additionalPotentialTotals: string[] = [];
   for (const item of c.items) {
-    lines.push(`▸ ${item.part} - ${item.starforce} ${item.name}`);
+    const starforceLabel = item.starforce > 0 ? `*${item.starforce} ` : '';
+    lines.push(`▸ ${item.part} - ${starforceLabel}${item.name}`);
     if (item.potentialOptions.length > 0) {
       lines.push(`  잠재: ${formatPotentialOptions(item.potentialOptions)}`);
       potentialTotals.push(...item.potentialOptions);
