@@ -789,37 +789,20 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result?.events[4]?.title).toBe('다섯 번째 이벤트');
     expect(fetcher.mock.calls[0]?.[0]).toBe('https://maplestory.nexon.com/News/Event');
   });
-  it('finds the latest Sunday Maple notice from the official notice API', async () => {
-    const fetcher = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          notice: [
-            {
-              title: '썬데이 메이플 8월 30일',
-              url: 'https://maplestory.nexon.com/News/Notice/30',
-              date: '2026-08-27',
-            },
-          ],
-        }),
-        { status: 200 },
-      ),
-    );
-    const result = await createNexonClient('fixture-key', fetcher).findSunday?.(
-      new AbortController().signal,
-    );
-    expect(result).toMatchObject({
-      title: '썬데이 메이플 8월 30일',
-      startDate: '2026-08-27',
-    });
-    expect(fetcher.mock.calls[0]?.[0]).toBe('https://open.api.nexon.com/maplestory/v1/notice');
-  });
-  it('falls back to the official closed event list when the notice API has no Sunday result', async () => {
+  it('finds the current Sunday Maple event and its official image', async () => {
     const fetcher = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ notice: [] }), { status: 200 }))
       .mockResolvedValueOnce(
         new Response(
-          '<a href="/News/Event/Closed/1375?search=%EC%8D%AC%EB%8D%B0%EC%9D%B4"><em class="event_listMt">썬데이 메이플</em></a><dd class="date"><p>2026.08.23 (일)</p>',
+          '<li><a href="/News/Event/1376"><img src="https://file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=card" /></a>' +
+            '<dl><dt><a href="/News/Event/1376">썬데이 메이플</a></dt>' +
+            '<dd><a href="/News/Event/1376">2026.08.30 (일) ~ 2026.08.30 (일)</a></dd></dl></li>',
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          '<div class="new_board_con"><img src="https://lwi.nexon.com/maplestory/2026/0820_board/sunday.png" /></div></div>',
           { status: 200 },
         ),
       );
@@ -828,13 +811,15 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     );
     expect(result).toMatchObject({
       title: '썬데이 메이플',
-      url: 'https://maplestory.nexon.com/News/Event/Closed/1375?search=%EC%8D%AC%EB%8D%B0%EC%9D%B4',
-      startDate: '2026-08-23',
-      endDate: '2026-08-23',
+      url: 'https://maplestory.nexon.com/News/Event/1376',
+      startDate: '2026-08-30',
+      endDate: '2026-08-30',
+      imageUrl: 'https://lwi.nexon.com/maplestory/2026/0820_board/sunday.png',
     });
-    expect(fetcher.mock.calls[1]?.[0]).toBe(
-      'https://maplestory.nexon.com/News/Event/Closed?search=%EC%8D%AC%EB%8D%B0%EC%9D%B4',
-    );
+    expect(fetcher.mock.calls.map((call) => call[0])).toEqual([
+      'https://maplestory.nexon.com/News/Event/Ongoing',
+      'https://maplestory.nexon.com/News/Event/1376',
+    ]);
   });
   it('maps the official Royal Style probability table', async () => {
     const fetcher = vi

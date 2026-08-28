@@ -151,6 +151,7 @@ export type EventItem = {
   url: string;
   startDate?: string;
   endDate?: string;
+  imageUrl?: string;
 };
 export type EventList = { events: EventItem[]; fetchedAt: string };
 export type RoyalStyleItem = { name: string; probability: number; category?: string };
@@ -316,18 +317,35 @@ function decodeHtml(value: string): string {
 
 function parseLatestSundayEventPage(html: string): EventItem | null {
   const pattern =
-    /<a\s+href="(\/News\/Event\/(?:Ongoing|Closed)\/\d+(?:\?[^\"]*)?)"[^>]*>[\s\S]*?<em\s+class="event_listMt">([\s\S]*?)<\/em>[\s\S]*?<\/a>[\s\S]*?<dd\s+class="date">\s*<p>(\d{4}\.\d{2}\.\d{2})/i;
-  const match = html.match(pattern);
-  if (!match) return null;
-  const title = decodeHtml(match[2] ?? '');
-  const date = (match[3] ?? '').replaceAll('.', '-');
-  if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('PROVIDER_SCHEMA');
-  return {
-    title,
-    url: `https://maplestory.nexon.com${match[1]}`,
-    startDate: date,
-    endDate: date,
-  };
+    /<li>[\s\S]*?<a\s+href="(\/News\/Event\/\d+(?:\?[^\"]*)?)"[^>]*>[\s\S]*?<img\s+src="([^"]+)"[^>]*>[\s\S]*?<\/a>[\s\S]*?<dt>\s*<a\s+href="[^\"]+"[^>]*>([\s\S]*?)<\/a>\s*<\/dt>[\s\S]*?<dd>\s*<a\s+href="[^\"]+"[^>]*>([\s\S]*?)<\/a>\s*<\/dd>[\s\S]*?<\/li>/gi;
+  for (const match of html.matchAll(pattern)) {
+    const title = decodeHtml(match[3] ?? '');
+    if (!title.includes('썬데이') && !title.includes('선데이')) continue;
+    const dateText = decodeHtml(match[4] ?? '');
+    const dates = [...dateText.matchAll(/(\d{4})[.\-/](\d{2})[.\-/](\d{2})/g)].map(
+      (date) => `${date[1]}-${date[2]}-${date[3]}`,
+    );
+    if (!dates[0]) throw new Error('PROVIDER_SCHEMA');
+    const imageUrl = optionalString(match[2]);
+    if (imageUrl && !/^https:\/\/(?:lwi|file|ssl)\.nexon\.com\//i.test(imageUrl))
+      throw new Error('PROVIDER_SCHEMA');
+    return {
+      title,
+      url: `https://maplestory.nexon.com${match[1]}`,
+      startDate: dates[0],
+      ...(dates[1] ? { endDate: dates[1] } : {}),
+      ...(imageUrl ? { imageUrl } : {}),
+    };
+  }
+  return null;
+}
+
+function parseSundayImage(html: string): string | undefined {
+  const content = html.match(/<div\s+class="new_board_con"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i)?.[1];
+  if (!content) return undefined;
+  const imageUrl = content.match(/<img\s+[^>]*src="([^"]+)"/i)?.[1];
+  if (!imageUrl || !/^https:\/\/(?:lwi|file|ssl)\.nexon\.com\//i.test(imageUrl)) return undefined;
+  return imageUrl;
 }
 
 function parseLatestEventPage(html: string, limit = 5): EventList['events'] {
@@ -1022,37 +1040,25 @@ export function createNexonClient(
       };
     },
     async findSunday(signal) {
-      if (!apiKey) throw new Error('NOT_CONFIGURED');
-      const response = await fetchWithRetry(
-        fetcher,
-        'https://open.api.nexon.com/maplestory/v1/notice',
-        { headers: { 'x-nxopen-api-key': apiKey }, signal },
-      );
+      const sourceUrl = 'https://maplestory.nexon.com/News/Event/Ongoing';
+      const response = await fetchWithRetry(fetcher, sourceUrl, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
       if (!response.ok)
         throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
-      const body = (await response.json()) as {
-        notice?: Array<{ title?: string; url?: string; date?: string }> | null;
-      };
-      if (!Array.isArray(body.notice)) throw new Error('PROVIDER_SCHEMA');
-      for (const notice of body.notice) {
-        if (typeof notice.title !== 'string' || typeof notice.url !== 'string')
-          throw new Error('PROVIDER_SCHEMA');
-        if (!/^https:\/\/(www\.)?maplestory\.nexon\.com\//.test(notice.url))
-          throw new Error('PROVIDER_SCHEMA');
-        if (notice.title.includes('썬데이') || notice.title.includes('선데이')) {
-          const date = optionalString(notice.date);
-          return {
-            title: notice.title,
-            url: notice.url,
-            ...(date ? { startDate: date } : {}),
-          };
-        }
-      }
-      const sourceUrl =
-        'https://maplestory.nexon.com/News/Event/Closed?search=%EC%8D%AC%EB%8D%B0%EC%9D%B4';
-      const eventResponse = await fetchWithRetry(fetcher, sourceUrl, { signal });
-      if (!eventResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
-      return parseLatestSundayEventPage(await eventResponse.text());
+      const event = parseLatestSundayEventPage(await response.text());
+      if (!event) return null;
+      const detailResponse = await fetchWithRetry(fetcher, event.url, {
+        headers: { Accept: 'text/html,application/xhtml+xml' },
+        signal,
+      });
+      if (!detailResponse.ok) return event;
+      const imageUrl = parseSundayImage(await detailResponse.text());
+      return imageUrl ? { ...event, imageUrl } : event;
     },
     async findRoyalStyles(signal) {
       const sourceUrl = 'https://maplestory.nexon.com/Guide/CashShop/Probability';

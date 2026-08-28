@@ -649,6 +649,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
             url: 'https://maplestory.nexon.com/News/Event/30',
             startDate: '2026-08-30T00:00:00.000Z',
             endDate: '2026-08-30T23:59:59.000Z',
+            imageUrl: 'https://lwi.nexon.com/maplestory/2026/0820_board/sunday.png',
           },
         ],
         fetchedAt: '2026-08-27T00:00:00.000Z',
@@ -663,6 +664,9 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('썬데이 메이플 8월 30일');
     expect(result.reply).toContain('기간: 2026-08-30~2026-08-30');
     expect(result.reply).toContain('https://maplestory.nexon.com/News/Event/30');
+    expect(result.reply).toContain(
+      '이미지: https://lwi.nexon.com/maplestory/2026/0820_board/sunday.png',
+    );
   });
   it('handles ten weighted Royal Style draws', async () => {
     const nexon = {

@@ -151,6 +151,7 @@ let netflixCache:
   { value: Array<{ title: string; country?: string }>; expiresAt: number } | undefined;
 let weeklyNewProductCache: { value: NaverBlogPost | null; expiresAt: number } | undefined;
 let eventCache: { value: EventList; expiresAt: number } | undefined;
+let sundayCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 let wonderBerryCache: { value: WonderBerryList; expiresAt: number; provider?: object } | undefined;
 let boutiqueGiftCache: { value: BoutiqueGiftList; expiresAt: number } | undefined;
@@ -858,24 +859,24 @@ export async function handleMessage(
         return { reply: formatEvents(events), requestId, cache: 'miss' };
       }
       case 'sunday': {
-        if (eventCache && eventCache.expiresAt > now) {
-          const reply = formatSunday(eventCache.value);
+        if (sundayCache && sundayCache.expiresAt > now) {
+          const reply = formatSunday(sundayCache.value);
           if (reply) return { reply, requestId, cache: 'hit' };
-          eventCache = undefined;
+          sundayCache = undefined;
         }
         const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
         if (client.findSunday) {
           const sunday = await client.findSunday(timeoutSignal());
           if (!sunday) throw new Error('NOT_FOUND');
-          eventCache = {
+          sundayCache = {
             value: { events: [sunday], fetchedAt: new Date().toISOString() },
             expiresAt: now + 5 * 60_000,
           };
-          return { reply: formatSunday(eventCache.value)!, requestId, cache: 'miss' };
+          return { reply: formatSunday(sundayCache.value)!, requestId, cache: 'miss' };
         }
         if (!client.findEvents) throw new Error('NOT_CONFIGURED');
         const events = await client.findEvents(timeoutSignal());
-        eventCache = { value: events, expiresAt: now + 5 * 60_000 };
+        sundayCache = { value: events, expiresAt: now + 5 * 60_000 };
         const reply = formatSunday(events);
         if (!reply) throw new Error('NOT_FOUND');
         return { reply, requestId, cache: 'miss' };
@@ -1478,6 +1479,7 @@ function formatSunday(c: EventList): string | null {
       ? `기간: ${(event.startDate ?? '?').slice(0, 10)}~${(event.endDate ?? '?').slice(0, 10)}`
       : '',
     event.url,
+    event.imageUrl ? `이미지: ${event.imageUrl}` : '',
   ]
     .filter(Boolean)
     .join('\n');
