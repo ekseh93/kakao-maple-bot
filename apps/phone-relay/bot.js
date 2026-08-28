@@ -10,6 +10,9 @@ var CONFIG = {
 var knownNoticeUrls = [];
 var noticeInitialized = false;
 var noticePolling = false;
+var sundayPolling = false;
+var sundayInitialized = false;
+var knownSundayUrl = '';
 var runtimePolling = false;
 var lastRuntimeAlertAt = 0;
 
@@ -55,6 +58,53 @@ function pollNoticeAlerts() {
 }
 
 if (typeof setInterval === 'function') setInterval(pollNoticeAlerts, 60000);
+
+// Announces only a newly published current Sunday Maple event.
+function pollSundayAlerts() {
+  if (sundayPolling || !CONFIG.endpoint || !CONFIG.sharedSecret || !CONFIG.noticeRooms.length)
+    return;
+  sundayPolling = true;
+  try {
+    var connection = org.jsoup.Jsoup.connect(CONFIG.endpoint + '/v1/sunday-alert');
+    connection.header('Authorization', 'Bearer ' + CONFIG.sharedSecret);
+    connection.ignoreContentType(true);
+    connection.ignoreHttpErrors(true);
+    connection.timeout(4500);
+    connection.method(org.jsoup.Connection.Method.GET);
+    var result = connection.execute();
+    if (result.statusCode() !== 200) return;
+    var body = JSON.parse(result.body());
+    var event = body && body.event;
+    if (!event || typeof event.url !== 'string') return;
+    if (!sundayInitialized) {
+      knownSundayUrl = event.url;
+      sundayInitialized = true;
+      return;
+    }
+    if (event.url === knownSundayUrl) return;
+    if (typeof Api !== 'undefined' && typeof Api.replyRoom === 'function') {
+      CONFIG.noticeRooms.forEach(function (roomName) {
+        Api.replyRoom(
+          roomName,
+          '[썬데이 메이플 새 게시글]\n' +
+            (typeof event.title === 'string' ? event.title + '\n' : '') +
+            event.url
+        );
+        if (typeof event.imageUrl === 'string' && event.imageUrl) {
+          Api.replyRoom(roomName, '[썬데이 이미지]\n' + event.imageUrl);
+        }
+      });
+    }
+    knownSundayUrl = event.url;
+  } catch (error) {
+    void error;
+    return;
+  } finally {
+    sundayPolling = false;
+  }
+}
+
+if (typeof setInterval === 'function') setInterval(pollSundayAlerts, 60000);
 
 // MessengerBot R cannot press its own compile/runtime controls. This watchdog
 // checks the backend once a day while this script is active and reports outages.

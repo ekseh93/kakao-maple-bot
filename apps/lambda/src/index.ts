@@ -1568,6 +1568,18 @@ export async function httpHandler(request: Request, env: Env): Promise<Response>
       fetchedAt: result.fetchedAt,
     });
   }
+  if (request.method === 'GET' && url.pathname === '/v1/sunday-alert') {
+    if (
+      !env.BOT_SHARED_SECRET ||
+      !safeEqual(request.headers.get('authorization') ?? '', `Bearer ${env.BOT_SHARED_SECRET}`)
+    )
+      return new Response('Unauthorized', { status: 401 });
+    if (env.NOTICE_ALERT_ENABLED !== 'true') return Response.json({ event: null });
+    const client = createNexonClient(env.NEXON_API_KEY);
+    if (!client.findSunday) return Response.json({ event: null });
+    const event = await client.findSunday(timeoutSignal());
+    return Response.json({ event });
+  }
   if (request.method !== 'POST' || url.pathname !== '/v1/messages')
     return new Response('Not found', { status: 404 });
   const contentLength = Number(request.headers.get('content-length') ?? 0);

@@ -1147,6 +1147,22 @@ describe('HTTP boundary', () => {
     expect(disabled.status).toBe(200);
     expect(await disabled.json()).toEqual({ notices: [] });
   });
+  it('protects and disables Sunday alerts by default', async () => {
+    const handler = { fetch: httpHandler };
+    const unauthorized = await handler.fetch(
+      new Request('https://example.test/v1/sunday-alert'),
+      env,
+    );
+    expect(unauthorized.status).toBe(401);
+    const disabled = await handler.fetch(
+      new Request('https://example.test/v1/sunday-alert', {
+        headers: { authorization: 'Bearer test' },
+      }),
+      env,
+    );
+    expect(disabled.status).toBe(200);
+    expect(await disabled.json()).toEqual({ event: null });
+  });
   it('adapts an API Gateway v2 health event to the Lambda handler', async () => {
     const result = await lambdaHandler({
       version: '2.0',
