@@ -1374,10 +1374,12 @@ function formatEquipment(c: EquipmentCharacter): string {
       additionalPotentialTotals.push(...item.additionalPotentialOptions);
     }
   }
-  if (potentialTotals.length > 0)
-    lines.push(`잠재 총합: ${formatPotentialOptions(potentialTotals)}`);
-  if (additionalPotentialTotals.length > 0)
-    lines.push(`에디 총합: ${formatPotentialOptions(additionalPotentialTotals)}`);
+  if (potentialTotals.length > 0) {
+    lines.push('▸ 잠재 총합:', ...formatPotentialLines(potentialTotals));
+  }
+  if (additionalPotentialTotals.length > 0) {
+    lines.push('▸ 에디 총합:', ...formatPotentialLines(additionalPotentialTotals));
+  }
   lines.push('────────────', `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`);
   return lines.join('\n');
 }
@@ -1385,6 +1387,11 @@ function formatCombatPower(value: number): string {
   if (value < 100_000_000) return value.toLocaleString('ko-KR');
   const billions = value / 100_000_000;
   return `${Number(billions.toFixed(1))}억`;
+}
+function formatPotentialLines(options: readonly string[]): string[] {
+  return formatPotentialOptions(options)
+    .split(' | ')
+    .map((option) => `  ${option}`);
 }
 function formatPotentialOptions(options: readonly string[]): string {
   const totals = new Map<string, { value: number; percent: boolean; raw?: string }>();
