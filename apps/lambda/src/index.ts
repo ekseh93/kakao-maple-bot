@@ -24,6 +24,7 @@ import {
   formatBossLevelBoost,
   formatBossForceBoost,
   formatMekaBerry,
+  formatSauna,
   formatMepoEfficiency,
   formatMaxLevelSymbolEffects,
   formatFortune,
@@ -477,6 +478,8 @@ export async function handleMessage(
         return { reply: formatBossForceBoost(parsed.args), requestId, cache: 'bypass' };
       case 'mekaBerry':
         return { reply: formatMekaBerry(parsed.args), requestId, cache: 'bypass' };
+      case 'sauna':
+        return { reply: formatSauna(parsed.args), requestId, cache: 'bypass' };
       case 'mepoEfficiency':
         return { reply: formatMepoEfficiency(parsed.args), requestId, cache: 'bypass' };
       case 'symbolMax':

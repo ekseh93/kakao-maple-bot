@@ -12,6 +12,7 @@ export type CommandName =
   | 'choice'
   | 'seedRing'
   | 'blackAccessoryBox'
+  | 'sauna'
   | 'food'
   | 'japanTravel'
   | 'boss'
@@ -71,6 +72,7 @@ const helpRows = {
     ['!장비 <닉네임>', '장비 요약'],
     ['!경험치 <닉네임>', '경험치 이력'],
     ['!메카베리 <레벨>', '메카베리/크림슨 경험치'],
+    ['!사우나 <레벨>', '사우나 1시간 경험치 상승률'],
     ['!메포효율', '메포 대비 BM 경치 효율표'],
     ['!심볼 <지역> 1 11', '심볼 계산'],
     ['!심볼만렙', '어센틱 심볼 만렙 효과'],
@@ -160,6 +162,7 @@ const aliases: Record<string, CommandName> = {
   보스렙뻥: 'bossLevelBoost',
   보스포뻥: 'bossForceBoost',
   메카베리: 'mekaBerry',
+  사우나: 'sauna',
   무릉: 'dojang',
   유니온: 'union',
   유챔: 'unionChampion',
@@ -680,6 +683,25 @@ export function formatMekaBerry(args: string[] = []): string {
     `메카베리 1개당 상승: ${rate.meka.toFixed(3)}%`,
     `크림슨 메카베리 1개당 상승: ${rate.crimson.toFixed(3)}%`,
   ].join('\n');
+}
+
+const saunaRates = [
+  168.401, 155.083, 142.877, 131.905, 121.49, 112.006, 103.233, 94.8, 86.68, 79.221, 129.283,
+  119.81, 111.191, 103.071, 95.013, 81.077, 75.961, 71.317, 66.773, 62.653, 76.47, 73.048, 69.598,
+  66.446, 63.279, 53.839, 51.362, 48.877, 46.618, 44.426, 39.285, 38.887, 38.481, 37.993, 37.583,
+  31.904, 31.545, 31.121, 30.76, 30.397, 25.777, 25.812, 25.494, 25.125, 24.806, 21.018, 20.745,
+  20.47, 20.197, 19.925, 17.552, 17.31, 17.068, 16.827, 16.587, 16.348, 16.111, 15.875, 15.667,
+  15.433, 9.086, 9.125, 9.164, 9.203, 9.252, 8.007, 8.037, 8.065, 8.106, 8.133, 4.12, 4.14, 4.152,
+  4.164, 4.182, 2.327, 2.142, 1.975, 1.818, 1.675, 0.931, 0.858, 0.79, 0.727, 0.669, 0.372, 0.342,
+  0.315, 0.29, 0.267, 0.149, 0.137, 0.126, 0.116, 0.106, 0.059, 0.054, 0.05, 0.046, 0.031,
+] as const;
+
+export function formatSauna(args: string[] = []): string {
+  if (args.length !== 1 || !/^2[0-9]{2}$/.test(args[0]!)) throw new Error('INVALID_USAGE');
+  const level = Number(args[0]);
+  const rate = saunaRates[level - 200];
+  if (rate === undefined) throw new Error('INVALID_USAGE');
+  return [`[VIP 사우나 경험치]`, `레벨: ${level}`, `상승: ${rate.toFixed(3)}% (1시간)`].join('\n');
 }
 
 const maxLevelSymbolEffects = [

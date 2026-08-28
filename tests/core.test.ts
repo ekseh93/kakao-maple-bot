@@ -19,6 +19,7 @@ import {
   formatBossLevelBoost,
   formatBossForceBoost,
   formatMekaBerry,
+  formatSauna,
   formatMepoEfficiency,
   formatMaxLevelSymbolEffects,
   formatFortune,
@@ -187,6 +188,13 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(formatMekaBerry(['299'])).toContain('0.467%');
     expect(() => formatMekaBerry(['279'])).toThrow('INVALID_USAGE');
     expect(() => formatMekaBerry([])).toThrow('INVALID_USAGE');
+  });
+  it('parses and formats VIP Sauna one-hour rates for levels 200 through 299', () => {
+    expect(parseCommand('!사우나 295')).toEqual({ name: 'sauna', args: ['295'] });
+    expect(formatSauna(['295'])).toContain('상승: 0.059% (1시간)');
+    expect(formatSauna(['280'])).toContain('상승: 0.931% (1시간)');
+    expect(() => formatSauna(['199'])).toThrow('INVALID_USAGE');
+    expect(() => formatSauna([])).toThrow('INVALID_USAGE');
   });
   it('parses and formats meso-point experience efficiency in descending order', () => {
     expect(parseCommand('!메포효율')).toEqual({ name: 'mepoEfficiency', args: [] });
