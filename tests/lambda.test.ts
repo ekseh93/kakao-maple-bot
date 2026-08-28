@@ -593,9 +593,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       findCharacter: vi.fn(),
       findExperienceHistory: vi.fn().mockResolvedValue({
         name: '에픽던전캐릭터',
-        snapshots: [
-          { date: '2026-08-29', level: 295, experience: 0, experienceRate: 97.75 },
-        ],
+        snapshots: [{ date: '2026-08-29', level: 295, experience: 0, experienceRate: 97.75 }],
       }),
     };
     const result = await handleMessage(
@@ -606,10 +604,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('[악몽선경 경험치]');
     expect(result.reply).toContain('현재 경험치: 97.75%');
     expect(result.reply).toContain('레벨업까지: 약 13판');
-    expect(nexon.findExperienceHistory).toHaveBeenCalledWith(
-      '에픽던전캐릭터',
-      expect.anything(),
-    );
+    expect(nexon.findExperienceHistory).toHaveBeenCalledWith('에픽던전캐릭터', expect.anything());
   });
   it('handles notice lookup with official links and a bounded list', async () => {
     const nexon = {

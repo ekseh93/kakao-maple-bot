@@ -1116,7 +1116,12 @@ export async function handleMessage(
         const current = history.snapshots[0];
         if (!current) throw new Error('NOT_FOUND');
         return {
-          reply: formatEpicDungeon(history.name, current.level, current.experienceRate, parsed.name),
+          reply: formatEpicDungeon(
+            history.name,
+            current.level,
+            current.experienceRate,
+            parsed.name,
+          ),
           requestId,
           cache: cached && cached.expiresAt > now ? 'hit' : 'miss',
         };
