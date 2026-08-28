@@ -717,6 +717,13 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(5);
     expect(nexon.findWhiteJadeBossRingBox).toHaveBeenCalledTimes(1);
   });
+  it('handles the static Black Accessory Box draw', async () => {
+    const result = await handleMessage(
+      { ...message('!칠흑'), roomId: 'black-box-room', senderId: 'black-box-sender' },
+      { ...env, ALLOWED_ROOMS: 'black-box-room' },
+    );
+    expect(result.reply).toMatch(/^축하합니다! .+ 나왔습니다(?:\n운이 제일 싼거에 먹혔네요)?$/);
+  });
   it('supports a custom Royal Style count and hides detailed results', async () => {
     const nexon = {
       findCharacter: vi.fn(),

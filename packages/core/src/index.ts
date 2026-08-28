@@ -11,6 +11,7 @@ export type CommandName =
   | 'rps'
   | 'choice'
   | 'seedRing'
+  | 'blackAccessoryBox'
   | 'food'
   | 'japanTravel'
   | 'boss'
@@ -75,6 +76,7 @@ const helpRows = {
     ['!심볼만렙', '어센틱 심볼 만렙 효과'],
     ['!보스', '보스 결정 가격표'],
     ['!시드링', '백옥 보스 반지 상자 5회 뽑기'],
+    ['!칠흑', '칠흑 장신구 상자 1회 뽑기'],
     ['!보스보상', '스우~벨로나 보상표'],
     ['!보스렙뻥', '보스 레벨 보정표'],
     ['!보스포뻥', '어센틱 보스 포스표'],
@@ -191,6 +193,7 @@ const aliases: Record<string, CommandName> = {
   보: 'rps',
   가위바위보: 'rps',
   시드링: 'seedRing',
+  칠흑: 'blackAccessoryBox',
   뭐먹지: 'food',
   ㅁㅁㅈ: 'food',
   메뉴: 'food',
@@ -1254,6 +1257,23 @@ export function formatJapanTravelRecommendation(args: string[] = [], random = Ma
 export function choose<T>(items: T[], random = Math.random): T {
   if (items.length === 0) throw new Error('INVALID_USAGE');
   return items[Math.floor(random() * items.length)] as T;
+}
+
+const blackAccessoryBoxItems = [
+  '루즈 컨트롤 머신 마크',
+  '마력이 깃든 안대',
+  '몽환의 벨트',
+  '저주받은 마도서 선택 상자',
+  '거대한 공포',
+  '커맨더 포스 이어링',
+  '고통의 근원',
+] as const;
+
+export function formatBlackAccessoryBoxDraw(random = Math.random): string {
+  const item = choose([...blackAccessoryBoxItems], random);
+  return item === '루즈 컨트롤 머신 마크'
+    ? `축하합니다! ${item} 나왔습니다\n운이 제일 싼거에 먹혔네요`
+    : `축하합니다! ${item} 나왔습니다`;
 }
 
 export type RoyalStyleItem = { name: string; probability: number; category?: string };

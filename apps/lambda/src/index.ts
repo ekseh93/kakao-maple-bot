@@ -4,6 +4,7 @@ import {
   formatWonderBerryDraw,
   formatBoutiqueGiftDraw,
   formatWhiteJadeBossRingBoxDraw,
+  formatBlackAccessoryBoxDraw,
   formatLunaCrystalSweetDraw,
   formatLunaCrystalDreamDraw,
   formatSymbol,
@@ -465,6 +466,9 @@ export async function handleMessage(
           cache: 'miss',
         };
       }
+      case 'blackAccessoryBox':
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        return { reply: formatBlackAccessoryBoxDraw(), requestId, cache: 'bypass' };
       case 'bossRewards':
         return { reply: formatBossRewardSummaries(parsed.args), requestId, cache: 'bypass' };
       case 'bossLevelBoost':
