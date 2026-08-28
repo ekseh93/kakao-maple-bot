@@ -150,6 +150,10 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(ordinary.reply).toBeNull();
     expect(command.reply).toContain('[가위바위보]');
   });
+  it('returns a winning menu for the compact vs choice syntax', async () => {
+    const result = await handleMessage(message('!치킨vs짬뽕'), env);
+    expect(result.reply).toMatch(/^(치킨|짬뽕) 승리!$/);
+  });
   it('ignores unknown commands without returning help', async () =>
     expect((await handleMessage(message('!없는명령'), env)).reply).toBeNull());
   it('T-004 rejects an oversized command before any provider work', async () => {

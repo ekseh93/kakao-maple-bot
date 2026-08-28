@@ -424,7 +424,7 @@ export async function handleMessage(
         };
       case 'choice':
         return {
-          reply: `제가 고른 건: ${chooseItems(parsed.args.join(' '))}`,
+          reply: `${chooseItems(parsed.args.join(' '))} 승리!`,
           requestId,
           cache: 'bypass',
         };

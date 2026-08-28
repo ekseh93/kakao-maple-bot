@@ -97,7 +97,7 @@ const helpRows = {
     ['!환율', '달러·엔화 환율'],
     ['!기름 / !유가', '전국 평균 유가'],
     ['!주유소', '전국 최저가 주유소 TOP 3'],
-    ['!골라 <메뉴들>', '메뉴 선택'],
+    ['!<메뉴A>vs<메뉴B>', '메뉴 선택'],
     ['!뭐먹지 !ㅁㅁㅈ', '메뉴 추천'],
     ['!운세 <생년월일> <성별> <양력/음력>', '예: 931201 남성 양력'],
     ['!로또', '한·일 번호 추천'],
@@ -188,8 +188,6 @@ const aliases: Record<string, CommandName> = {
   바위: 'rps',
   보: 'rps',
   가위바위보: 'rps',
-  골라: 'choice',
-  선택: 'choice',
   뭐먹지: 'food',
   ㅁㅁㅈ: 'food',
   메뉴: 'food',
@@ -219,6 +217,12 @@ export function formatUsageStats(total: number): string {
 export function parseCommand(message: string): ParsedCommand | null {
   const value = message.trim();
   if ((!value.startsWith('!') && !value.startsWith('/')) || value.length > 300) return null;
+  const choiceMatch = value.match(/^!(.+?)\s*vs\s*(.+)$/i);
+  if (choiceMatch) {
+    const left = choiceMatch[1]?.trim() ?? '';
+    const right = choiceMatch[2]?.trim() ?? '';
+    if (left && right) return { name: 'choice', args: [left, right] };
+  }
   const [raw, ...args] = value.slice(1).split(/\s+/);
   const normalizedRaw = raw?.toLocaleLowerCase() ?? '';
   const name = aliases[normalizedRaw];

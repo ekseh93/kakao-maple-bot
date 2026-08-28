@@ -218,6 +218,9 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(parseCommand('!정보 테스트')).toEqual({ name: 'character', args: ['테스트'] });
     expect(parseCommand('!유챔 테스트')).toEqual({ name: 'unionChampion', args: ['테스트'] });
     expect(parseCommand('!ㅁㅁㅈ')).toEqual({ name: 'food', args: [] });
+    expect(parseCommand('!치킨vs짬뽕')).toEqual({ name: 'choice', args: ['치킨', '짬뽕'] });
+    expect(parseCommand('!치킨 vs 짬뽕')).toEqual({ name: 'choice', args: ['치킨', '짬뽕'] });
+    expect(parseCommand('!골라 치킨 짬뽕')).toBeNull();
   });
   it('parses the Wonder Berry command', () =>
     expect(parseCommand('!원더베리')).toEqual({ name: 'wonderBerry', args: [] }));
