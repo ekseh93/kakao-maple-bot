@@ -15,6 +15,8 @@
     "lambda:dry-run": "pnpm build && esbuild apps/lambda/src/index.ts --bundle --format=esm --platform=node --target=node22 --outfile=apps/lambda/dist/bundle.js",
     "lambda:package": "pnpm lambda:dry-run && node scripts/package-lambda.mjs",
     "lambda:deploy": "pnpm lambda:package && node scripts/deploy-aws.mjs",
+    "usage:aggregate": "node scripts/aggregate-usage.mjs",
+    "usage:sample": "node scripts/generate-portfolio-sample.mjs",
     "format": "prettier --write ."
   },
   "devDependencies": {

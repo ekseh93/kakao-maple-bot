@@ -45,6 +45,8 @@ Probability-based commands are simulations only. They do not purchase or grant c
 
 `!핫딜` shows six Quasar Zone titles numbered from 0 with the listed time, plus up to five titles each from Arca Live and FMKorea in compact mobile-friendly sections.
 
+The Lambda emits anonymous command-usage audit records only. A local script aggregates daily totals and a separate deterministic synthetic report is available for portfolio use; raw chat data is never committed.
+
 `!주식` is informational only and does not place orders or access accounts. `!운세` is a deterministic entertainment feature based on date, gender, calendar type, and Korea Standard Time; it does not call an LLM or a remote fortune MCP server.
 
 ## Data and safety policy

@@ -155,8 +155,11 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       latencyMs: 12.4,
       provider: 'nexon',
       cacheStatus: 'miss',
+      now: new Date('2026-08-28T00:00:00.000Z'),
     });
     expect(log).toEqual({
+      event: 'anonymous-command-usage',
+      date: '2026-08-28',
       requestId: 'request-1',
       command: 'character',
       outcome: 'success',
@@ -166,6 +169,38 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       appVersion: '0.1.0',
     });
     expect(JSON.stringify(log)).not.toMatch(/message|room|sender|secret|token/i);
+  });
+  it('emits only anonymous audit fields for an authenticated command', async () => {
+    const originalLog = console.log;
+    const lines: string[] = [];
+    console.log = (value?: unknown) => lines.push(String(value));
+    try {
+      const response = await httpHandler(
+        new Request('https://example.test/v1/messages', {
+          method: 'POST',
+          body: JSON.stringify({
+            eventId: 'audit-event',
+            roomId: 'audit-room',
+            senderId: 'private-sender-name',
+            message: '!도움말',
+          }),
+          headers: { authorization: 'Bearer test', 'content-type': 'application/json' },
+        }),
+        { ...env, ALLOWED_ROOMS: 'audit-room' },
+      );
+      expect(response.status).toBe(200);
+      const audit = JSON.parse(lines.at(-1) ?? '{}') as Record<string, unknown>;
+      expect(audit.event).toBe('anonymous-command-usage');
+      expect(audit.command).toBe('help');
+      expect(audit.outcome).toBe('success');
+      expect(audit).not.toHaveProperty('roomId');
+      expect(audit).not.toHaveProperty('senderId');
+      expect(audit).not.toHaveProperty('message');
+      expect(JSON.stringify(audit)).not.toContain('audit-room');
+      expect(JSON.stringify(audit)).not.toContain('private-sender-name');
+    } finally {
+      console.log = originalLog;
+    }
   });
   it('T-016 deduplicates the same event', async () => {
     const id = crypto.randomUUID();

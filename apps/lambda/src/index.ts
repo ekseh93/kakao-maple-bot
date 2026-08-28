@@ -238,8 +238,17 @@ export function createAuditLog(input: {
   latencyMs: number;
   provider?: string;
   cacheStatus: string;
+  now?: Date;
 }) {
+  const date = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(input.now ?? new Date());
   return {
+    event: 'anonymous-command-usage',
+    date,
     requestId: input.requestId,
     command: input.command,
     outcome: input.outcome,
@@ -248,6 +257,40 @@ export function createAuditLog(input: {
     cacheStatus: input.cacheStatus,
     appVersion: '0.1.0',
   };
+}
+
+function auditOutcome(reply: string | null, cache: string): 'success' | 'error' | 'bypass' {
+  if (!reply && cache === 'bypass') return 'bypass';
+  if (!reply) return 'error';
+  if (Object.values(errorText).some((text) => reply === text) || reply.startsWith('처리 중 오류'))
+    return 'error';
+  return 'success';
+}
+
+function writeAnonymousCommandAudit(
+  message: string,
+  result: { reply: string | null; requestId: string; cache: string },
+  startedAt: number,
+): void {
+  if (!message.trim().startsWith('!') || result.reply === null) return;
+  const command = parseCommand(message)?.name;
+  if (!command) return;
+  try {
+    // Deliberately emit only aggregate-safe fields. Never add room, sender, or message here.
+    console.log(
+      JSON.stringify(
+        createAuditLog({
+          requestId: result.requestId,
+          command,
+          outcome: auditOutcome(result.reply, result.cache),
+          latencyMs: Date.now() - startedAt,
+          cacheStatus: result.cache,
+        }),
+      ),
+    );
+  } catch {
+    // Observability must never change the command response.
+  }
 }
 
 export async function handleMessage(
@@ -1530,7 +1573,9 @@ export async function httpHandler(request: Request, env: Env): Promise<Response>
     typeof body.senderId !== 'string'
   )
     return new Response('Invalid request', { status: 400 });
+  const startedAt = Date.now();
   const result = await handleMessage(body, env);
+  writeAnonymousCommandAudit(body.message, result, startedAt);
   return Response.json(result);
 }
 

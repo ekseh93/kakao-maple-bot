@@ -163,6 +163,8 @@ KV가 무료 한도나 복잡도를 높이면 MVP 중복 제거는 공기계 측
 
 구조화 로그 필드:
 
+- event (`anonymous-command-usage`)
+- date (Asia/Tokyo)
 - requestId
 - command
 - outcome
@@ -179,6 +181,8 @@ KV가 무료 한도나 복잡도를 높이면 MVP 중복 제거는 공기계 측
 - API 키·토큰·Authorization
 - 캐릭터 조회 결과 전체
 - 외부 응답 원문
+
+명령어 사용 통계는 CloudWatch의 구조화 로그를 로컬 집계 스크립트로 날짜별 합산합니다. 집계 산출물에는 requestId도 제거하며, Lambda가 GitHub에 직접 쓰지 않습니다. 포트폴리오 샘플은 실제 로그와 분리된 고정 가상 데이터입니다.
 
 ## 8. 확장 지점
 

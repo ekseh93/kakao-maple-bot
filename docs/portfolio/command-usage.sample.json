@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "reportType": "anonymous-command-usage",
+  "sample": true,
+  "generatedAt": "2026-08-28T00:00:00.000Z",
+  "days": [
+    {
+      "date": "2026-08-22",
+      "total": 4,
+      "commands": {
+        "character": 1,
+        "help": 1,
+        "hotDeals": 1,
+        "weather": 1
+      },
+      "outcomes": {
+        "success": 3,
+        "error": 1,
+        "bypass": 0
+      },
+      "latencyMs": {
+        "average": 1147,
+        "p50": 640,
+        "p95": 3000,
+        "max": 3000
+      }
+    },
+    {
+      "date": "2026-08-23",
+      "total": 4,
+      "commands": {
+        "help": 1,
+        "hotDeals": 1,
+        "stock": 1,
+        "symbol": 1
+      },
+      "outcomes": {
+        "success": 3,
+        "error": 1,
+        "bypass": 0
+      },
+      "latencyMs": {
+        "average": 884,
+        "p50": 34,
+        "p95": 3000,
+        "max": 3000
+      }
+    },
+    {
+      "date": "2026-08-24",
+      "total": 4,
+      "commands": {
+        "character": 1,
+        "experience": 1,
+        "help": 1,
+        "weather": 1
+      },
+      "outcomes": {
+        "success": 4,
+        "error": 0,
+        "bypass": 0
+      },
+      "latencyMs": {
+        "average": 478,
+        "p50": 520,
+        "p95": 760,
+        "max": 760
+      }
+    },
+    {
+      "date": "2026-08-25",
+      "total": 3,
+      "commands": {
+        "help": 1,
+        "hotDeals": 1,
+        "union": 1
+      },
+      "outcomes": {
+        "success": 3,
+        "error": 0,
+        "bypass": 0
+      },
+      "latencyMs": {
+        "average": 573,
+        "p50": 820,
+        "p95": 870,
+        "max": 870
+      }
+    },
+    {
+      "date": "2026-08-26",
+      "total": 4,
+      "commands": {
+        "help": 1,
+        "lunaDream": 1,
+        "lunaSweet": 1,
+        "unknown": 1
+      },
+      "outcomes": {
+        "success": 3,
+        "error": 0,
+        "bypass": 1
+      },
+      "latencyMs": {
+        "average": 219,
+        "p50": 36,
+        "p95": 430,
+        "max": 430
+      }
+    },
+    {
+      "date": "2026-08-27",
+      "total": 3,
+      "commands": {
+        "character": 1,
+        "help": 1,
+        "hotDeals": 1
+      },
+      "outcomes": {
+        "success": 3,
+        "error": 0,
+        "bypass": 0
+      },
+      "latencyMs": {
+        "average": 531,
+        "p50": 610,
+        "p95": 940,
+        "max": 940
+      }
+    },
+    {
+      "date": "2026-08-28",
+      "total": 3,
+      "commands": {
+        "fortune": 1,
+        "help": 1,
+        "weather": 1
+      },
+      "outcomes": {
+        "success": 3,
+        "error": 0,
+        "bypass": 0
+      },
+      "latencyMs": {
+        "average": 186,
+        "p50": 31,
+        "p95": 510,
+        "max": 510
+      }
+    }
+  ]
+}
