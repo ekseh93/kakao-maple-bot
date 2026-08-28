@@ -43,6 +43,8 @@ Probability-based commands are simulations only. They do not purchase or grant c
 
 `!날씨 <location>`, `!주식 <name>`, `!환율`, `!기름`, `!유가`, `!주유소 <region>`, `!골라 <items>`, `!뭐먹지`, `!ㅁㅁㅈ`, `!운세 <birth date> <gender> <calendar>`, `!로또`, `!넷플`, `!애니`, `!만화`, `!웹툰`, `!웹소설`, `!일본여행`, `!일본여행기`, `!일본음식점`, `!핫딜`, `!글카`, `!모니터`, `!금주의신상`, `!다이소 <product>`, and `!상태`.
 
+`!핫딜` combines up to five titles each from Quasar Zone, Arca Live, and FMKorea in compact mobile-friendly sections.
+
 `!주식` is informational only and does not place orders or access accounts. `!운세` is a deterministic entertainment feature based on date, gender, calendar type, and Korea Standard Time; it does not call an LLM or a remote fortune MCP server.
 
 ## Data and safety policy

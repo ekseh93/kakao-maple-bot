@@ -89,6 +89,8 @@ export type InvenClient = {
   findTopPosts(signal: AbortSignal): Promise<InvenTopPostList>;
   findMabbakDorosiPosts?(signal: AbortSignal): Promise<InvenTopPostList>;
   findHotDeals?(signal: AbortSignal): Promise<InvenTopPostList>;
+  findArcaLiveHotDeals?(signal: AbortSignal): Promise<InvenTopPostList>;
+  findFmKoreaHotDeals?(signal: AbortSignal): Promise<InvenTopPostList>;
   findGraphicsCardPosts?(signal: AbortSignal): Promise<InvenTopPostList>;
   findMonitorPosts?(signal: AbortSignal): Promise<InvenTopPostList>;
   findJapanTravelPosts?(signal: AbortSignal): Promise<InvenTopPostList>;
@@ -396,6 +398,47 @@ function parseQuasarZoneHotDeals(html: string, boardUrl: string): InvenTopPostLi
     const path = (match[1] ?? '').match(/\/bbs\/qb_saleinfo\/views\/\d+/)?.[0];
     if (!path) continue;
     posts.push({ title, url: `https://quasarzone.com${path}` });
+    if (posts.length === 5) break;
+  }
+  if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
+  return { posts, boardUrl, fetchedAt: new Date().toISOString() };
+}
+
+function parseArcaLiveHotDeals(html: string, boardUrl: string): InvenTopPostList {
+  const posts: InvenTopPost[] = [];
+  const pattern = /<a\b[^>]*href=["'](\/b\/hotdeal\/\d+(?:\?[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  for (const match of html.matchAll(pattern)) {
+    const title = decodeHtml(match[2] ?? '');
+    if (
+      !title ||
+      /^(핫딜|전체|검색|로그인|회원가입|더보기|공지)$/i.test(title) ||
+      posts.some((post) => post.title === title)
+    )
+      continue;
+    const path = (match[1] ?? '').match(/\/b\/hotdeal\/\d+/)?.[0];
+    if (!path) continue;
+    posts.push({ title, url: `https://arca.live${path}` });
+    if (posts.length === 5) break;
+  }
+  if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
+  return { posts, boardUrl, fetchedAt: new Date().toISOString() };
+}
+
+function parseFmKoreaHotDeals(html: string, boardUrl: string): InvenTopPostList {
+  const posts: InvenTopPost[] = [];
+  const pattern =
+    /<td\b[^>]*class=["'][^"']*\btitle\b[^"']*["'][^>]*>[\s\S]*?<a\b[^>]*href=["']([^"']*document_srl=\d+[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  for (const match of html.matchAll(pattern)) {
+    const title = decodeHtml(match[2] ?? '');
+    if (
+      !title ||
+      /(?:통합)?공지|금지|규정|이용안내/i.test(title) ||
+      posts.some((post) => post.title === title)
+    )
+      continue;
+    const documentId = (match[1] ?? '').match(/document_srl=(\d+)/i)?.[1];
+    if (!documentId) continue;
+    posts.push({ title, url: `https://www.fmkorea.com/${documentId}` });
     if (posts.length === 5) break;
   }
   if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
@@ -1235,6 +1278,30 @@ export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
         await fetchQuasarZoneHotDealsHtml(fetcher, boardUrl, signal),
         boardUrl,
       );
+    },
+    async findArcaLiveHotDeals(signal) {
+      const boardUrl = 'https://arca.live/b/hotdeal';
+      const response = await fetchWithRetry(fetcher, boardUrl, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return parseArcaLiveHotDeals(await response.text(), boardUrl);
+    },
+    async findFmKoreaHotDeals(signal) {
+      const boardUrl = 'https://www.fmkorea.com/hotdeal';
+      const response = await fetchWithRetry(fetcher, boardUrl, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+        },
+        signal,
+      });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      return parseFmKoreaHotDeals(await response.text(), boardUrl);
     },
     async findGraphicsCardPosts(signal) {
       const boardUrl = 'https://quasarzone.com/bbs/qb_tsy';

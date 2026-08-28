@@ -1160,4 +1160,38 @@ describe('HTTP boundary', () => {
     );
     expect(response.status).toBe(413);
   });
+  it('combines the three hot-deal sources into mobile sections', async () => {
+    const inven = {
+      findHotDeals: vi.fn().mockResolvedValue({
+        posts: [{ title: '퀘이사존 핫딜' }],
+        boardUrl: 'https://quasarzone.com/bbs/qb_saleinfo',
+        fetchedAt: '2026-08-28T00:00:00.000Z',
+      }),
+      findArcaLiveHotDeals: vi.fn().mockResolvedValue({
+        posts: [{ title: '아카라이브 핫딜' }],
+        boardUrl: 'https://arca.live/b/hotdeal',
+        fetchedAt: '2026-08-28T00:00:00.000Z',
+      }),
+      findFmKoreaHotDeals: vi.fn().mockResolvedValue({
+        posts: [{ title: '에펨코리아 핫딜' }],
+        boardUrl: 'https://www.fmkorea.com/hotdeal',
+        fetchedAt: '2026-08-28T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!핫딜'), roomId: 'multi-hotdeal-room' },
+      { ...env, ALLOWED_ROOMS: 'multi-hotdeal-room' },
+      { inven, now: () => new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) },
+    );
+
+    expect(result.reply).toContain('【퀘이사존】');
+    expect(result.reply).toContain('【아카라이브】');
+    expect(result.reply).toContain('【에펨코리아】');
+    expect(result.reply).toContain('1. 퀘이사존 핫딜');
+    expect(result.reply).toContain('1. 아카라이브 핫딜');
+    expect(result.reply).toContain('1. 에펨코리아 핫딜');
+    expect(inven.findHotDeals).toHaveBeenCalledOnce();
+    expect(inven.findArcaLiveHotDeals).toHaveBeenCalledOnce();
+    expect(inven.findFmKoreaHotDeals).toHaveBeenCalledOnce();
+  });
 });

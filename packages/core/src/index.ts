@@ -108,7 +108,7 @@ const helpRows = {
     ['!일본여행', '여행지 추천'],
     ['!일본여행기', '디시인사이드 일본여행 최신 글 5개'],
     ['!일본음식점', '디시인사이드 일본 음식점 최신 글 5개'],
-    ['!핫딜', '퀘이사존 최신 핫딜 5개'],
+    ['!핫딜', '3개 커뮤니티 핫딜 각 5개'],
     ['!글카', '퀘이사존 그래픽카드 최신 글 5개'],
     ['!모니터', '디시인사이드 모니터 최신 글 10개'],
     ['!금주의신상', '금주의 신상'],
@@ -1105,6 +1105,33 @@ export function formatHotDeals(
   ]
     .join('\n')
     .slice(0, 1000);
+}
+
+export type HotDealSection = {
+  source: string;
+  posts: readonly { title: string; url?: string }[];
+  boardUrl: string;
+  state?: 'fresh' | 'stale' | 'unavailable';
+};
+
+export function formatHotDealSections(sections: readonly HotDealSection[]): string {
+  if (sections.length === 0 || sections.every((section) => section.posts.length === 0))
+    throw new Error('NOT_FOUND');
+  const lines = ['[커뮤니티 핫딜 모음]', ''];
+  for (const section of sections) {
+    lines.push(`【${section.source}】`);
+    if (section.posts.length === 0) {
+      lines.push('현재 조회할 수 없습니다.');
+    } else {
+      section.posts.slice(0, 5).forEach((post, index) => {
+        const title = post.title.length > 46 ? `${post.title.slice(0, 43)}...` : post.title;
+        lines.push(`${index + 1}. ${title}`);
+      });
+      if (section.state === 'stale') lines.push('※ 최근 정상 조회 결과');
+    }
+    lines.push(`게시판: ${section.boardUrl}`, '');
+  }
+  return lines.join('\n').trim().slice(0, 1000);
 }
 
 export function formatAnimeRecommendation(random = Math.random): string {

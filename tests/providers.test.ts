@@ -186,6 +186,63 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     ).rejects.toThrow('PROVIDER_UNAVAILABLE');
   });
 
+  it('maps five Arca Live hot-deal titles and links', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '<a href="/b/hotdeal/101"><span>아카라이브 상품 A</span></a>' +
+            '<a href="/b/hotdeal/102">아카라이브 상품 B</a>' +
+            '<a href="/b/hotdeal/103">아카라이브 상품 C</a>' +
+            '<a href="/b/hotdeal/104">아카라이브 상품 D</a>' +
+            '<a href="/b/hotdeal/105">아카라이브 상품 E</a>' +
+            '<a href="/b/hotdeal/106">아카라이브 상품 F</a>',
+          { status: 200 },
+        ),
+      );
+
+    const result = await createInvenClient(fetcher).findArcaLiveHotDeals?.(
+      new AbortController().signal,
+    );
+
+    expect(result?.posts).toEqual([
+      { title: '아카라이브 상품 A', url: 'https://arca.live/b/hotdeal/101' },
+      { title: '아카라이브 상품 B', url: 'https://arca.live/b/hotdeal/102' },
+      { title: '아카라이브 상품 C', url: 'https://arca.live/b/hotdeal/103' },
+      { title: '아카라이브 상품 D', url: 'https://arca.live/b/hotdeal/104' },
+      { title: '아카라이브 상품 E', url: 'https://arca.live/b/hotdeal/105' },
+    ]);
+  });
+
+  it('maps five FMKorea hot-deal titles and removes notice rows', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '<td class="title"><a href="/index.php?mid=hotdeal&amp;document_srl=1">통합공지</a></td>' +
+            '<td class="title"><a href="/index.php?mid=hotdeal&amp;document_srl=201">펨코 상품 A&nbsp; [2]</a></td>' +
+            '<td class="title"><a href="/index.php?mid=hotdeal&amp;document_srl=202">펨코 상품 B</a></td>' +
+            '<td class="title"><a href="/index.php?mid=hotdeal&amp;document_srl=203">펨코 상품 C</a></td>' +
+            '<td class="title"><a href="/index.php?mid=hotdeal&amp;document_srl=204">펨코 상품 D</a></td>' +
+            '<td class="title"><a href="/index.php?mid=hotdeal&amp;document_srl=205">펨코 상품 E</a></td>' +
+            '<td class="title"><a href="/index.php?mid=hotdeal&amp;document_srl=206">펨코 상품 F</a></td>',
+          { status: 200 },
+        ),
+      );
+
+    const result = await createInvenClient(fetcher).findFmKoreaHotDeals?.(
+      new AbortController().signal,
+    );
+
+    expect(result?.posts).toEqual([
+      { title: '펨코 상품 A [2]', url: 'https://www.fmkorea.com/201' },
+      { title: '펨코 상품 B', url: 'https://www.fmkorea.com/202' },
+      { title: '펨코 상품 C', url: 'https://www.fmkorea.com/203' },
+      { title: '펨코 상품 D', url: 'https://www.fmkorea.com/204' },
+      { title: '펨코 상품 E', url: 'https://www.fmkorea.com/205' },
+    ]);
+  });
+
   it('maps five Quasar Zone graphics-card titles and links', async () => {
     const fetcher = vi
       .fn()

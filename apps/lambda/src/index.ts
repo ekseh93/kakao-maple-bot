@@ -13,7 +13,8 @@ import {
   formatFoodRecommendation,
   formatJapanTravelRecommendation,
   formatNetflixRecommendation,
-  formatHotDeals,
+  formatHotDealSections,
+  type HotDealSection,
   formatAnimeRecommendation,
   formatMangaRecommendation,
   formatBossRewards,
@@ -133,6 +134,8 @@ type ResilientPostCache = {
   staleUntil: number;
 };
 let hotDealsCache: ResilientPostCache | undefined;
+let arcaLiveHotDealsCache: ResilientPostCache | undefined;
+let fmKoreaHotDealsCache: ResilientPostCache | undefined;
 let graphicsCardCache: ResilientPostCache | undefined;
 let monitorCache: ResilientPostCache | undefined;
 let japanTravelPostsCache: ResilientPostCache | undefined;
@@ -212,6 +215,20 @@ function stalePostReply(
 ): string | null {
   if (!cache || cache.staleUntil <= now) return null;
   return `${format(cache.value)}\n※ 원문 일시 접근 제한으로 최근 정상 조회 결과를 표시합니다.`;
+}
+
+type HotDealCacheKey = 'quasarzone' | 'arcalive' | 'fmkorea';
+
+function getHotDealCache(key: HotDealCacheKey): ResilientPostCache | undefined {
+  if (key === 'quasarzone') return hotDealsCache;
+  if (key === 'arcalive') return arcaLiveHotDealsCache;
+  return fmKoreaHotDealsCache;
+}
+
+function setHotDealCache(key: HotDealCacheKey, value: ResilientPostCache): void {
+  if (key === 'quasarzone') hotDealsCache = value;
+  else if (key === 'arcalive') arcaLiveHotDealsCache = value;
+  else fmKoreaHotDealsCache = value;
 }
 
 export function createAuditLog(input: {
@@ -533,29 +550,87 @@ export async function handleMessage(
       }
       case 'hotDeals': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
-        if (hotDealsCache && hotDealsCache.expiresAt > now)
-          return {
-            reply: formatHotDeals(hotDealsCache.value.posts, hotDealsCache.value.boardUrl),
-            requestId,
-            cache: 'hit',
-          };
         const client = deps.inven ?? createInvenClient();
-        if (!client.findHotDeals) throw new Error('NOT_CONFIGURED');
-        try {
-          const deals = await client.findHotDeals(timeoutSignal());
-          hotDealsCache = {
-            value: deals,
-            expiresAt: now + dcInsideCacheTtlMs,
-            staleUntil: now + publicPostStaleTtlMs,
-          };
-          return { reply: formatHotDeals(deals.posts, deals.boardUrl), requestId, cache: 'miss' };
-        } catch (error) {
-          const stale = stalePostReply(hotDealsCache, now, (value) =>
-            formatHotDeals(value.posts, value.boardUrl),
-          );
-          if (stale) return { reply: stale, requestId, cache: 'stale' };
-          throw error;
+        const sourceConfigs: Array<{
+          key: HotDealCacheKey;
+          source: string;
+          boardUrl: string;
+          fetch?: (signal: AbortSignal) => Promise<InvenTopPostList>;
+        }> = [
+          {
+            key: 'quasarzone',
+            source: '퀘이사존',
+            boardUrl: 'https://quasarzone.com/bbs/qb_saleinfo',
+            fetch: client.findHotDeals,
+          },
+          {
+            key: 'arcalive',
+            source: '아카라이브',
+            boardUrl: 'https://arca.live/b/hotdeal',
+            fetch: client.findArcaLiveHotDeals,
+          },
+          {
+            key: 'fmkorea',
+            source: '에펨코리아',
+            boardUrl: 'https://www.fmkorea.com/hotdeal',
+            fetch: client.findFmKoreaHotDeals,
+          },
+        ];
+        let cacheHit = true;
+        let hasStale = false;
+        let firstError: unknown;
+        const sections: HotDealSection[] = [];
+
+        const results = await Promise.all(
+          sourceConfigs.map(async (config) => {
+            const cached = getHotDealCache(config.key);
+            if (cached && cached.expiresAt > now)
+              return { config, result: cached.value, state: 'fresh' as const };
+            cacheHit = false;
+            try {
+              if (!config.fetch) throw new Error('NOT_CONFIGURED');
+              const result = await config.fetch(timeoutSignal());
+              setHotDealCache(config.key, {
+                value: result,
+                expiresAt: now + dcInsideCacheTtlMs,
+                staleUntil: now + publicPostStaleTtlMs,
+              });
+              return { config, result, state: 'fresh' as const };
+            } catch (error) {
+              firstError ??= error;
+              const stale = getHotDealCache(config.key);
+              if (stale && stale.staleUntil > now) {
+                hasStale = true;
+                return { config, result: stale.value, state: 'stale' as const };
+              }
+              return {
+                config,
+                result: {
+                  posts: [],
+                  boardUrl: config.boardUrl,
+                  fetchedAt: new Date(now).toISOString(),
+                },
+                state: 'unavailable' as const,
+              };
+            }
+          }),
+        );
+
+        for (const { config, result, state } of results) {
+          sections.push({
+            source: config.source,
+            posts: result.posts,
+            boardUrl: result.boardUrl,
+            state,
+          });
         }
+        if (sections.every((section) => section.posts.length === 0))
+          throw firstError ?? new Error('PROVIDER_UNAVAILABLE');
+        return {
+          reply: formatHotDealSections(sections),
+          requestId,
+          cache: hasStale ? 'stale' : cacheHit ? 'hit' : 'miss',
+        };
       }
       case 'graphicsCard': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
