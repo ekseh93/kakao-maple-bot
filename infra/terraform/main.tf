@@ -117,6 +117,18 @@ resource "aws_apigatewayv2_route" "messages" {
   target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 
+resource "aws_apigatewayv2_route" "notice_alerts" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "GET /v1/notice-alerts"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "sunday_alert" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "GET /v1/sunday-alert"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.http.id
   name        = "$default"
