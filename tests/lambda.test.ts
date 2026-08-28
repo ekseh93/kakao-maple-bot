@@ -721,6 +721,10 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
           { name: '리스트레인트 링', probability: 14.28571 },
           { name: '컨티뉴어스 링', probability: 14.28571 },
         ],
+        levelProbabilities: [
+          { level: 3, probability: 65 },
+          { level: 4, probability: 35 },
+        ],
         sourceUrl:
           'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxWhiteJade',
         fetchedAt: '2026-08-29T00:00:00.000Z',

@@ -1483,19 +1483,38 @@ export function formatWhiteJadeBossRingBoxDraw(
   items: RoyalStyleItem[],
   count = 5,
   random = Math.random,
+  levelProbabilities: Array<{ level: number; probability: number }> = [
+    { level: 3, probability: 65 },
+    { level: 4, probability: 35 },
+  ],
 ): string {
-  return formatWeightedDraw(
+  if (!Number.isInteger(count) || count < 1 || count > 25 || items.length === 0)
+    throw new Error('INVALID_USAGE');
+  const itemTotal = items.reduce((sum, item) => sum + item.probability, 0);
+  const levelTotal = levelProbabilities.reduce((sum, item) => sum + item.probability, 0);
+  if (itemTotal <= 0 || levelTotal <= 0) throw new Error('PROVIDER_SCHEMA');
+  const draws = Array.from({ length: count }, () => {
+    const item = drawWeightedItem(items, itemTotal, random);
+    const level = drawWeightedItem(levelProbabilities, levelTotal, random);
+    return `${item.name} ${level.level}레벨 (총 확률 ${((item.probability * level.probability) / 100).toFixed(2)}%)`;
+  });
+  return [
     `[백옥의 보스 반지 상자 ${count}회 뽑기]`,
-    items,
-    '',
-    '',
-    count,
-    true,
-    random,
-    false,
-    (item) => item.name,
-    false,
-  );
+    ...draws.map((value, i) => `${i + 1}. ${value}`),
+  ].join('\n');
+}
+
+function drawWeightedItem<T extends { probability: number }>(
+  items: readonly T[],
+  total: number,
+  random: () => number,
+): T {
+  let cursor = random() * total;
+  for (const item of items) {
+    cursor -= item.probability;
+    if (cursor < 0) return item;
+  }
+  return items[items.length - 1]!;
 }
 
 export function formatLunaCrystalSweetDraw(

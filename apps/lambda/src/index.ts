@@ -454,7 +454,12 @@ export async function handleMessage(
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
         if (whiteJadeBossRingBoxCache && whiteJadeBossRingBoxCache.expiresAt > now)
           return {
-            reply: formatWhiteJadeBossRingBoxDraw(whiteJadeBossRingBoxCache.value.items),
+            reply: formatWhiteJadeBossRingBoxDraw(
+              whiteJadeBossRingBoxCache.value.items,
+              5,
+              Math.random,
+              whiteJadeBossRingBoxCache.value.levelProbabilities,
+            ),
             requestId,
             cache: 'hit',
           };
@@ -463,7 +468,7 @@ export async function handleMessage(
         const box = await client.findWhiteJadeBossRingBox(timeoutSignal());
         whiteJadeBossRingBoxCache = { value: box, expiresAt: now + 5 * 60_000 };
         return {
-          reply: formatWhiteJadeBossRingBoxDraw(box.items),
+          reply: formatWhiteJadeBossRingBoxDraw(box.items, 5, Math.random, box.levelProbabilities),
           requestId,
           cache: 'miss',
         };

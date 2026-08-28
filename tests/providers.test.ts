@@ -885,7 +885,7 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       .fn()
       .mockResolvedValue(
         new Response(
-          '<table><tr><th>아이템 명</th><th>획득확률</th></tr><tr><td>리스트레인트 링</td><td>14.28571%</td></tr><tr><td>컨티뉴어스 링</td><td>14.28571%</td></tr></table>',
+          '<table><tr><th>반지 레벨</th><th>확률</th></tr><tr><td>3</td><td>65%</td></tr><tr><td>4</td><td>35%</td></tr></table><table><tr><th>아이템 명</th><th>획득확률</th></tr><tr><td>리스트레인트 링</td><td>14.28571%</td></tr><tr><td>컨티뉴어스 링</td><td>14.28571%</td></tr></table>',
           { status: 200, headers: { 'content-type': 'text/html' } },
         ),
       );
@@ -895,6 +895,10 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result?.items).toEqual([
       { name: '리스트레인트 링', probability: 14.28571 },
       { name: '컨티뉴어스 링', probability: 14.28571 },
+    ]);
+    expect(result?.levelProbabilities).toEqual([
+      { level: 3, probability: 65 },
+      { level: 4, probability: 35 },
     ]);
     expect(fetcher.mock.calls[0]?.[0]).toBe(
       'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxWhiteJade',

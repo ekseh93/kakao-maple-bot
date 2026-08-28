@@ -281,6 +281,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output.match(/^\d+\./gm) ?? []).toHaveLength(5);
     expect(output).not.toContain('기준: Nexon');
     expect(output).not.toContain('실제 구매가 아닌');
+    expect(output).toContain('리스트레인트 링 3레벨 (총 확률 9.29%)');
+    expect(output).not.toMatch(/^\d+\. 3 \(/m);
   });
   it('formats the Black Accessory Box draw and its special Loose Control message', () => {
     expect(parseCommand('!칠흑깡')).toEqual({ name: 'blackAccessoryBox', args: [] });

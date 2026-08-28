@@ -166,6 +166,7 @@ export type BoutiqueGiftList = {
 };
 export type BossRingBoxList = {
   items: RoyalStyleItem[];
+  levelProbabilities: Array<{ level: number; probability: number }>;
   sourceUrl: string;
   fetchedAt: string;
 };
@@ -629,7 +630,9 @@ function parseProbabilityPage(
   tablePosition: 'first' | 'last' = 'first',
   includeCategory = false,
 ): RoyalStyleList {
-  const tables = html.match(/<table\b[\s\S]*?획득확률[\s\S]*?<\/table>/gi) ?? [];
+  const tables = (html.match(/<table\b[\s\S]*?<\/table>/gi) ?? []).filter((table) =>
+    /획득확률/.test(table),
+  );
   const table = tablePosition === 'last' ? tables.at(-1) : tables[0];
   if (!table) throw new Error('PROVIDER_SCHEMA');
   const items: RoyalStyleItem[] = [];
@@ -649,6 +652,29 @@ function parseProbabilityPage(
   }
   if (items.length === 0) throw new Error('PROVIDER_SCHEMA');
   return { items, sourceUrl, fetchedAt: new Date().toISOString() };
+}
+
+function parseRingLevelProbabilities(html: string): Array<{ level: number; probability: number }> {
+  const table = (html.match(/<table\b[\s\S]*?<\/table>/gi) ?? []).find((value) =>
+    /반지\s*레벨/.test(value),
+  );
+  if (!table) throw new Error('PROVIDER_SCHEMA');
+  const levels: Array<{ level: number; probability: number }> = [];
+  for (const row of table.match(/<tr\b[\s\S]*?<\/tr>/gi) ?? []) {
+    const cells = [...row.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((match) =>
+      decodeHtml(match[1]!),
+    );
+    if (cells.length < 2) continue;
+    const level = Number(cells[0]);
+    const probabilityMatch = cells[1]!.match(/^(\d+(?:\.\d+)?)%$/);
+    const probability = probabilityMatch ? Number(probabilityMatch[1]) : NaN;
+    if (!Number.isInteger(level) || !Number.isFinite(probability) || probability <= 0) {
+      throw new Error('PROVIDER_SCHEMA');
+    }
+    levels.push({ level, probability });
+  }
+  if (levels.length === 0) throw new Error('PROVIDER_SCHEMA');
+  return levels;
 }
 
 export function createNexonClient(
@@ -1095,7 +1121,11 @@ export function createNexonClient(
         'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxWhiteJade';
       const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
-      return parseProbabilityPage(await response.text(), sourceUrl, 'first');
+      const html = await response.text();
+      return {
+        ...parseProbabilityPage(html, sourceUrl, 'first'),
+        levelProbabilities: parseRingLevelProbabilities(html),
+      };
     },
     async findLunaCrystalSweet(kind, signal) {
       const sourceUrl =
