@@ -46,6 +46,13 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(FORMATTED_HELP).toContain('!주식 <이름>');
     expect(FORMATTED_HELP).toContain('• !마빡도로시');
     expect(FORMATTED_HELP).toContain('• !가위 / !바위 / !보');
+    expect(FORMATTED_HELP).toContain('• !사우나 <레벨>');
+    expect(FORMATTED_HELP).toContain('• !시드링');
+    expect(FORMATTED_HELP).toContain('• !칠흑깡');
+    expect(FORMATTED_HELP).toContain('• !주유소 <지역>');
+    expect(FORMATTED_HELP).toContain('• !일본여행기');
+    expect(FORMATTED_HELP).toContain('디시인사이드 일본여행 최신 글 3개');
+    expect(FORMATTED_HELP).toContain('디시인사이드 모니터 최신 글 5개');
     expect(FORMATTED_HELP).toContain('• !주유소');
     expect(FORMATTED_HELP).toContain('  └ 예: 931201 남성 양력');
     expect(FORMATTED_HELP).toContain('• !정보 <닉네임>');
