@@ -880,6 +880,26 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     expect(result?.feverItems).toEqual([{ name: '티켓 10개', probability: 100 }]);
     expect(fetcher.mock.calls[0]?.[0]).toContain('BoutiqueGift');
   });
+  it('maps the official White Jade boss ring box probability table', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '<table><tr><th>아이템 명</th><th>획득확률</th></tr><tr><td>리스트레인트 링</td><td>14.28571%</td></tr><tr><td>컨티뉴어스 링</td><td>14.28571%</td></tr></table>',
+          { status: 200, headers: { 'content-type': 'text/html' } },
+        ),
+      );
+    const result = await createNexonClient(undefined, fetcher).findWhiteJadeBossRingBox?.(
+      new AbortController().signal,
+    );
+    expect(result?.items).toEqual([
+      { name: '리스트레인트 링', probability: 14.28571 },
+      { name: '컨티뉴어스 링', probability: 14.28571 },
+    ]);
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxWhiteJade',
+    );
+  });
   it('maps the selected official Luna Crystal Sweet probability table', async () => {
     const fetcher = vi
       .fn()
