@@ -1361,7 +1361,7 @@ function formatEquipment(c: EquipmentCharacter): string {
     '────────────',
   ];
   for (const item of c.items) {
-    lines.push(`▸ ${item.part}`, `  ${item.name}`, `  ⭐ 스타포스 ${item.starforce}`);
+    lines.push(`▸ ${item.part} - ${item.starforce} ${item.name}`);
     const potentials = [
       item.potentialGrade ? `잠재 ${item.potentialGrade}` : '',
       item.additionalPotentialGrade ? `에디 ${item.additionalPotentialGrade}` : '',

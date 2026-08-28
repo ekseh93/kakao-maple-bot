@@ -549,8 +549,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply).toContain('캐릭터: 장비캐릭터');
-    expect(result.reply).toContain('▸ 모자\n  테스트 모자');
-    expect(result.reply).toContain('⭐ 스타포스 22');
+    expect(result.reply).toContain('▸ 모자 - 22 테스트 모자');
+    expect(result.reply).not.toContain('⭐ 스타포스 22');
     expect(result.reply).toContain('잠재 레전드리 | 에디 에픽');
   });
   it('handles slash experience history with daily change', async () => {
