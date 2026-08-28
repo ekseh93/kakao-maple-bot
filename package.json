@@ -12,7 +12,7 @@
     "policy:check": "node scripts/policy-check.mjs",
     "phone:check": "node --check apps/phone-relay/bot.js",
     "audit": "pnpm audit --audit-level high",
-    "lambda:dry-run": "pnpm build && esbuild apps/lambda/src/index.ts --bundle --format=esm --platform=node --target=node22 --outfile=apps/lambda/dist/bundle.js",
+    "lambda:dry-run": "pnpm build && esbuild apps/lambda/src/index.ts --bundle --format=cjs --platform=node --target=node22 --outfile=apps/lambda/dist/bundle.js",
     "lambda:package": "pnpm lambda:dry-run && node scripts/package-lambda.mjs",
     "lambda:deploy": "pnpm lambda:package && node scripts/deploy-aws.mjs",
     "usage:aggregate": "node scripts/aggregate-usage.mjs",

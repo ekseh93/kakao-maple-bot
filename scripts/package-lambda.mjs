@@ -50,7 +50,7 @@ function zipEntry(name, content, offset) {
 }
 
 const bundle = await readFile(bundlePath);
-const packageJson = Buffer.from('{"type":"module"}\n');
+const packageJson = Buffer.from('{"type":"commonjs"}\n');
 const entries = [
   ['bundle.js', bundle],
   ['package.json', packageJson],

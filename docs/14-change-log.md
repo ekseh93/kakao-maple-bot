@@ -738,3 +738,8 @@
 - 방 이름·발신자·메시지 원문은 누적 카운터에 저장하지 않습니다.
 - Terraform에 온디맨드 테이블과 Lambda의 `dynamodb:UpdateItem` 최소 권한을 추가했습니다.
 - DynamoDB 배포 이후부터 카운트하며, 이전 CloudWatch 로그를 소급해 합산하지 않습니다.
+## 2026-08-28 Lambda SDK 런타임 호환성 수정
+
+- DynamoDB SDK가 포함된 Lambda 번들을 ESM에서 CommonJS 형식으로 변경했습니다.
+- Node.js 22 Lambda에서 SDK의 `node:https` 동적 require가 실패해 발생하던 500 오류를 방지합니다.
+- ZIP 루트의 package type도 `commonjs`로 맞췄습니다.
