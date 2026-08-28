@@ -23,6 +23,7 @@ import {
   formatMaxLevelSymbolEffects,
   formatFortune,
   formatBoutiqueGiftDraw,
+  formatWhiteJadeBossRingBoxDraw,
   formatRoyalDraw,
   formatLunaCrystalSweetDraw,
   formatLunaCrystalDreamDraw,
@@ -224,6 +225,21 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('parses the Wonder Berry command', () =>
     expect(parseCommand('!원더베리')).toEqual({ name: 'wonderBerry', args: [] }));
+  it('parses and formats the White Jade boss ring box command', () => {
+    expect(parseCommand('!시드링')).toEqual({ name: 'seedRing', args: [] });
+    const output = formatWhiteJadeBossRingBoxDraw(
+      [
+        { name: '리스트레인트 링', probability: 14.28571 },
+        { name: '컨티뉴어스 링', probability: 14.28571 },
+      ],
+      5,
+      () => 0,
+    );
+    expect(output).toContain('[백옥의 보스 반지 상자 5회 뽑기]');
+    expect(output.match(/^\d+\./gm) ?? []).toHaveLength(5);
+    expect(output).not.toContain('기준: Nexon');
+    expect(output).not.toContain('실제 구매가 아닌');
+  });
   it('labels rare Wonder Berry results and omits metadata', () => {
     const output = formatWonderBerryDraw(
       [{ name: '원더 블랙 펫', probability: 100, category: '희귀' }],

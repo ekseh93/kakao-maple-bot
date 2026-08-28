@@ -3,6 +3,7 @@ import {
   formatRoyalDraw,
   formatWonderBerryDraw,
   formatBoutiqueGiftDraw,
+  formatWhiteJadeBossRingBoxDraw,
   formatLunaCrystalSweetDraw,
   formatLunaCrystalDreamDraw,
   formatSymbol,
@@ -71,6 +72,7 @@ import {
   type RoyalStyleList,
   type WonderBerryList,
   type BoutiqueGiftList,
+  type BossRingBoxList,
   type WeatherSnapshot,
   type LunaCrystalSweetList,
   type McpRetailClient,
@@ -155,6 +157,7 @@ let sundayCache: { value: EventList; expiresAt: number } | undefined;
 let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 let wonderBerryCache: { value: WonderBerryList; expiresAt: number; provider?: object } | undefined;
 let boutiqueGiftCache: { value: BoutiqueGiftList; expiresAt: number } | undefined;
+let whiteJadeBossRingBoxCache: { value: BossRingBoxList; expiresAt: number } | undefined;
 const lunaSweetCache = new Map<
   '일반' | '스페셜',
   { value: LunaCrystalSweetList; expiresAt: number }
@@ -348,6 +351,8 @@ export async function handleMessage(
   if (royalCache && royalCache.expiresAt <= now) royalCache = undefined;
   if (wonderBerryCache && wonderBerryCache.expiresAt <= now) wonderBerryCache = undefined;
   if (boutiqueGiftCache && boutiqueGiftCache.expiresAt <= now) boutiqueGiftCache = undefined;
+  if (whiteJadeBossRingBoxCache && whiteJadeBossRingBoxCache.expiresAt <= now)
+    whiteJadeBossRingBoxCache = undefined;
   for (const [kind, entry] of lunaSweetCache)
     if (entry.expiresAt <= now) lunaSweetCache.delete(kind);
   for (const [kind, entry] of lunaDreamCache)
@@ -442,6 +447,24 @@ export async function handleMessage(
         };
       case 'boss':
         return { reply: formatBossRewards(parsed.args), requestId, cache: 'bypass' };
+      case 'seedRing': {
+        if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
+        if (whiteJadeBossRingBoxCache && whiteJadeBossRingBoxCache.expiresAt > now)
+          return {
+            reply: formatWhiteJadeBossRingBoxDraw(whiteJadeBossRingBoxCache.value.items),
+            requestId,
+            cache: 'hit',
+          };
+        const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
+        if (!client.findWhiteJadeBossRingBox) throw new Error('NOT_CONFIGURED');
+        const box = await client.findWhiteJadeBossRingBox(timeoutSignal());
+        whiteJadeBossRingBoxCache = { value: box, expiresAt: now + 5 * 60_000 };
+        return {
+          reply: formatWhiteJadeBossRingBoxDraw(box.items),
+          requestId,
+          cache: 'miss',
+        };
+      }
       case 'bossRewards':
         return { reply: formatBossRewardSummaries(parsed.args), requestId, cache: 'bypass' };
       case 'bossLevelBoost':

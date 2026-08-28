@@ -695,6 +695,28 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).not.toContain('실제 구매가 아닌');
     expect(result.reply).not.toContain('https://maplestory.nexon.com/Guide/CashShop/Probability');
   });
+  it('handles five weighted White Jade boss ring box draws', async () => {
+    const nexon = {
+      findCharacter: vi.fn(),
+      findWhiteJadeBossRingBox: vi.fn().mockResolvedValue({
+        items: [
+          { name: '리스트레인트 링', probability: 14.28571 },
+          { name: '컨티뉴어스 링', probability: 14.28571 },
+        ],
+        sourceUrl:
+          'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxWhiteJade',
+        fetchedAt: '2026-08-29T00:00:00.000Z',
+      }),
+    };
+    const result = await handleMessage(
+      { ...message('!시드링'), roomId: 'seed-ring-room', senderId: 'seed-ring-sender' },
+      { ...env, ALLOWED_ROOMS: 'seed-ring-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[백옥의 보스 반지 상자 5회 뽑기]');
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(5);
+    expect(nexon.findWhiteJadeBossRingBox).toHaveBeenCalledTimes(1);
+  });
   it('supports a custom Royal Style count and hides detailed results', async () => {
     const nexon = {
       findCharacter: vi.fn(),

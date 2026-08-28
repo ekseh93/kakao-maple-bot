@@ -10,6 +10,7 @@ export type CommandName =
   | 'help'
   | 'rps'
   | 'choice'
+  | 'seedRing'
   | 'food'
   | 'japanTravel'
   | 'boss'
@@ -73,6 +74,7 @@ const helpRows = {
     ['!심볼 <지역> 1 11', '심볼 계산'],
     ['!심볼만렙', '어센틱 심볼 만렙 효과'],
     ['!보스', '보스 결정 가격표'],
+    ['!시드링', '백옥 보스 반지 상자 5회 뽑기'],
     ['!보스보상', '스우~벨로나 보상표'],
     ['!보스렙뻥', '보스 레벨 보정표'],
     ['!보스포뻥', '어센틱 보스 포스표'],
@@ -188,6 +190,7 @@ const aliases: Record<string, CommandName> = {
   바위: 'rps',
   보: 'rps',
   가위바위보: 'rps',
+  시드링: 'seedRing',
   뭐먹지: 'food',
   ㅁㅁㅈ: 'food',
   메뉴: 'food',
@@ -1355,6 +1358,25 @@ export function formatBoutiqueGiftDraw(
     ),
     `10. [피버 타임] ${feverDraw.name} (${feverDraw.probability.toFixed(2)}%)`,
   ].join('\n');
+}
+
+export function formatWhiteJadeBossRingBoxDraw(
+  items: RoyalStyleItem[],
+  count = 5,
+  random = Math.random,
+): string {
+  return formatWeightedDraw(
+    `[백옥의 보스 반지 상자 ${count}회 뽑기]`,
+    items,
+    '',
+    '',
+    count,
+    true,
+    random,
+    false,
+    (item) => item.name,
+    false,
+  );
 }
 
 export function formatLunaCrystalSweetDraw(
