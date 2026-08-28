@@ -1357,7 +1357,7 @@ function formatEquipment(c: EquipmentCharacter): string {
   const lines = [
     '[장비 요약]',
     `캐릭터: ${c.name}`,
-    c.combatPower !== undefined ? `전투력: ${c.combatPower.toLocaleString('ko-KR')}` : '',
+    c.combatPower !== undefined ? `전투력: ${formatCombatPower(c.combatPower)}` : '',
     '────────────',
   ];
   const potentialTotals: string[] = [];
@@ -1380,6 +1380,11 @@ function formatEquipment(c: EquipmentCharacter): string {
     lines.push(`에디 총합: ${formatPotentialOptions(additionalPotentialTotals)}`);
   lines.push('────────────', `기준: Nexon Open API ${c.fetchedAt.slice(0, 10)}`);
   return lines.join('\n');
+}
+function formatCombatPower(value: number): string {
+  if (value < 100_000_000) return value.toLocaleString('ko-KR');
+  const billions = value / 100_000_000;
+  return `${Number(billions.toFixed(1))}억`;
 }
 function formatPotentialOptions(options: readonly string[]): string {
   const totals = new Map<string, { value: number; percent: boolean; raw?: string }>();

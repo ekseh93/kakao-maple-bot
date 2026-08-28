@@ -531,7 +531,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       findCharacter: vi.fn(),
       findEquipment: vi.fn().mockResolvedValue({
         name: '장비캐릭터',
-        combatPower: 12345678,
+        combatPower: 250000000,
         items: [
           {
             part: '모자',
@@ -550,7 +550,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply).toContain('캐릭터: 장비캐릭터');
-    expect(result.reply).toContain('전투력: 12,345,678');
+    expect(result.reply).toContain('전투력: 2.5억');
     expect(result.reply).toContain('▸ 모자 - *22 테스트 모자');
     expect(result.reply).not.toContain('⭐ 스타포스 22');
     expect(result.reply).toContain('잠재: INT +21% | 보스 몬스터 공격 시 데미지 +20%');
