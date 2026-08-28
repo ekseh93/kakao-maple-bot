@@ -1357,6 +1357,7 @@ function formatEquipment(c: EquipmentCharacter): string {
   const lines = [
     '[장비 요약]',
     `캐릭터: ${c.name}`,
+    c.combatPower !== undefined ? `전투력: ${c.combatPower.toLocaleString('ko-KR')}` : '',
     `장착 장비: ${c.items.length}개`,
     '────────────',
   ];

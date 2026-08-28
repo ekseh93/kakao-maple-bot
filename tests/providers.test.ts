@@ -555,6 +555,12 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
           }),
           { status: 200 },
         ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ final_stat: [{ stat_name: '전투력', stat_value: '12345678' }] }),
+          { status: 200 },
+        ),
       );
     const result = await createNexonClient('fixture-key', fetcher).findCharacter(
       '테스트',
@@ -717,6 +723,12 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
           }),
           { status: 200 },
         ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ final_stat: [{ stat_name: '전투력', stat_value: '12345678' }] }),
+          { status: 200 },
+        ),
       );
     const result = await createNexonClient('fixture-key', fetcher).findEquipment?.(
       '테스트',
@@ -724,6 +736,7 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     );
     expect(result).toMatchObject({
       name: '테스트',
+      combatPower: 12345678,
       items: [
         {
           part: '모자',

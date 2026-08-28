@@ -77,7 +77,12 @@ export type EquipmentItem = {
   potentialOptions: string[];
   additionalPotentialOptions: string[];
 };
-export type EquipmentCharacter = { name: string; items: EquipmentItem[]; fetchedAt: string };
+export type EquipmentCharacter = {
+  name: string;
+  combatPower?: number;
+  items: EquipmentItem[];
+  fetchedAt: string;
+};
 export type NoticeItem = { title: string; url: string; date?: string };
 export type NoticeList = { notices: NoticeItem[]; fetchedAt: string };
 export type InvenTopPost = { title: string; url?: string; postedAt?: string };
@@ -1016,7 +1021,27 @@ export function createNexonClient(
           additionalPotentialOptions,
         };
       });
-      return { name, items, fetchedAt: body.date ?? new Date().toISOString() };
+      const stat = await fetchWithRetry(
+        fetcher,
+        `${base}/character/stat?ocid=${encodeURIComponent(ocid)}`,
+        { headers: { 'x-nxopen-api-key': apiKey }, signal },
+      );
+      if (!stat.ok) throw new Error(stat.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const statBody = (await stat.json()) as {
+        final_stat?: Array<{ stat_name?: string; stat_value?: string }>;
+      };
+      if (!Array.isArray(statBody.final_stat)) throw new Error('PROVIDER_SCHEMA');
+      const combatPowerValue = statBody.final_stat.find(
+        (entry) => entry.stat_name === '전투력',
+      )?.stat_value;
+      const combatPower =
+        combatPowerValue === undefined ? undefined : finiteNumber(combatPowerValue);
+      return {
+        name,
+        ...(combatPower !== undefined ? { combatPower } : {}),
+        items,
+        fetchedAt: body.date ?? new Date().toISOString(),
+      };
     },
     async findNotice(signal) {
       if (!apiKey) throw new Error('NOT_CONFIGURED');
