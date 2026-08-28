@@ -50,6 +50,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(FORMATTED_HELP).toContain('• !사우나 <레벨>');
     expect(FORMATTED_HELP).toContain('• !시드링');
     expect(FORMATTED_HELP).toContain('• !칠흑깡');
+    expect(FORMATTED_HELP).toContain('  └ 현재 장비·전투력·잠재 합계');
+    expect(FORMATTED_HELP).toContain('  └ 백옥 상자 5회·링/레벨 최종확률');
     expect(FORMATTED_HELP).toContain('• !주유소 <지역>');
     expect(FORMATTED_HELP).toContain('• !일본여행기');
     expect(FORMATTED_HELP).toContain('디시인사이드 일본여행 최신 글 3개');
