@@ -69,7 +69,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     const output = formatHotDealSections([
       {
         source: '퀘이사존',
-        posts: [{ title: '퀘이사존 상품 A' }],
+        posts: [{ title: '퀘이사존 상품 A', postedAt: '08.28' }],
         boardUrl: 'https://quasarzone.com/bbs/qb_saleinfo',
       },
       {
@@ -86,7 +86,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('【퀘이사존】');
     expect(output).toContain('【아카라이브】');
     expect(output).toContain('【에펨코리아】');
-    expect(output).toContain('1. 퀘이사존 상품 A');
+    expect(output).toContain('0. 퀘이사존 상품 A (08.28)');
     expect(output).not.toContain('/views/');
   });
   it('T-001 ignores ordinary chat', () => expect(parseCommand('안녕하세요')).toBeNull());

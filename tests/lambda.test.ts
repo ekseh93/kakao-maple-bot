@@ -1187,7 +1187,7 @@ describe('HTTP boundary', () => {
     expect(result.reply).toContain('【퀘이사존】');
     expect(result.reply).toContain('【아카라이브】');
     expect(result.reply).toContain('【에펨코리아】');
-    expect(result.reply).toContain('1. 퀘이사존 핫딜');
+    expect(result.reply).toContain('0. 퀘이사존 핫딜');
     expect(result.reply).toContain('1. 아카라이브 핫딜');
     expect(result.reply).toContain('1. 에펨코리아 핫딜');
     expect(inven.findHotDeals).toHaveBeenCalledOnce();

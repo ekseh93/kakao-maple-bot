@@ -79,7 +79,7 @@ export type EquipmentItem = {
 export type EquipmentCharacter = { name: string; items: EquipmentItem[]; fetchedAt: string };
 export type NoticeItem = { title: string; url: string; date?: string };
 export type NoticeList = { notices: NoticeItem[]; fetchedAt: string };
-export type InvenTopPost = { title: string; url?: string };
+export type InvenTopPost = { title: string; url?: string; postedAt?: string };
 export type InvenTopPostList = {
   posts: InvenTopPost[];
   boardUrl: string;
@@ -397,11 +397,35 @@ function parseQuasarZoneHotDeals(html: string, boardUrl: string): InvenTopPostLi
     if (!title || posts.some((post) => post.title === title)) continue;
     const path = (match[1] ?? '').match(/\/bbs\/qb_saleinfo\/views\/\d+/)?.[0];
     if (!path) continue;
-    posts.push({ title, url: `https://quasarzone.com${path}` });
-    if (posts.length === 5) break;
+    const postedAt = extractQuasarPostedAt(html, match.index ?? 0);
+    posts.push({ title, url: `https://quasarzone.com${path}`, ...(postedAt ? { postedAt } : {}) });
+    if (posts.length === 6) break;
   }
   if (posts.length === 0) throw new Error('PROVIDER_SCHEMA');
   return { posts, boardUrl, fetchedAt: new Date().toISOString() };
+}
+
+function extractQuasarPostedAt(html: string, anchorIndex: number): string | undefined {
+  const rowStarts = [
+    html.lastIndexOf('<li', anchorIndex),
+    html.lastIndexOf('<tr', anchorIndex),
+  ].filter((index) => index >= 0);
+  const rowStart = rowStarts.length > 0 ? Math.max(...rowStarts) : Math.max(0, anchorIndex - 1200);
+  const rowEnds = ['</li>', '</tr>']
+    .map((closingTag) => html.indexOf(closingTag, anchorIndex))
+    .filter((index) => index >= 0);
+  const rowEnd = rowEnds.length > 0 ? Math.min(...rowEnds) + 5 : anchorIndex + 3000;
+  const row = html.slice(rowStart, rowEnd);
+
+  const dateElement = row.match(
+    /<(?:time|span|div|p|td)\b[^>]*(?:class|data-time|datetime)=["'][^"']*(?:date|time|datetime)[^"']*["'][^>]*>([\s\S]*?)<\/(?:time|span|div|p|td)>/i,
+  );
+  const datetime = row.match(/\bdatetime=["']([^"']+)["']/i)?.[1];
+  const candidate = decodeHtml(dateElement?.[1] ?? datetime ?? '');
+  const match = candidate.match(
+    /\b(?:\d{4}[./-]\d{1,2}[./-]\d{1,2}(?:\s+\d{1,2}:\d{2})?|\d{1,2}[./-]\d{1,2}(?:\s+\d{1,2}:\d{2})?|\d{1,2}:\d{2})\b/,
+  );
+  return match?.[0];
 }
 
 function parseArcaLiveHotDeals(html: string, boardUrl: string): InvenTopPostList {

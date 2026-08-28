@@ -133,22 +133,27 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       .fn()
       .mockResolvedValue(
         new Response(
-          '<a href="/bbs/qb_saleinfo/views/1?_method=GET&sort=num"><h3>[쿠팡] 상품 A</h3></a>' +
-            '<a href="/bbs/qb_saleinfo/views/2">상품 B</a>' +
-            '<a href="/bbs/qb_saleinfo/views/3">상품 C</a>' +
-            '<a href="/bbs/qb_saleinfo/views/4">상품 D</a>' +
-            '<a href="/bbs/qb_saleinfo/views/5">상품 E</a>' +
-            '<a href="/bbs/qb_saleinfo/views/6">상품 F</a>',
+          '<li><a href="/bbs/qb_saleinfo/views/1?_method=GET&sort=num"><h3>[쿠팡] 상품 A</h3></a><span class="date">08.28</span></li>' +
+            '<li><a href="/bbs/qb_saleinfo/views/2">상품 B</a><span class="date">08.28</span></li>' +
+            '<li><a href="/bbs/qb_saleinfo/views/3">상품 C</a><span class="date">08.28</span></li>' +
+            '<li><a href="/bbs/qb_saleinfo/views/4">상품 D</a><span class="date">08.28</span></li>' +
+            '<li><a href="/bbs/qb_saleinfo/views/5">상품 E</a><span class="date">08.28</span></li>' +
+            '<li><a href="/bbs/qb_saleinfo/views/6">상품 F</a><span class="date">08:30</span></li>',
           { status: 200 },
         ),
       );
     const result = await createInvenClient(fetcher).findHotDeals?.(new AbortController().signal);
     expect(result?.posts).toEqual([
-      { title: '[쿠팡] 상품 A', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/1' },
-      { title: '상품 B', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/2' },
-      { title: '상품 C', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/3' },
-      { title: '상품 D', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/4' },
-      { title: '상품 E', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/5' },
+      {
+        title: '[쿠팡] 상품 A',
+        url: 'https://quasarzone.com/bbs/qb_saleinfo/views/1',
+        postedAt: '08.28',
+      },
+      { title: '상품 B', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/2', postedAt: '08.28' },
+      { title: '상품 C', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/3', postedAt: '08.28' },
+      { title: '상품 D', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/4', postedAt: '08.28' },
+      { title: '상품 E', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/5', postedAt: '08.28' },
+      { title: '상품 F', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/6', postedAt: '08:30' },
     ]);
   });
 

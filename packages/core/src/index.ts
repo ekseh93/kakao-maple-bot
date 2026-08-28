@@ -1093,7 +1093,7 @@ function countryName(code: string): string {
 }
 
 export function formatHotDeals(
-  posts: readonly { title: string; url?: string }[],
+  posts: readonly { title: string; url?: string; postedAt?: string }[],
   boardUrl: string,
 ): string {
   if (posts.length === 0) throw new Error('NOT_FOUND');
@@ -1109,7 +1109,7 @@ export function formatHotDeals(
 
 export type HotDealSection = {
   source: string;
-  posts: readonly { title: string; url?: string }[];
+  posts: readonly { title: string; url?: string; postedAt?: string }[];
   boardUrl: string;
   state?: 'fresh' | 'stale' | 'unavailable';
 };
@@ -1123,9 +1123,13 @@ export function formatHotDealSections(sections: readonly HotDealSection[]): stri
     if (section.posts.length === 0) {
       lines.push('현재 조회할 수 없습니다.');
     } else {
-      section.posts.slice(0, 5).forEach((post, index) => {
+      const isQuasarZone = section.source === '퀘이사존';
+      const limit = isQuasarZone ? 6 : 5;
+      const numberingStart = isQuasarZone ? 0 : 1;
+      section.posts.slice(0, limit).forEach((post, index) => {
         const title = post.title.length > 46 ? `${post.title.slice(0, 43)}...` : post.title;
-        lines.push(`${index + 1}. ${title}`);
+        const postedAt = isQuasarZone && post.postedAt ? ` (${post.postedAt})` : '';
+        lines.push(`${numberingStart + index}. ${title}${postedAt}`);
       });
       if (section.state === 'stale') lines.push('※ 최근 정상 조회 결과');
     }
