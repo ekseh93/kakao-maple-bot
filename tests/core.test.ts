@@ -191,8 +191,9 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   });
   it('parses and formats VIP Sauna one-hour rates for levels 200 through 299', () => {
     expect(parseCommand('!사우나 295')).toEqual({ name: 'sauna', args: ['295'] });
-    expect(formatSauna(['295'])).toContain('상승: 0.059% (1시간)');
-    expect(formatSauna(['280'])).toContain('상승: 0.931% (1시간)');
+    expect(formatSauna(['295'])).toContain('1시간: 0.059%');
+    expect(formatSauna(['295'])).toContain('1업: 약 1,695시간');
+    expect(formatSauna(['280'])).toContain('1시간: 0.931%');
     expect(() => formatSauna(['199'])).toThrow('INVALID_USAGE');
     expect(() => formatSauna([])).toThrow('INVALID_USAGE');
   });

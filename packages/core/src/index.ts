@@ -701,7 +701,13 @@ export function formatSauna(args: string[] = []): string {
   const level = Number(args[0]);
   const rate = saunaRates[level - 200];
   if (rate === undefined) throw new Error('INVALID_USAGE');
-  return [`[VIP 사우나 경험치]`, `레벨: ${level}`, `상승: ${rate.toFixed(3)}% (1시간)`].join('\n');
+  const levelUpHours = Math.ceil(100 / rate);
+  return [
+    '[VIP 사우나 경험치]',
+    `레벨: ${level}`,
+    `1시간: ${rate.toFixed(3)}%`,
+    `1업: 약 ${levelUpHours.toLocaleString('ko-KR')}시간`,
+  ].join('\n');
 }
 
 const maxLevelSymbolEffects = [
