@@ -10,8 +10,16 @@
 - 트러블슈팅 문서에 Terraform 경로·SSO 만료·MessengerBot R 레거시 콜백·오픈채팅 room 값·HTTP 200 빈 응답 문제와 해결 방법을 추가했습니다.
 - 공개용 phone relay에서 실제 방 이름과 공유 secret을 제거하고 placeholder로 변경했습니다. 실제 값은 공기계의 비공개 복사본에만 입력합니다.
 - 사용자 제공 채팅 화면은 명령어·봇 응답 영역만 남긴 비식별화 파생 이미지로 변환해 `docs/assets/`에 추가했습니다. 원본과 실제 대화 식별 정보는 커밋하지 않습니다.
-- 과거 Git 커밋에 운영 secret이 포함된 이력을 발견했으므로, 이력 회전·정리는 일반 커밋과 분리된 보안 작업으로 보류했습니다.
+- 과거 Git 커밋에 운영 secret이 포함된 이력을 발견해 운영 secret을 회전하고 이력 정리를 진행했습니다.
 - README 영문판·일문판과 비식별화된 영문·일문 인증 이미지 변형을 추가했습니다.
+
+### secret 회전 및 Git 이력 정리 완료
+
+- 운영 Lambda의 `BOT_SHARED_SECRET`을 새 값으로 회전하고 Terraform apply 결과를 확인했습니다.
+- 새 secret 기준 `/health` HTTP 200과 인증된 `!도움말` reply 응답을 확인했습니다.
+- `codex/aws-tokyo-region`의 도달 가능한 Git 이력을 재작성하고 GitHub 원격 브랜치를 `--force-with-lease`로 갱신했습니다.
+- `main` 브랜치는 변경하지 않았으며, secret 값은 로그·문서·커밋에 기록하지 않았습니다.
+- 공기계 릴레이의 secret 교체·재컴파일은 사용자가 수행해야 하는 마지막 수동 단계입니다.
 
 ### !모니터 출력 축소
 

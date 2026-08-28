@@ -184,17 +184,20 @@ HTTP 200이지만 응답 내용이 없습니다.
 - 인증된 API smoke test에서 `/health` HTTP 200과 `!도움말` reply 필드를 확인했습니다.
 - 사용자는 공기계 MessengerBot R과 카카오톡에서 봇을 사용 중이라고 보고했습니다. 이 문서는 사용자 보고를 Codex의 직접 기기 관측과 구분합니다.
 
-## 공개 전 보안 차단 조건
+## 공개 전 보안 점검 결과
 
 - 현재 파일의 phone relay는 secret·실제 방 이름을 placeholder로만 보관합니다.
-- 실제 공유 secret은 과거 Git 커밋에 포함된 이력이 발견되었습니다. 따라서 새 일반 커밋만으로는 GitHub의 전체 이력이 안전해지지 않습니다.
-- GitHub 공개 전에는 운영 secret 회전 후, 승인된 범위에서 해당 이력을 제거하고 원격 브랜치를 force-push하거나, 기존 원격 저장소를 폐기하고 비밀이 없는 새 저장소로 이전해야 합니다.
-- 이력 재작성은 기존 commit SHA와 협업자 clone을 무효화할 수 있는 파괴적 작업이므로 별도 확인 없이는 실행하지 않습니다.
+- 실제 공유 secret이 과거 Git 커밋에 포함된 사실을 확인했습니다.
+- 운영 secret을 새 값으로 회전하고 도쿄 Lambda 환경변수를 갱신했습니다. plan은 Lambda 1개 인플레이스 변경, 생성·삭제 0개였습니다.
+- `codex/aws-tokyo-region`의 도달 가능한 전체 Git 이력을 placeholder로 재작성하고 `--force-with-lease`로 GitHub 원격 브랜치를 갱신했습니다. `main` 브랜치는 변경하지 않았습니다.
+- 원격 `main`과 작업 브랜치의 도달 가능한 이력에 긴 secret이 없는 것을 재검사했습니다. Git 호스팅 서비스의 내부 백업·캐시까지 즉시 삭제된다고 주장하지 않습니다.
+- 기존 커밋 SHA가 바뀌었으므로 이전 clone은 새 브랜치를 다시 fetch하거나 재복제해야 합니다.
+- 공기계는 새 secret으로 `sharedSecret`을 교체하고 컴파일·런타임을 다시 확인해야 합니다. Codex는 기기 화면을 직접 관측하지 않았습니다.
 
 ## 현재 미수행 항목
 
 - API 키·GitHub secret 등록
 - 공기계 MessengerBot R 컴파일과 카카오톡 E2E의 Codex 독립 재현
-- 운영 secret 회전 및 과거 Git 이력 정리
+- 공기계 MessengerBot R에 회전된 secret 입력 및 재컴파일
 
 위 항목은 승인과 준비가 된 뒤에도 관측한 결과만 기록합니다.

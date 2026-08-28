@@ -208,7 +208,7 @@ pnpm lambda:deploy
 
 `lambda:deploy`는 `aws sts get-caller-identity`로 현재 주체를 확인하고, root 계정이면 기본적으로 중단합니다. `ALLOW_ROOT_DEPLOY=true` 없이는 root 배포를 허용하지 않습니다. API 키와 shared secret은 환경 변수로만 주입하며 저장소에 기록하지 않습니다. S3 버킷은 자동 생성하지 않으므로 비용·보존 정책을 확인한 기존 버킷을 명시해야 합니다.
 
-배포 스크립트와 지금까지의 오류·해결 과정은 [트러블슈팅 기록](docs/13-troubleshooting.md)에 분리해 정리했습니다. 과거 커밋에 노출된 운영 secret 이력은 일반 커밋만으로 제거되지 않으므로, GitHub 공개 전 secret 회전과 승인된 이력 정리가 필요합니다.
+배포 스크립트와 지금까지의 오류·해결 과정은 [트러블슈팅 기록](docs/13-troubleshooting.md)에 분리해 정리했습니다. 운영 secret은 회전했고, `codex/aws-tokyo-region`의 도달 가능한 Git 이력에서도 기존 secret을 제거했습니다. 새 secret은 공기계의 비공개 릴레이 복사본에 입력해야 합니다.
 
 AWS 인프라를 코드로 먼저 검토하고 싶다면 [Terraform 설계](infra/terraform/README.md)를 사용할 수 있습니다. Terraform 구성은 CloudFormation과 같은 Lambda/API Gateway 구조를 선언하지만, Lambda ZIP을 직접 업로드하므로 artifact S3 버킷을 별도로 만들 필요가 없습니다. `terraform plan`까지는 검토 단계이며 `terraform apply`는 별도 승인이 있을 때만 실행합니다.
 
