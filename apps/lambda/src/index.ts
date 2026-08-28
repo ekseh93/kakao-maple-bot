@@ -485,7 +485,32 @@ export async function handleMessage(
       case 'mekaBerry':
         return { reply: formatMekaBerry(parsed.args), requestId, cache: 'bypass' };
       case 'sauna':
-        return { reply: formatSauna(parsed.args), requestId, cache: 'bypass' };
+        if (parsed.args.length !== 1) throw new Error('INVALID_USAGE');
+        if (/^2[0-9]{2}$/.test(parsed.args[0]!))
+          return { reply: formatSauna(parsed.args), requestId, cache: 'bypass' };
+        {
+          const name = validateCharacterName(parsed.args[0]);
+          const cached = experienceCache.get(name);
+          const cacheHit = cached && cached.expiresAt > now;
+          const history = cacheHit
+            ? cached.value
+            : await (deps.nexon ?? createNexonClient(env.NEXON_API_KEY)).findExperienceHistory?.(
+                name,
+                timeoutSignal(),
+              );
+          if (!history || history.snapshots.length === 0) throw new Error('NOT_FOUND');
+          if (!cacheHit) experienceCache.set(name, { value: history, expiresAt: now + 5 * 60_000 });
+          const current = history.snapshots[0]!;
+          return {
+            reply: formatSauna(parsed.args, {
+              name: history.name,
+              level: current.level,
+              experienceRate: current.experienceRate,
+            }),
+            requestId,
+            cache: cacheHit ? 'hit' : 'miss',
+          };
+        }
       case 'mepoEfficiency':
         return { reply: formatMepoEfficiency(parsed.args), requestId, cache: 'bypass' };
       case 'symbolMax':

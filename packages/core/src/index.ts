@@ -78,7 +78,7 @@ const helpRows = {
     ['!앵글 <닉네임>', '앵글러 컴퍼니 1판 경험치·레벨업 예상'],
     ['!마운틴 <닉네임>', '하이마운틴 1판 경험치·레벨업 예상'],
     ['!메카베리 <레벨>', '메카베리/크림슨 경험치'],
-    ['!사우나 <레벨>', '사우나 1시간 경험치 상승률'],
+    ['!사우나 <레벨 또는 닉네임>', '사우나 1시간 상승률·레벨업 예상'],
     ['!메포효율', '메포 대비 BM 경치 효율표'],
     ['!심볼 <지역> 1 11', '심볼 계산'],
     ['!심볼만렙', '어센틱 심볼 만렙 효과'],
@@ -705,17 +705,30 @@ const saunaRates = [
   0.315, 0.29, 0.267, 0.149, 0.137, 0.126, 0.116, 0.106, 0.059, 0.054, 0.05, 0.046, 0.031,
 ] as const;
 
-export function formatSauna(args: string[] = []): string {
-  if (args.length !== 1 || !/^2[0-9]{2}$/.test(args[0]!)) throw new Error('INVALID_USAGE');
-  const level = Number(args[0]);
+export function formatSauna(
+  args: string[] = [],
+  character?: { name: string; level: number; experienceRate: number },
+): string {
+  if (args.length !== 1) throw new Error('INVALID_USAGE');
+  const isLevelInput = /^2[0-9]{2}$/.test(args[0]!);
+  if (!isLevelInput && !character) throw new Error('INVALID_USAGE');
+  const level = isLevelInput ? Number(args[0]) : character!.level;
   const rate = saunaRates[level - 200];
   if (rate === undefined) throw new Error('INVALID_USAGE');
-  const levelUpHours = Math.ceil(100 / rate);
+  const currentRate = character?.experienceRate;
+  if (
+    currentRate !== undefined &&
+    (!Number.isFinite(currentRate) || currentRate < 0 || currentRate >= 100)
+  )
+    throw new Error('INVALID_USAGE');
+  const remainingRate = currentRate === undefined ? 100 : 100 - currentRate;
+  const levelUpHours = Math.ceil(remainingRate / rate);
   return [
     '[VIP 사우나 경험치]',
+    ...(character ? [`캐릭터: ${character.name}`, `현재 경험치: ${currentRate!.toFixed(2)}%`] : []),
     `레벨: ${level}`,
     `1시간: ${rate.toFixed(3)}%`,
-    `1업: 약 ${levelUpHours.toLocaleString('ko-KR')}시간`,
+    `레벨업: 약 ${levelUpHours.toLocaleString('ko-KR')}시간`,
     '[*단, API 최신 기록 시점에 따라 실제 경험치와 약간 차이 날 수 있습니다]',
   ].join('\n');
 }
