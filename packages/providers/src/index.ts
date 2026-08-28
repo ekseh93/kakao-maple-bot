@@ -402,6 +402,35 @@ function parseQuasarZoneHotDeals(html: string, boardUrl: string): InvenTopPostLi
   return { posts, boardUrl, fetchedAt: new Date().toISOString() };
 }
 
+function isQuasarZoneChallengePage(html: string): boolean {
+  return /(?:Enable JavaScript and cookies to continue|퀘이사존에 접속하려면 보안검사를 완료하세요|_cf_chl_opt|turnstile\.render)/i.test(
+    html,
+  );
+}
+
+async function fetchQuasarZoneHotDealsHtml(
+  fetcher: typeof fetch,
+  boardUrl: string,
+  signal: AbortSignal,
+): Promise<string> {
+  const headers = {
+    Accept: 'text/html,application/xhtml+xml',
+    'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
+  };
+  const requestUrls = [boardUrl, `${boardUrl}?sort=num%2C+reply`];
+
+  for (const requestUrl of requestUrls) {
+    const response = await fetchWithRetry(fetcher, requestUrl, { headers, signal });
+    if (response.status === 403 || response.status === 429) continue;
+    if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+    const html = await response.text();
+    if (isQuasarZoneChallengePage(html)) continue;
+    return html;
+  }
+
+  throw new Error('PROVIDER_UNAVAILABLE');
+}
+
 function parseQuasarZonePosts(html: string, boardUrl: string, limit: number): InvenTopPostList {
   const posts: InvenTopPost[] = [];
   const pattern = /<a\b[^>]*href=["'](\/bbs\/qb_tsy\/views\/\d+)["'][^>]*>([\s\S]*?)<\/a>/gi;
@@ -1202,15 +1231,10 @@ export function createInvenClient(fetcher: typeof fetch = fetch): InvenClient {
     },
     async findHotDeals(signal) {
       const boardUrl = 'https://quasarzone.com/bbs/qb_saleinfo';
-      const response = await fetchWithRetry(fetcher, boardUrl, {
-        headers: {
-          Accept: 'text/html,application/xhtml+xml',
-          'User-Agent': 'Mozilla/5.0 (compatible; KakaoMapleBot/1.0)',
-        },
-        signal,
-      });
-      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
-      return parseQuasarZoneHotDeals(await response.text(), boardUrl);
+      return parseQuasarZoneHotDeals(
+        await fetchQuasarZoneHotDealsHtml(fetcher, boardUrl, signal),
+        boardUrl,
+      );
     },
     async findGraphicsCardPosts(signal) {
       const boardUrl = 'https://quasarzone.com/bbs/qb_tsy';

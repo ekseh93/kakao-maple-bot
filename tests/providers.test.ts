@@ -152,6 +152,40 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     ]);
   });
 
+  it('tries the sorted Quasar Zone hot-deal board after a board-level block', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('', { status: 403 }))
+      .mockResolvedValueOnce(
+        new Response('<a href="/bbs/qb_saleinfo/views/9">정렬된 핫딜</a>', { status: 200 }),
+      );
+
+    const result = await createInvenClient(fetcher).findHotDeals?.(new AbortController().signal);
+
+    expect(result?.posts).toEqual([
+      { title: '정렬된 핫딜', url: 'https://quasarzone.com/bbs/qb_saleinfo/views/9' },
+    ]);
+    expect(fetcher).toHaveBeenNthCalledWith(
+      2,
+      'https://quasarzone.com/bbs/qb_saleinfo?sort=num%2C+reply',
+      expect.anything(),
+    );
+    expect(result?.boardUrl).toBe('https://quasarzone.com/bbs/qb_saleinfo');
+  });
+
+  it('treats a Quasar Zone challenge page as unavailable', async () => {
+    const fetcher = vi.fn().mockImplementation(
+      () =>
+        new Response('Enable JavaScript and cookies to continue _cf_chl_opt turnstile.render', {
+          status: 200,
+        }),
+    );
+
+    await expect(
+      createInvenClient(fetcher).findHotDeals?.(new AbortController().signal),
+    ).rejects.toThrow('PROVIDER_UNAVAILABLE');
+  });
+
   it('maps five Quasar Zone graphics-card titles and links', async () => {
     const fetcher = vi
       .fn()
