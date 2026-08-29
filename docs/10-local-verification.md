@@ -62,3 +62,16 @@ AWS Lambda TypeScript 번들은 `pnpm lambda:dry-run`으로 로컬 빌드하고,
 - 공개 `/health`: HTTP 200과 `{"status":"ok"}` 확인
 - 배포 Lambda의 `CodeSha256`과 로컬 `lambda.zip` SHA-256 일치 확인
 - 인증된 `/v1/messages`는 HTTP 200이었으나 smoke 요청의 `reply`가 `null`이어서 실제 배포 API의 `!보스` 문자열은 독립 확인하지 못했습니다. 비밀과 실제 허용 방 이름은 출력하지 않았으며, 공기계의 비공개 허용 방에서 후속 확인이 필요합니다.
+
+## 2026-08-29 `!보스수익` 계산기 배포
+
+- 배포 코드 커밋: `cfca751a5c888bb6f534cff3df35c59565ff249b`
+- 로컬 검증: Vitest 174개, typecheck, lint, build, format check, policy check, phone syntax check, dependency audit, Lambda package 생성 통과
+- AWS 인증: `kakao-maple-bot` SSO의 비-root 역할과 도쿄 리전 확인
+- Terraform 사전 plan: `0 added, 1 changed, 0 destroyed`로 Lambda 코드만 인플레이스 변경
+- Terraform apply: `0 added, 1 changed, 0 destroyed`
+- 배포 후 plan: `No changes`
+- 공개 `/health`: HTTP 200과 `{"status":"ok"}` 확인
+- 배포 Lambda의 `CodeSha256`과 로컬 `lambda.zip` SHA-256 일치 확인
+- 인증된 `/v1/messages`에서 `!보스수익 검마 하드 2인 / 세렌 노말 3인`을 호출해 HTTP 200과 다음 핵심 결과를 확인했습니다: 검은 마법사 2인 `332,500,000 메소`, 세렌 3인 `79,666,666 메소`, 전체 `412,166,666 메소 (4.12억)`.
+- 실제 허용 방 이름과 공유 secret은 출력하거나 문서에 기록하지 않았습니다. 공기계 카카오톡 화면 E2E는 Codex가 직접 관측하지 않았습니다.
