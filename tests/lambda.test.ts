@@ -51,6 +51,15 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(nexon.findCharacter).not.toHaveBeenCalled();
   });
 
+  it('routes the !계산기 alias to the boss profit calculator', async () => {
+    const result = await handleMessage(
+      { ...message('!계산기 세렌 노말 3인'), roomId: 'calculator-room' },
+      { ...env, ALLOWED_ROOMS: 'calculator-room' },
+    );
+    expect(result.reply).toContain('• 세렌 노말 · 3인 [주간]');
+    expect(result.reply).toContain('전체 선택 1회: 79,666,666 메소');
+  });
+
   it('formats today fortune for a birth year', async () => {
     const result = await handleMessage(
       { ...message('!운세 2000-01-01 남자 양력'), roomId: 'fortune-room' },

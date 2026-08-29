@@ -175,8 +175,16 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('월간 1회 합계: 332,500,000 메소 (3.33억)');
     expect(output).toContain('전체 선택 1회: 412,166,666 메소 (4.12억)');
   });
+  it('accepts !계산기 as the short boss profit calculator command', () => {
+    expect(parseCommand('!계산기 검마 하드 2인 / 세렌 노말 3인')).toEqual({
+      name: 'bossProfit',
+      args: ['검마', '하드', '2인', '/', '세렌', '노말', '3인'],
+    });
+    expect(parseCommand('!계산기 목록')).toEqual({ name: 'bossProfit', args: ['목록'] });
+    expect(formatBossProfit()).toContain('!계산기 검마 하드 2인 / 세렌 노말 3인');
+  });
   it('supports boss profit help, lists only priced difficulties, and defaults to solo', () => {
-    expect(formatBossProfit()).toContain('!보스수익 검마 하드 2인 / 세렌 노말 3인');
+    expect(formatBossProfit()).toContain('같은 명령: !보스수익');
     const list = formatBossProfit(['목록']);
     expect(list).toContain('• 검은 마법사: 하드·익스트림');
     expect(list).not.toContain('검은 마법사: 이지');
