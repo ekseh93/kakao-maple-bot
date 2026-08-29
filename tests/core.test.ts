@@ -16,6 +16,7 @@ import {
   formatAnimeRecommendation,
   formatBossRewards,
   formatBossProfit,
+  formatCalculator,
   formatBossRewardSummaries,
   formatBossLevelBoost,
   formatBossForceBoost,
@@ -71,6 +72,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
       FORMATTED_HELP.indexOf('• !상태'),
     );
     expect(FORMATTED_HELP).toContain('• !통계');
+    expect(FORMATTED_HELP).toContain('• !계산기 <수식>');
   });
   it('formats the anonymous total command count', () => {
     expect(formatUsageStats(1234)).toBe('[봇 사용 통계]\n현재까지 명령어 호출: 1,234회');
@@ -175,16 +177,8 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('월간 1회 합계: 332,500,000 메소 (3.33억)');
     expect(output).toContain('전체 선택 1회: 412,166,666 메소 (4.12억)');
   });
-  it('accepts !계산기 as the short boss profit calculator command', () => {
-    expect(parseCommand('!계산기 검마 하드 2인 / 세렌 노말 3인')).toEqual({
-      name: 'bossProfit',
-      args: ['검마', '하드', '2인', '/', '세렌', '노말', '3인'],
-    });
-    expect(parseCommand('!계산기 목록')).toEqual({ name: 'bossProfit', args: ['목록'] });
-    expect(formatBossProfit()).toContain('!계산기 검마 하드 2인 / 세렌 노말 3인');
-  });
   it('supports boss profit help, lists only priced difficulties, and defaults to solo', () => {
-    expect(formatBossProfit()).toContain('같은 명령: !보스수익');
+    expect(formatBossProfit()).toContain('!보스수익 검마 하드 2인 / 세렌 노말 3인');
     const list = formatBossProfit(['목록']);
     expect(list).toContain('• 검은 마법사: 하드·익스트림');
     expect(list).not.toContain('검은 마법사: 이지');
@@ -206,6 +200,42 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     );
     expect(output).toContain('주간 보스: 9/12');
     expect(output.length).toBeLessThanOrEqual(1_000);
+  });
+  it('calculates regular arithmetic with precedence and parentheses', () => {
+    expect(parseCommand('!계산기 12 x 11')).toEqual({
+      name: 'calculator',
+      args: ['12', 'x', '11'],
+    });
+    expect(formatCalculator(['12', 'x', '11'])).toBe('[일반 계산기]\n12 × 11 = 132');
+    expect(formatCalculator(['(12', '+', '3)', 'x', '2'])).toContain('(12 + 3) × 2 = 30');
+    expect(formatCalculator(['0.1', '+', '0.2'])).toContain('0.1 + 0.2 = 0.3');
+    expect(formatCalculator(['-5', '+', '2'])).toContain('-5 + 2 = -3');
+  });
+  it('keeps percent and count units in calculator results', () => {
+    expect(formatCalculator(['12퍼', 'x', '11개'])).toBe('[일반 계산기]\n12퍼 × 11개 = 132퍼');
+    expect(formatCalculator(['12%', '*', '11개'])).toContain('12퍼 × 11개 = 132퍼');
+    expect(formatCalculator(['12개', '+', '3개'])).toContain('12개 + 3개 = 15개');
+    expect(formatCalculator(['132퍼', '/', '11개'])).toContain('132퍼 ÷ 11개 = 12퍼');
+  });
+  it('shows calculator usage and rejects unsafe or invalid expressions', () => {
+    expect(formatCalculator()).toContain('!계산기 12퍼 x 11개');
+    expect(() => formatCalculator(['1', '/', '0'])).toThrow('INVALID_USAGE');
+    expect(() => formatCalculator(['1퍼', '+', '1개'])).toThrow('INVALID_USAGE');
+    expect(() => formatCalculator(['process.exit()'])).toThrow('INVALID_USAGE');
+    expect(() => formatCalculator(['2', 'x'])).toThrow('INVALID_USAGE');
+  });
+  it('calculates meso fees and equal n-way splits', () => {
+    const comma = formatCalculator(['2,530,000,000', '2인', '3%']);
+    expect(comma).toContain('원금: 2,530,000,000 메소 (25.3억)');
+    expect(comma).toContain('수수료: 3% = 75,900,000 메소');
+    expect(comma).toContain('수수료 제외: 2,454,100,000 메소 (24.54억)');
+    expect(comma).toContain('2인 분배: 1,227,050,000 메소 (12.27억)');
+    const eok = formatCalculator(['25.3억', '2명', '5퍼']);
+    expect(eok).toContain('수수료: 5% = 126,500,000 메소');
+    expect(eok).toContain('2인 분배: 1,201,750,000 메소 (12.02억)');
+  });
+  it('shows a remainder when n-way division is not even', () => {
+    expect(formatCalculator(['100', '3인', '3%'])).toContain('분배 잔액: 1 메소');
   });
   it('parses and formats the boss reward summary from Swoo to Velona', () => {
     expect(parseCommand('!보스보상')).toEqual({ name: 'bossRewards', args: [] });

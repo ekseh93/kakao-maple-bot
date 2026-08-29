@@ -21,6 +21,7 @@ import {
   formatMangaRecommendation,
   formatBossRewards,
   formatBossProfit,
+  formatCalculator,
   formatBossRewardSummaries,
   formatBossLevelBoost,
   formatBossForceBoost,
@@ -453,6 +454,8 @@ export async function handleMessage(
         return { reply: formatBossRewards(parsed.args), requestId, cache: 'bypass' };
       case 'bossProfit':
         return { reply: formatBossProfit(parsed.args), requestId, cache: 'bypass' };
+      case 'calculator':
+        return { reply: formatCalculator(parsed.args), requestId, cache: 'bypass' };
       case 'seedRing': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
         if (whiteJadeBossRingBoxCache && whiteJadeBossRingBoxCache.expiresAt > now)

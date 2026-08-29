@@ -29,6 +29,17 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toBeNull();
     expect(nexon.findCharacter).not.toHaveBeenCalled();
   });
+
+  it('routes the meso fee split calculator without provider calls', async () => {
+    const nexon = { findCharacter: vi.fn() };
+    const result = await handleMessage(
+      { ...message('!계산기 25.3억 2명 5퍼'), roomId: 'calculator-room' },
+      { ...env, ALLOWED_ROOMS: 'calculator-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('2인 분배: 1,201,750,000 메소 (12.02억)');
+    expect(nexon.findCharacter).not.toHaveBeenCalled();
+  });
   it('formats a static Japan travel recommendation', async () => {
     const result = await handleMessage(
       { ...message('!일본여행'), roomId: 'japan-travel-room' },
@@ -51,13 +62,15 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(nexon.findCharacter).not.toHaveBeenCalled();
   });
 
-  it('routes the !계산기 alias to the boss profit calculator', async () => {
+  it('routes the safe general calculator without provider calls', async () => {
+    const nexon = { findCharacter: vi.fn() };
     const result = await handleMessage(
-      { ...message('!계산기 세렌 노말 3인'), roomId: 'calculator-room' },
+      { ...message('!계산기 12퍼 x 11개'), roomId: 'calculator-room' },
       { ...env, ALLOWED_ROOMS: 'calculator-room' },
+      { nexon },
     );
-    expect(result.reply).toContain('• 세렌 노말 · 3인 [주간]');
-    expect(result.reply).toContain('전체 선택 1회: 79,666,666 메소');
+    expect(result.reply).toBe('[일반 계산기]\n12퍼 × 11개 = 132퍼');
+    expect(nexon.findCharacter).not.toHaveBeenCalled();
   });
 
   it('formats today fortune for a birth year', async () => {

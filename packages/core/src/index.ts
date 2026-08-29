@@ -1,4 +1,5 @@
 import { calculateDailyFortune } from './fortune-mcp-adapter.js';
+export { formatCalculator } from './calculator.js';
 export { formatExchangeRates, type ExchangeRateView } from './exchange.js';
 export {
   formatDaisoProducts,
@@ -20,6 +21,7 @@ export type CommandName =
   | 'japanTravel'
   | 'boss'
   | 'bossProfit'
+  | 'calculator'
   | 'bossRewards'
   | 'bossLevelBoost'
   | 'bossForceBoost'
@@ -84,7 +86,8 @@ const helpRows = {
     ['!심볼 <지역> 1 11', '심볼 계산'],
     ['!심볼만렙', '어센틱 심볼 만렙 효과'],
     ['!보스', '보스 결정 가격표'],
-    ['!보스수익 / !계산기', '결정 개인 수익 계산'],
+    ['!보스수익 <보스> <난이도>', '결정 개인 수익 계산'],
+    ['!계산기 <수식>', '일반 사칙연산·퍼·개 계산'],
     ['!시드링', '백옥 상자 5회·링/레벨 최종확률'],
     ['!칠흑깡', '가중치 적용 칠흑 상자 1회'],
     ['!보스보상', '스우~벨로나 보상표'],
@@ -167,7 +170,7 @@ const aliases: Record<string, CommandName> = {
   심볼계산: 'symbol',
   보스: 'boss',
   보스수익: 'bossProfit',
-  계산기: 'bossProfit',
+  계산기: 'calculator',
   보스보상: 'bossRewards',
   보스렙뻥: 'bossLevelBoost',
   보스포뻥: 'bossForceBoost',
@@ -980,10 +983,9 @@ function findBoss(value: string): BossRewardRow | undefined {
 function formatBossProfitUsage(): string {
   return [
     '[보스 결정 수익 사용법]',
-    '!계산기 검마 하드 2인 / 세렌 노말 3인',
-    '같은 명령: !보스수익',
+    '!보스수익 검마 하드 2인 / 세렌 노말 3인',
     '인원을 생략하면 1인으로 계산합니다.',
-    '지원 목록: !계산기 목록',
+    '지원 목록: !보스수익 목록',
   ].join('\n');
 }
 

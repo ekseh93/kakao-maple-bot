@@ -29,9 +29,11 @@ The phone script is intentionally thin. Command rules, calculations, caching, pr
 
 ### MapleStory
 
-`!정보 <nickname>`, `!무릉 <nickname>`, `!유니온 <nickname>`, `!유챔 <nickname>`, `!장비 <nickname>`, `!경험치 <nickname>`, `!심볼 <area> <start> <target>`, `!심볼만렙`, `!보스`, `!계산기 <boss> <difficulty> [party size]`, `!보스수익`, `!보스보상`, `!보스렙뻥`, `!보스포뻥`, `!메카베리 <level>`, `!메포효율`, `!공지`, `!이벤트`, `!썬데이`, `!선데이`, `!인벤`, `!마빡도로시`, and `!디코`.
+`!정보 <nickname>`, `!무릉 <nickname>`, `!유니온 <nickname>`, `!유챔 <nickname>`, `!장비 <nickname>`, `!경험치 <nickname>`, `!심볼 <area> <start> <target>`, `!심볼만렙`, `!보스`, `!보스수익 <boss> <difficulty> [party size]`, `!계산기 <expression>`, `!보스보상`, `!보스렙뻥`, `!보스포뻥`, `!메카베리 <level>`, `!메포효율`, `!공지`, `!이벤트`, `!썬데이`, `!선데이`, `!인벤`, `!마빡도로시`, and `!디코`.
 
-`!계산기 검마 하드 2인 / 세렌 노말 3인` calculates each player's crystal income by flooring `price / party size`. `!보스수익` is the equivalent alias. Both use versioned static data and make no runtime request to the reference page.
+`!보스수익 검마 하드 2인 / 세렌 노말 3인` calculates each player's crystal income by flooring `price / party size`. It uses versioned static data and makes no runtime request to the reference page.
+
+`!계산기` is a separate safe arithmetic parser. For example, `!계산기 12 x 11` returns `132`, while `!계산기 12퍼 x 11개` returns `132퍼`. It supports decimals, parentheses, four basic operators, percent points, and count units without evaluating code. Meso fee splitting accepts `!계산기 2,530,000,000 2인 3%` and `!계산기 25.3억 2명 5퍼`.
 
 Maple character data uses the Nexon Open API. Maple.GG and Maplescouter are link-only destinations; the bot does not crawl or automatically access them.
 
