@@ -15,6 +15,7 @@ import {
   formatNetflixRecommendation,
   formatAnimeRecommendation,
   formatBossRewards,
+  formatBossProfit,
   formatBossRewardSummaries,
   formatBossLevelBoost,
   formatBossForceBoost,
@@ -158,6 +159,45 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).not.toContain('8,740,000,000');
     expect(output).toContain('출처: https://matsu1207.tistory.com/757');
     expect(() => formatBossRewards(['닉네임'])).toThrow('INVALID_USAGE');
+  });
+  it('calculates personal boss crystal profit with aliases, cycles, and floor division', () => {
+    expect(parseCommand('!보스수익 검마 하드 2인 / 세렌 노말 3인')).toEqual({
+      name: 'bossProfit',
+      args: ['검마', '하드', '2인', '/', '세렌', '노말', '3인'],
+    });
+    const output = formatBossProfit(['검마', '하드', '2인', '/', '세렌', '노말', '3인']);
+    expect(output).toContain('[보스 결정 수익]');
+    expect(output).toContain('• 검은 마법사 하드 · 2인 [월간]');
+    expect(output).toContain('6.65억 ÷ 2 = 332,500,000 메소 (3.33억)');
+    expect(output).toContain('• 세렌 노말 · 3인 [주간]');
+    expect(output).toContain('2.39억 ÷ 3 = 79,666,666 메소');
+    expect(output).toContain('주간 보스: 1/12');
+    expect(output).toContain('월간 1회 합계: 332,500,000 메소 (3.33억)');
+    expect(output).toContain('전체 선택 1회: 412,166,666 메소 (4.12억)');
+  });
+  it('supports boss profit help, lists only priced difficulties, and defaults to solo', () => {
+    expect(formatBossProfit()).toContain('!보스수익 검마 하드 2인 / 세렌 노말 3인');
+    const list = formatBossProfit(['목록']);
+    expect(list).toContain('• 검은 마법사: 하드·익스트림');
+    expect(list).not.toContain('검은 마법사: 이지');
+    expect(formatBossProfit(['선택받은', '세렌', '하드'])).toContain('• 세렌 하드 · 1인 [주간]');
+  });
+  it('rejects invalid boss profit difficulty, party size, and duplicate bosses', () => {
+    expect(() => formatBossProfit(['세렌', '이지', '1인'])).toThrow('INVALID_USAGE');
+    expect(() => formatBossProfit(['림보', '하드', '4인'])).toThrow('INVALID_USAGE');
+    expect(() => formatBossProfit(['검마', '하드', '/', '검은', '마법사', '익스트림'])).toThrow(
+      'INVALID_USAGE',
+    );
+    expect(() => formatBossProfit(['세렌', '노말', '/'])).toThrow('INVALID_USAGE');
+  });
+  it('keeps the full supported boss profit selection within the reply limit', () => {
+    const output = formatBossProfit(
+      '검마 하드 / 세렌 노말 / 칼로스 이지 / 카링 이지 / 림보 노말 / 발드릭스 노말 / 대적자 이지 / 흉성 노말 / 유피테르 노말 / 벨로나 이지'.split(
+        ' ',
+      ),
+    );
+    expect(output).toContain('주간 보스: 9/12');
+    expect(output.length).toBeLessThanOrEqual(1_000);
   });
   it('parses and formats the boss reward summary from Swoo to Velona', () => {
     expect(parseCommand('!보스보상')).toEqual({ name: 'bossRewards', args: [] });

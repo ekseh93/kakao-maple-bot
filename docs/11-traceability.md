@@ -16,6 +16,7 @@
 | FR-013        | Lambda/provider cache                  | cache contract tests      | 로컬 통과 |
 | FR-014        | Lambda `!상태`                         | admin authorization test  | 로컬 통과 |
 | FR-015        | 방별 최소 허용 목록                    | configuration boundary    | 후속 후보 |
+| FR-016        | `packages/core` boss profit calculator | BP-001~BP-008             | 로컬 통과 |
 
 ## 비기능 요구사항
 

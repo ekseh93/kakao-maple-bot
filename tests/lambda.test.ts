@@ -39,6 +39,18 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('도시:');
   });
 
+  it('routes the static boss profit calculator without provider calls', async () => {
+    const nexon = { findCharacter: vi.fn() };
+    const result = await handleMessage(
+      { ...message('!보스수익 검마 하드 2인 / 세렌 노말 3인'), roomId: 'boss-profit-room' },
+      { ...env, ALLOWED_ROOMS: 'boss-profit-room' },
+      { nexon },
+    );
+    expect(result.reply).toContain('[보스 결정 수익]');
+    expect(result.reply).toContain('전체 선택 1회: 412,166,666 메소 (4.12억)');
+    expect(nexon.findCharacter).not.toHaveBeenCalled();
+  });
+
   it('formats today fortune for a birth year', async () => {
     const result = await handleMessage(
       { ...message('!운세 2000-01-01 남자 양력'), roomId: 'fortune-room' },

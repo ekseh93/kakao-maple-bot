@@ -25,6 +25,18 @@
 
 ## 오류와 해결
 
+### 0. Codex 터미널에서 `node`를 찾지 못함
+
+증상:
+
+```text
+'node' is not recognized as an internal or external command
+```
+
+원인: 데스크톱 작업 터미널의 PATH에 저장소가 사용하는 번들 Node.js 실행 경로가 포함되지 않았습니다.
+
+해결: Codex 작업공간 의존성 정보를 읽어 제공된 Node.js와 pnpm 디렉터리를 현재 PowerShell 세션의 PATH 앞에 추가한 뒤 동일한 테스트·타입 검사를 다시 실행했습니다. 시스템 전역 Node.js 설치나 저장소 설정은 변경하지 않았습니다.
+
 ### 1. `sam` 용어를 찾을 수 없음
 
 증상:

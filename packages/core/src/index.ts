@@ -19,6 +19,7 @@ export type CommandName =
   | 'food'
   | 'japanTravel'
   | 'boss'
+  | 'bossProfit'
   | 'bossRewards'
   | 'bossLevelBoost'
   | 'bossForceBoost'
@@ -83,6 +84,7 @@ const helpRows = {
     ['!심볼 <지역> 1 11', '심볼 계산'],
     ['!심볼만렙', '어센틱 심볼 만렙 효과'],
     ['!보스', '보스 결정 가격표'],
+    ['!보스수익 <보스> <난이도> [인원]', '결정 개인 수익 계산'],
     ['!시드링', '백옥 상자 5회·링/레벨 최종확률'],
     ['!칠흑깡', '가중치 적용 칠흑 상자 1회'],
     ['!보스보상', '스우~벨로나 보상표'],
@@ -164,6 +166,7 @@ const aliases: Record<string, CommandName> = {
   심볼: 'symbol',
   심볼계산: 'symbol',
   보스: 'boss',
+  보스수익: 'bossProfit',
   보스보상: 'bossRewards',
   보스렙뻥: 'bossLevelBoost',
   보스포뻥: 'bossForceBoost',
@@ -615,45 +618,114 @@ const japanTravelPlaces = [
   { prefecture: '오키나와현', city: '나하', highlight: '해변·섬 풍경·류큐 문화' },
 ] as const;
 
+type BossDifficulty = 'easy' | 'normal' | 'hard' | 'extreme';
+type BossCycle = 'weekly' | 'monthly';
+type BossRewardVariant = {
+  priceMeso: number;
+  cycle: BossCycle;
+  maxParty: number;
+};
 type BossRewardRow = {
   name: string;
-  easy: number | null;
-  normal: number | null;
-  hard: number | null;
-  extreme: number | null;
+  aliases: readonly string[];
+  rewards: Partial<Record<BossDifficulty, BossRewardVariant>>;
 };
 
-// Snapshot of the four difficulty columns in the referenced decision-price table.
-// A dash in the source is represented as null and displayed as '-'.
+function reward(priceMeso: number, cycle: BossCycle, maxParty: number): BossRewardVariant {
+  return { priceMeso, cycle, maxParty };
+}
+
+// Independently maintained snapshot of the referenced decision-price facts.
+// Missing difficulties are omitted instead of represented by placeholder values.
 const grandisBossRewards: BossRewardRow[] = [
-  { name: '검은 마법사', easy: null, normal: null, hard: 665_000_000, extreme: 8_740_000_000 },
-  { name: '세렌', easy: null, normal: 239_000_000, hard: 356_000_000, extreme: 2_835_000_000 },
+  {
+    name: '검은 마법사',
+    aliases: ['검마', '검은마법사'],
+    rewards: {
+      hard: reward(665_000_000, 'monthly', 6),
+      extreme: reward(8_740_000_000, 'monthly', 6),
+    },
+  },
+  {
+    name: '세렌',
+    aliases: ['선택받은세렌'],
+    rewards: {
+      normal: reward(239_000_000, 'weekly', 6),
+      hard: reward(356_000_000, 'weekly', 6),
+      extreme: reward(2_835_000_000, 'weekly', 6),
+    },
+  },
   {
     name: '칼로스',
-    easy: 280_000_000,
-    normal: 505_000_000,
-    hard: 1_273_000_000,
-    extreme: 4_104_000_000,
+    aliases: ['감시자칼로스'],
+    rewards: {
+      easy: reward(280_000_000, 'weekly', 6),
+      normal: reward(505_000_000, 'weekly', 6),
+      hard: reward(1_273_000_000, 'weekly', 6),
+      extreme: reward(4_104_000_000, 'weekly', 6),
+    },
   },
   {
     name: '카링',
-    easy: 377_000_000,
-    normal: 678_000_000,
-    hard: 1_739_000_000,
-    extreme: 5_387_000_000,
+    aliases: [],
+    rewards: {
+      easy: reward(377_000_000, 'weekly', 6),
+      normal: reward(678_000_000, 'weekly', 6),
+      hard: reward(1_739_000_000, 'weekly', 6),
+      extreme: reward(5_387_000_000, 'weekly', 6),
+    },
   },
-  { name: '림보', easy: null, normal: 1_026_000_000, hard: 2_385_000_000, extreme: null },
-  { name: '발드릭스', easy: null, normal: 1_368_000_000, hard: 3_078_000_000, extreme: null },
+  {
+    name: '림보',
+    aliases: [],
+    rewards: {
+      normal: reward(1_026_000_000, 'weekly', 3),
+      hard: reward(2_385_000_000, 'weekly', 3),
+    },
+  },
+  {
+    name: '발드릭스',
+    aliases: [],
+    rewards: {
+      normal: reward(1_368_000_000, 'weekly', 3),
+      hard: reward(3_078_000_000, 'weekly', 3),
+    },
+  },
   {
     name: '최초의 대적자',
-    easy: 308_000_000,
-    normal: 560_000_000,
-    hard: 1_435_000_000,
-    extreme: 4_712_000_000,
+    aliases: ['최초의대적자', '대적자'],
+    rewards: {
+      easy: reward(308_000_000, 'weekly', 3),
+      normal: reward(560_000_000, 'weekly', 3),
+      hard: reward(1_435_000_000, 'weekly', 3),
+      extreme: reward(4_712_000_000, 'weekly', 3),
+    },
   },
-  { name: '찬란한 흉성', easy: null, normal: 625_000_000, hard: 2_678_000_000, extreme: null },
-  { name: '유피테르', easy: null, normal: 1_615_000_000, hard: 4_845_000_000, extreme: null },
-  { name: '벨로나', easy: 440_000_000, normal: 850_000_000, hard: 2_950_000_000, extreme: null },
+  {
+    name: '찬란한 흉성',
+    aliases: ['찬란한흉성', '흉성'],
+    rewards: {
+      normal: reward(625_000_000, 'weekly', 3),
+      hard: reward(2_678_000_000, 'weekly', 3),
+    },
+  },
+  {
+    name: '유피테르',
+    aliases: [],
+    rewards: {
+      normal: reward(1_615_000_000, 'weekly', 3),
+      hard: reward(4_845_000_000, 'weekly', 3),
+    },
+  },
+  {
+    name: '벨로나',
+    aliases: [],
+    rewards: {
+      easy: reward(440_000_000, 'weekly', 3),
+      normal: reward(850_000_000, 'weekly', 3),
+      hard: reward(2_950_000_000, 'weekly', 3),
+    },
+  },
 ];
 
 type MekaBerryRate = { level: number; meka: number; crimson: number };
@@ -873,6 +945,137 @@ function formatMeso(value: number): string {
   return `${(value / 100_000_000).toFixed(2).replace(/\.?0+$/, '')}억`;
 }
 
+function formatProfitMeso(value: number): string {
+  const exact = `${value.toLocaleString('ko-KR')} 메소`;
+  return value >= 100_000_000 ? `${exact} (${formatMeso(value)})` : exact;
+}
+
+const bossDifficultyRows = [
+  ['easy', '이지'],
+  ['normal', '노말'],
+  ['hard', '하드'],
+  ['extreme', '익스트림'],
+] as const satisfies readonly (readonly [BossDifficulty, string])[];
+
+const bossDifficultyAliases: Record<string, BossDifficulty> = {
+  이지: 'easy',
+  노말: 'normal',
+  하드: 'hard',
+  익스트림: 'extreme',
+  익스: 'extreme',
+};
+
+function normalizeBossName(value: string): string {
+  return value.replace(/\s+/g, '').toLocaleLowerCase();
+}
+
+function findBoss(value: string): BossRewardRow | undefined {
+  const normalized = normalizeBossName(value);
+  return grandisBossRewards.find((boss) =>
+    [boss.name, ...boss.aliases].some((name) => normalizeBossName(name) === normalized),
+  );
+}
+
+function formatBossProfitUsage(): string {
+  return [
+    '[보스 결정 수익 사용법]',
+    '!보스수익 검마 하드 2인 / 세렌 노말 3인',
+    '인원을 생략하면 1인으로 계산합니다.',
+    '지원 목록: !보스수익 목록',
+  ].join('\n');
+}
+
+function formatBossProfitList(): string {
+  return [
+    '[보스수익 지원 목록]',
+    ...grandisBossRewards.map((boss) => {
+      const difficulties = bossDifficultyRows
+        .filter(([key]) => boss.rewards[key] !== undefined)
+        .map(([, label]) => label)
+        .join('·');
+      return `• ${boss.name}: ${difficulties}`;
+    }),
+  ].join('\n');
+}
+
+type BossProfitSelection = {
+  boss: BossRewardRow;
+  difficulty: BossDifficulty;
+  difficultyLabel: string;
+  partySize: number;
+  reward: BossRewardVariant;
+};
+
+function parseBossProfitSelection(value: string): BossProfitSelection {
+  const tokens = value.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length < 2) throw new Error('INVALID_USAGE');
+
+  let partySize = 1;
+  const partyToken = tokens.at(-1) ?? '';
+  if (/^(?:솔로|솔플)$/.test(partyToken)) {
+    tokens.pop();
+  } else {
+    const partyMatch = partyToken.match(/^([1-6])(?:인)?$/);
+    if (partyMatch) {
+      partySize = Number(partyMatch[1]);
+      tokens.pop();
+    }
+  }
+
+  const difficultyToken = tokens.pop();
+  const difficulty = difficultyToken ? bossDifficultyAliases[difficultyToken] : undefined;
+  const boss = findBoss(tokens.join(' '));
+  if (!difficulty || !boss) throw new Error('INVALID_USAGE');
+  const rewardVariant = boss.rewards[difficulty];
+  if (!rewardVariant || partySize > rewardVariant.maxParty) throw new Error('INVALID_USAGE');
+  const difficultyLabel = bossDifficultyRows.find(([key]) => key === difficulty)?.[1];
+  if (!difficultyLabel) throw new Error('INVALID_USAGE');
+  return { boss, difficulty, difficultyLabel, partySize, reward: rewardVariant };
+}
+
+export function formatBossProfit(args: string[] = []): string {
+  if (args.length === 0 || (args.length === 1 && args[0] === '도움말')) {
+    return formatBossProfitUsage();
+  }
+  if (args.length === 1 && args[0] === '목록') return formatBossProfitList();
+
+  const entries = args
+    .join(' ')
+    .split('/')
+    .map((entry) => entry.trim());
+  if (entries.length === 0 || entries.length > 12 || entries.some((entry) => !entry)) {
+    throw new Error('INVALID_USAGE');
+  }
+  const selections = entries.map(parseBossProfitSelection);
+  const bossIds = selections.map(({ boss }) => normalizeBossName(boss.name));
+  if (new Set(bossIds).size !== bossIds.length) throw new Error('INVALID_USAGE');
+
+  const totals: Record<BossCycle, number> = { weekly: 0, monthly: 0 };
+  const detailLines = selections.flatMap((selection) => {
+    const personalReward = Math.floor(selection.reward.priceMeso / selection.partySize);
+    totals[selection.reward.cycle] += personalReward;
+    const cycleLabel = selection.reward.cycle === 'weekly' ? '주간' : '월간';
+    return [
+      `• ${selection.boss.name} ${selection.difficultyLabel} · ${selection.partySize}인 [${cycleLabel}]`,
+      `  └ ${formatMeso(selection.reward.priceMeso)} ÷ ${selection.partySize} = ${formatProfitMeso(personalReward)}`,
+    ];
+  });
+  const weeklyCount = selections.filter(({ reward: value }) => value.cycle === 'weekly').length;
+  const grandTotal = totals.weekly + totals.monthly;
+  const output = [
+    '[보스 결정 수익]',
+    ...detailLines,
+    '',
+    `주간 보스: ${weeklyCount}/12`,
+    ...(totals.weekly > 0 ? [`주간 1회 합계: ${formatProfitMeso(totals.weekly)}`] : []),
+    ...(totals.monthly > 0 ? [`월간 1회 합계: ${formatProfitMeso(totals.monthly)}`] : []),
+    `전체 선택 1회: ${formatProfitMeso(grandTotal)}`,
+    '데이터 기준: 2026-08-13',
+  ].join('\n');
+  if (output.length > 1_000) throw new Error('INVALID_USAGE');
+  return output;
+}
+
 export function formatBossRewards(args: string[] = []): string {
   if (args.length > 0) throw new Error('INVALID_USAGE');
   const lines = [
@@ -881,16 +1084,10 @@ export function formatBossRewards(args: string[] = []): string {
     '────────────',
     ...grandisBossRewards.flatMap((boss) => [
       `• ${boss.name}`,
-      ...(
-        [
-          ['이지', boss.easy],
-          ['노말', boss.normal],
-          ['하드', boss.hard],
-          ['익스트림', boss.extreme],
-        ] as const
-      ).flatMap(([difficulty, value]) =>
-        value === null ? [] : [`  └ ${difficulty}: ${formatMeso(value)}`],
-      ),
+      ...bossDifficultyRows.flatMap(([key, difficulty]) => {
+        const variant = boss.rewards[key];
+        return variant ? [`  └ ${difficulty}: ${formatMeso(variant.priceMeso)}`] : [];
+      }),
       '',
     ]),
     '출처: https://matsu1207.tistory.com/757',
