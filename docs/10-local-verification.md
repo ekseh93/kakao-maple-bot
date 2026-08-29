@@ -50,3 +50,15 @@ AWS Lambda TypeScript 번들은 `pnpm lambda:dry-run`으로 로컬 빌드하고,
 - 24시간 soak test, 재부팅·네트워크 단절 복구
 
 위 항목은 별도 사용자 승인과 계정·기기 준비 후에만 수행합니다.
+
+## 2026-08-29 `!보스` 출력 배포
+
+- 배포 코드 커밋: `d3c9572fcccf4a72453601b7c4dcc785a6ea2890`
+- 로컬 검증: Vitest 169개, typecheck, lint, format check, policy check, phone syntax check, dependency audit, Lambda package 생성 통과
+- AWS 인증: `kakao-maple-bot` SSO의 비-root 역할 사용
+- Terraform 사전 plan: `0 added, 1 changed, 0 destroyed`로 Lambda 코드만 인플레이스 변경
+- Terraform apply: `0 added, 1 changed, 0 destroyed`
+- 배포 후 plan: `No changes`
+- 공개 `/health`: HTTP 200과 `{"status":"ok"}` 확인
+- 배포 Lambda의 `CodeSha256`과 로컬 `lambda.zip` SHA-256 일치 확인
+- 인증된 `/v1/messages`는 HTTP 200이었으나 smoke 요청의 `reply`가 `null`이어서 실제 배포 API의 `!보스` 문자열은 독립 확인하지 못했습니다. 비밀과 실제 허용 방 이름은 출력하지 않았으며, 공기계의 비공개 허용 방에서 후속 확인이 필요합니다.
