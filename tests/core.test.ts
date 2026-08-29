@@ -150,7 +150,12 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).toContain('이지');
     expect(output).toContain('익스트림');
     expect(output).toContain('검은 마법사');
-    expect(output).toContain('8,740,000,000');
+    expect(output).toContain('단위: 억 메소');
+    expect(output).toContain('• 검은 마법사\n  └ 하드: 6.65억\n  └ 익스트림: 87.4억');
+    expect(output).toContain('• 세렌\n  └ 노말: 2.39억\n  └ 하드: 3.56억\n  └ 익스트림: 28.35억');
+    expect(output).not.toContain('└ 이지: -');
+    expect(output).not.toContain('└ 노말: -');
+    expect(output).not.toContain('8,740,000,000');
     expect(output).toContain('출처: https://matsu1207.tistory.com/757');
     expect(() => formatBossRewards(['닉네임'])).toThrow('INVALID_USAGE');
   });

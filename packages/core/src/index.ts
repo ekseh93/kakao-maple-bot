@@ -869,25 +869,30 @@ export function formatMepoEfficiency(args: string[] = []): string {
   ].join('\n');
 }
 
-function formatMeso(value: number | null): string {
-  return value === null ? '-' : value.toLocaleString('ko-KR');
+function formatMeso(value: number): string {
+  return `${(value / 100_000_000).toFixed(2).replace(/\.?0+$/, '')}억`;
 }
 
 export function formatBossRewards(args: string[] = []): string {
   if (args.length > 0) throw new Error('INVALID_USAGE');
   const lines = [
     '[그란디스·검은 마법사 보스 결정 가격]',
-    '단위: 메소',
+    '단위: 억 메소',
     '────────────',
     ...grandisBossRewards.flatMap((boss) => [
       `• ${boss.name}`,
-      `  └ 이지: ${formatMeso(boss.easy)}`,
-      `  └ 노말: ${formatMeso(boss.normal)}`,
-      `  └ 하드: ${formatMeso(boss.hard)}`,
-      `  └ 익스트림: ${formatMeso(boss.extreme)}`,
+      ...(
+        [
+          ['이지', boss.easy],
+          ['노말', boss.normal],
+          ['하드', boss.hard],
+          ['익스트림', boss.extreme],
+        ] as const
+      ).flatMap(([difficulty, value]) =>
+        value === null ? [] : [`  └ ${difficulty}: ${formatMeso(value)}`],
+      ),
       '',
     ]),
-    '※ -는 원문 표에 해당 난이도 값이 없는 항목입니다.',
     '출처: https://matsu1207.tistory.com/757',
   ];
   return lines.join('\n');
