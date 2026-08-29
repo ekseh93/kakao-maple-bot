@@ -72,7 +72,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
       FORMATTED_HELP.indexOf('• !상태'),
     );
     expect(FORMATTED_HELP).toContain('• !통계');
-    expect(FORMATTED_HELP).toContain('• !계산기 <수식>');
+    expect(FORMATTED_HELP).toContain('• !계산기 <수식> / <가격> <인원> <3%·5%>');
   });
   it('formats the anonymous total command count', () => {
     expect(formatUsageStats(1234)).toBe('[봇 사용 통계]\n현재까지 명령어 호출: 1,234회');
