@@ -1,72 +1,147 @@
 # Kakao Maple Bot
 
-[한국어 README](README.md) · [English README](README.en.md)
+> 予備のAndroid端末上のKakaoTalkとAWSサーバーレスバックエンドを接続し、グループチャットで繰り返し発生する情報検索と計算を自動化した個人プロジェクトです。
 
-MessengerBot Rを実行する予備のAndroid端末をKakaoTalkの入口として利用する、個人用・非商用のポートフォリオ向けチャットボットです。MapleStoryの情報、シンボル計算、確率ベースのミニゲーム、各種おすすめ、天気、為替、ガソリン価格、読み取り専用の株価照会を提供します。
+[한국어](README.md) · [English](README.en.md)
 
-> 状態: Phase 0〜6の実装、自動検証、東京リージョンのAWSデプロイが完了しています。予備端末での運用はユーザーが確認した内容であり、CodexがAndroid端末のE2Eを独自に観測したものではありません。
+`TypeScript` · `AWS Lambda` · `API Gateway` · `DynamoDB` · `Terraform` · `Nexon Open API` · `Vitest`
+
+## プロジェクト概要
+
+| 項目       | 内容                                                                             |
+| ---------- | -------------------------------------------------------------------------------- |
+| 開発期間   | 2026年8月〜現在                                                                  |
+| 形態       | 個人開発・運用、非商用ポートフォリオ                                             |
+| 担当範囲   | 要件定義、アーキテクチャ設計、TypeScript実装、IaC、テスト、AWSデプロイ、運用改善 |
+| 利用環境   | 知人が参加する限定的なKakaoTalkグループチャット                                  |
+| 現在の状態 | 東京リージョンへデプロイ済み、バックエンドのsmoke test完了                       |
+| 品質確認   | 自動テスト181件、strict typecheck、lint、ポリシー検査、端末スクリプト検査        |
+
+単に機能を増やすのではなく、**非公式メッセンジャー連携のリスクを分離し、検証可能な形で実運用すること**を重視しました。開発にはAI支援ツールも利用していますが、変更内容は公式ドキュメント、コード確認、自動テスト、デプロイ後のsmoke testで検証しています。
+
+## 解決したかった課題
+
+MapleStoryでは、キャラクター情報、シンボル強化費用、ボス収益、イベント情報を確認するために複数のWebサイトや計算機を行き来する必要があります。また、グループチャットではメニュー選びや簡単なゲームをその場で完結させたい場面があります。
+
+- KakaoTalk上の短いコマンドだけで検索・計算結果を返します。
+- Android端末はメッセージ中継に限定し、業務ロジックとsecretはAWS側で管理します。
+- MapleStoryデータはNexon Open API、計算はバージョン管理した独自ロジックを使用します。
+- 外部サービスごとにtimeout、cache、retry、stale fallbackを分離します。
+- メッセージ本文、ルーム名、送信者名を保存せず、匿名の累積件数だけを管理します。
 
 ## アーキテクチャ
 
 ```text
 KakaoTalk
-    ↕ Android通知・返信
-予備端末上のMessengerBot R v40
-    ↕ HTTPS + shared secret
-API Gateway HTTP API
+    ↕ Android notification / reply
+MessengerBot R v40 on a spare phone
+    ↕ HTTPS + Bearer secret
+Amazon API Gateway HTTP API
     ↓
-AWS Lambda
-    ├─ コマンドルーター
-    ├─ Mapleアダプター ─ Nexon Open API
-    ├─ 株価アダプター ─ Yahoo Finance / Tiingo
-    ├─ 計算・乱数・メニュー
-    └─ キャッシュ・タイムアウト・安全な監査ログ
+AWS Lambda (Node.js 22 / TypeScript)
+    ├─ 認証・許可ルーム・rate limit・重複イベント防止
+    ├─ command router / formatter
+    ├─ Nexon Open API adapter
+    ├─ 読み取り専用provider adapters
+    ├─ calculator / static data / random features
+    └─ 匿名カウンター ─ DynamoDB (Tokyo)
 ```
 
-端末側のスクリプトは薄い中継層に限定しています。コマンド規則、計算、キャッシュ、外部プロバイダー呼び出し、secretを利用した認証はTypeScript製Lambdaバックエンドで処理します。
+端末側を薄いrelayにすることで、端末を交換してもHTTP契約とバックエンドロジックを再利用できます。計算、外部API、cache、認証をLambdaに集約し、端末がなくても大部分を自動テストできる構成にしました。
 
-## コマンドグループ
+詳細は[システムアーキテクチャ](docs/03-architecture.md)と[ADR](docs/decisions/README.md)に記録しています。
 
-### MapleStory
+## 技術的な工夫
 
-`!정보 <ニックネーム>`, `!무릉 <ニックネーム>`, `!유니온 <ニックネーム>`, `!유챔 <ニックネーム>`, `!장비 <ニックネーム>`, `!경험치 <ニックネーム>`, `!심볼 <地域> <開始> <目標>`, `!심볼만렙`, `!보스`, `!보스수익 <ボス> <難易度> [人数]`, `!계산기 <数式>`, `!보스보상`, `!보스렙뻥`, `!보스포뻥`, `!메카베리 <レベル>`, `!메포효율`, `!공지`, `!이벤트`, `!썬데이`, `!선데이`, `!인벤`, `!마빡도로시`, `!디코`を提供します。
+### 公式データを優先し、外部サービスとの境界を明確化
 
-`!보스수익 검마 하드 2인 / 세렌 노말 3인`は、`価格 ÷ パーティー人数`の小数点以下を切り捨てて1人分の結晶収益を計算します。バージョン管理された静的データを使用し、実行時に参照ページへアクセスしません。
+- キャラクター、武陵道場、ユニオン、装備、経験値はNexon Open APIから取得します。
+- Maple.GGとMaplescouterはリンク表示のみとし、クロールや非公開APIの利用は行いません。
+- シンボル・ボス収益計算は、出典と基準日を持つ静的データとpure functionで実装しました。
 
-`!계산기`は独立した安全な四則演算パーサーです。`!계산기 12 x 11`は`132`、`!계산기 12퍼 x 11개`は`132퍼`を返します。小数、括弧、四則演算、パーセントポイント、個数単位をサポートし、コード評価は行いません。`!계산기 25.3억 2명 5퍼`のようにメソ手数料と均等分配も計算できます。
+### コード評価を行わない計算機
 
-MapleのキャラクターデータはNexon Open APIから取得します。Maple.GGとMaplescouterはリンク表示のみで、自動クロールや自動HTTPアクセスは行いません。
+`!계산기 25.3억 2명 5퍼`のようなゲーム内で自然な韓国語入力に対応しています。`eval`や`Function`を使わず、専用tokenizerとrecursive descent parserで四則演算、単位、手数料、均等分配を処理します。
 
-### ミニゲーム
+### 障害を局所化するprovider設計
 
-`!부티크`, `!로얄`, `!원더베리`, `!루나스윗`, `!루나드림`, `!가위`, `!바위`, `!보`を提供します。
+- provider単位でtimeout、cache、retryを管理し、一つの障害が他のコマンドに波及しないようにしました。
+- 公開掲示板の一時的な障害には許可された範囲で直近の正常結果を利用し、アクセス制御の回避は行いません。
+- 長い装備結果はバックエンドで削らず、端末relayがKakaoTalkの長さに合わせて分割します。
 
-確率ベースのコマンドはシミュレーションのみです。キャッシュアイテムを購入・付与する機能ではありません。
+### セキュリティと個人情報の最小化
 
-### 一般機能
+- deny-by-defaultの許可ルーム、Bearer secret、kill switch、rate limit、event ID TTLを実装しました。
+- API key、shared secret、実際のルーム名はGitの外から注入します。
+- CloudWatchにはコマンド種別、結果、応答時間だけを出力し、本文や利用者識別情報は保存しません。
+- `!통계`はDynamoDBの単一`TOTAL`項目だけを更新します。
 
-`!날씨 <地域>`, `!주식 <銘柄名>`, `!환율`, `!기름`, `!유가`, `!주유소 <地域>`, `!골라 <候補>`, `!뭐먹지`, `!ㅁㅁㅈ`, `!운세 <生年月日> <性別> <暦>`, `!로또`, `!넷플`, `!애니`, `!만화`, `!웹툰`, `!웹소설`, `!일본여행`, `!일본여행기`, `!일본음식점`, `!핫딜`, `!글카`, `!모니터`, `!금주의신상`, `!다이소 <商品>`, `!통계`, `!상태`を提供します。
+### 再現可能なAWS運用
 
-`!핫딜`はクエーサーゾーンの最新6件を0番から時刻付きで表示し、アカライブとFMKoreaは最大5件ずつ取得してモバイルで読みやすいセクションにまとめます。
+当初のCloudflare Worker設計から、AWS運用・IAM・IaCの経験を深めるためLambda + API Gatewayへ移行しました。Terraformで東京リージョンのみを許可し、最小権限IAM、暗号化DynamoDB、Lambda設定をコードで管理します。
 
-Lambdaは匿名化したコマンド利用監査データだけを出力します。ローカルスクリプトで日別集計を作成でき、ポートフォリオ用には実データと分離した固定の合成レポートを生成します。チャット原文はコミットしません。
+## 代表機能
 
-`!통계`は東京リージョンの暗号化されたオンデマンドDynamoDB単一項目に保存した匿名の累積カウンターを表示します。ルーム名、送信者名、メッセージ本文は保存しません。カウンターはDynamoDBをデプロイした時点から始まり、過去のCloudWatch記録は遡って取り込みません。
+| 分類         | コマンド例                                | 実装ポイント                                   |
+| ------------ | ----------------------------------------- | ---------------------------------------------- |
+| キャラクター | `!정보 닉네임`, `!장비 닉네임`            | API schema検証、部分失敗処理、モバイル向け整形 |
+| 成長計算     | `!심볼 기어드락 1 11`, `!사우나 닉네임`   | バージョン管理データと境界値テスト             |
+| ボス収益     | `!보스수익 검마 하드 2인 / 세렌 노말 3인` | 週次・月次、人数上限、切り捨て計算             |
+| 一般計算     | `!계산기 12퍼 x 11개`                     | コード評価を使わない専用parser                 |
+| お知らせ     | `!공지`, `!이벤트`, `!썬데이`             | 公式データ、cache、キーワード通知              |
+| 生活情報     | `!날씨 도쿄`, `!환율`, `!주유소 서울`     | 読み取り専用providerと障害分離                 |
+| チャット機能 | `!짜장vs짬뽕`, `!뭐먹지`, `!로또`         | 外部通信のないpure logic                       |
+| 株価情報     | `!주식 삼성전자`, `!주식 Tesla`           | 参照専用、注文・口座機能は対象外               |
 
-`!주식`は情報提供のみで、注文・口座アクセスは行いません。`!운세`は生年月日、性別、暦、韓国標準時を使う決定的な娯楽機能であり、LLMやリモートの運勢MCPサーバーは呼び出しません。
+全コマンドと入力・エラー契約は[コマンド仕様](docs/04-command-specification.md)で確認できます。
 
-## データ・安全ポリシー
+## 検証結果
 
-- AWSリージョンは東京、`ap-northeast-1`に固定し、単一リージョンで費用管理の範囲を限定します。
-- 個人用・無料枠を前提としたポートフォリオです。Free Tierは請求額ゼロを保証しないため、Budgetと利用量の監視が必要です。
-- APIキー、shared secret、Kakao識別子、ルーム名、チャットログはGitにコミットしません。
-- 公開掲示板の取得にはタイムアウト、キャッシュ、エラー分離、許可されたstale fallbackを使用します。プロキシ切替、IP変更、その他のアクセス制御回避は行いません。
-- 端末リレーにはplaceholderのみを保存します。`sharedSecret`と同意済みルーム名のplaceholderは、非公開の端末コピーでのみ置き換えます。
-- ユーザーの元のチャットスクリーンショットは公開リポジトリに含めません。
+| 項目          | 確認結果                                                | 根拠                                      |
+| ------------- | ------------------------------------------------------- | ----------------------------------------- |
+| 自動テスト    | **181 passed** (`core 63`, `providers 50`, `lambda 68`) | `pnpm test`                               |
+| 静的品質      | strict typecheck、ESLint、Prettier、policy check        | [検証記録](docs/10-local-verification.md) |
+| 端末relay     | MessengerBot R向けJavaScript構文検査                    | `pnpm phone:check`                        |
+| AWS           | 東京Lambda/API Gateway、`/health` HTTP 200              | [リリースゲート](docs/12-release-gate.md) |
+| 認証API       | `/v1/messages`のhelp・ボス収益応答を確認                | [検証記録](docs/10-local-verification.md) |
+| KakaoTalk利用 | 限定グループチャットで利用中                            | ユーザー確認、Android E2Eは独自未観測     |
 
-## ローカル開発
+`/health`だけを根拠にKakaoTalk全体の動作を主張していません。リポジトリの自動検証、AWSで確認した結果、利用者の端末確認を分けて記録しています。
 
-Node.js 22とpnpm 11を使用します。
+## 利用画面
+
+<p align="center">
+  <img src="docs/assets/kakao-bot-evidence-ja.png" width="420" alt="個人情報を保護したKakao Maple Botの日本語ポートフォリオ画像" />
+</p>
+
+この画像は利用の流れを説明するための匿名化・翻訳資料です。正確なAPI出力やデプロイ状態の一次証拠ではありません。[証拠と公開範囲](docs/17-portfolio-evidence.md)
+
+## 技術スタック
+
+| 領域           | 技術                                                                            |
+| -------------- | ------------------------------------------------------------------------------- |
+| Backend        | TypeScript 5, Node.js 22, AWS Lambda                                            |
+| API / State    | API Gateway HTTP API, DynamoDB                                                  |
+| Infrastructure | Terraform, CloudFormation, IAM Identity Center                                  |
+| External data  | Nexon Open API, Open-Meteo, TMDB, Yahoo Finance, Tiingo等の読み取り専用provider |
+| Quality        | Vitest, TypeScript strict, ESLint, Prettier, dependency audit, policy check     |
+| Device relay   | MessengerBot R v40, JavaScript                                                  |
+
+## リポジトリ構成
+
+```text
+apps/lambda/         AWS Lambda HTTP boundary
+apps/phone-relay/    MessengerBot R thin relay
+packages/core/       command, parser, calculator, formatter
+packages/providers/  external API adapters and schemas
+infra/terraform/     AWS infrastructure as code
+tests/               unit, provider contract, Lambda integration tests
+docs/                requirements, architecture, policy, operations, evidence
+```
+
+## ローカル検証
+
+Node.js 22とpnpm 11を使用します。実際のAPI keyがなくてもmockベースのテストを実行できます。
 
 ```powershell
 pnpm install --ignore-scripts
@@ -81,30 +156,26 @@ pnpm phone:check
 pnpm audit
 ```
 
-現在の検証結果はテスト149件が成功し、typecheck、lint、format、policy、端末スクリプト構文、Lambda dry-run、auditも成功しています。
+環境変数名は[.env.example](.env.example)に空の例だけを定義しています。許可ルームの初期値も空であるため、設定しない限りメッセージへ応答しません。
 
-## AWSデプロイ
+AWSデプロイには明示的な承認と有効なIAM Identity Center認証が必要です。詳細は[Terraform運用ドキュメント](infra/terraform/README.md)と[リリースゲート](docs/12-release-gate.md)を参照してください。
 
-AWS Lambda + API Gateway HTTP APIを使用し、純粋なCloudFormationとTerraformの設計を提供しています。SAM CLIは必須ではありません。Terraformの`plan`は確認手順であり、`apply`とデプロイには明示的な承認と有効なIAM Identity Center認証が必要です。
+## 主なドキュメント
 
-すべてのAWSリクエストは`ap-northeast-1`を対象にします。root ARNではなく、IAM Identity Centerのassumed roleを使用します。`terraform.tfvars`、APIキー、shared secretはGitの外で管理します。
+- [製品要件](docs/01-product-requirements.md) · [機能・非機能要件](docs/02-requirements.md)
+- [アーキテクチャ](docs/03-architecture.md) · [コマンド仕様](docs/04-command-specification.md)
+- [API・データポリシー](docs/05-api-data-policy.md) · [セキュリティ・運用](docs/06-security-operations.md)
+- [テスト戦略](docs/07-test-strategy.md) · [トラブルシューティング](docs/13-troubleshooting.md)
+- [端末E2Eチェックリスト](docs/16-phone-e2e-checklist.md) · [ポートフォリオ証拠基準](docs/17-portfolio-evidence.md)
 
-過去に確認した`/health`と認証済みメッセージのsmoke testは別文書に記録しています。未観測の端末状態や新しいデプロイを、このREADMEで主張することはありません。
+## 制約
 
-## ポートフォリオ証跡
-
-- [個人情報を加工した韓国語の証跡画像](docs/assets/kakao-bot-evidence-redacted.png)
-- [英語訳ポートフォリオ画像](docs/assets/kakao-bot-evidence-en.png)
-- [日本語訳ポートフォリオ画像](docs/assets/kakao-bot-evidence-ja.png)
-- [証跡と公開範囲](docs/17-portfolio-evidence.md)
-- [トラブルシューティング記録](docs/13-troubleshooting.md)
-
-英語・日本語画像は、表示用に作成した個人情報保護済みの翻訳・簡略化資料です。チャットボットのコマンドと応答の流れは示しますが、元のチャットログを正確にOCRした一次資料ではありません。
-
-## ドキュメント
-
-要件、アーキテクチャ、コマンド契約、APIポリシー、セキュリティ運用、テスト、リリースゲート、トラブルシューティング、端末E2Eチェックリストは[韓国語READMEのドキュメント一覧](README.md#문서)から確認できます。
+- 一般KakaoTalkアカウントの自動化は公式chatbot方式ではなく、アカウント制限の可能性があります。
+- Free Tierは請求額0円を保証しないため、AWS Budgetと利用量監視が必要です。
+- 公開HTMLを利用するproviderは、構造変更やアクセス制限により一時的に失敗する場合があります。
+- Androidの24時間soak test、再起動・ネットワーク復旧の独立検証は未完了です。
+- 株価機能は情報提供のみで、取引、推奨、収益保証は行いません。
 
 ## ライセンス
 
-ライセンスは付与していません。別途ライセンスを追加するまでは、個人用・非商用のポートフォリオリポジトリです。
+ライセンスは付与していません。個人・非商用のポートフォリオ公開用であり、複製、再配布、商用利用を許可するものではありません。

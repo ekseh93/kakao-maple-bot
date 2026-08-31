@@ -1,73 +1,145 @@
 # Kakao Maple Bot
 
-[한국어 README](README.md) · [日本語 README](README.ja.md)
+> A personal project that connects KakaoTalk on a spare Android phone to an AWS serverless backend, automating recurring lookups and calculations for a real group chat.
 
-A personal, non-commercial portfolio chatbot that uses a spare Android phone running MessengerBot R as a KakaoTalk gateway. The backend provides MapleStory data, symbol calculations, probability-based mini-games, recommendations, weather, exchange rates, fuel prices, and read-only stock quotes.
+[한국어](README.md) · [日本語](README.ja.md)
 
-> Status: Phase 0–6 implementation, automated verification, and Tokyo-region AWS deployment are complete. Spare-phone operation is reported by the user; Codex has not independently observed the Android device end to end.
+`TypeScript` · `AWS Lambda` · `API Gateway` · `DynamoDB` · `Terraform` · `Nexon Open API` · `Vitest`
+
+## At a glance
+
+| Item          | Details                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------- |
+| Development   | August 2026–present                                                                               |
+| Type          | Personal, non-commercial portfolio project in active use                                          |
+| Scope         | Requirements, architecture, TypeScript implementation, IaC, tests, AWS deployment, and operations |
+| Users         | A limited KakaoTalk group of the developer and consenting acquaintances                           |
+| Current state | Deployed in Tokyo; backend smoke tests completed                                                  |
+| Quality       | 181 automated tests, strict typecheck, lint, policy and phone-script checks                       |
+
+The main engineering question was not simply how many commands could be added, but **how to isolate the risks of an unofficial messenger integration and operate it with verifiable evidence**. AI-assisted development tools were used; changes are checked against official documentation, code review, automated tests, and post-deployment smoke tests.
+
+## Problem and approach
+
+MapleStory players repeatedly move between character sites, symbol calculators, boss-income tables, and event pages. Group chats also contain small decisions—food, games, and recommendations—that benefit from immediate answers.
+
+- One short KakaoTalk command returns the essential result.
+- The Android device remains a thin relay; business logic and secrets stay in AWS.
+- MapleStory data comes from the Nexon Open API, while calculations use versioned project-owned logic.
+- Provider-specific timeouts, caches, retries, and stale fallbacks isolate failures.
+- Message text, room names, and sender identities are not stored; only an anonymous aggregate count is retained.
 
 ## Architecture
 
 ```text
 KakaoTalk
-    ↕ Android notification/reply
+    ↕ Android notification / reply
 MessengerBot R v40 on a spare phone
-    ↕ HTTPS + shared secret
-API Gateway HTTP API
+    ↕ HTTPS + Bearer secret
+Amazon API Gateway HTTP API
     ↓
-AWS Lambda
-    ├─ command router
-    ├─ Maple adapter ─ Nexon Open API
-    ├─ stock adapter ─ Yahoo Finance / Tiingo
-    ├─ calculators / random / food
-    └─ cache, timeout, audit-safe logs
+AWS Lambda (Node.js 22 / TypeScript)
+    ├─ authentication, allowed rooms, rate limits, event deduplication
+    ├─ command router / formatter
+    ├─ Nexon Open API adapter
+    ├─ read-only provider adapters
+    ├─ calculators / static data / random features
+    └─ anonymous counter ─ DynamoDB (Tokyo)
 ```
 
-The phone script is intentionally thin. Command rules, calculations, caching, provider calls, and secret-backed authentication stay in the TypeScript Lambda backend.
+Keeping the phone script thin preserves the HTTP contract and backend logic when the device changes. Calculations, provider calls, caching, and authentication can be tested without a phone. See the [architecture](docs/03-architecture.md) and [ADRs](docs/decisions/README.md).
 
-## Command groups
+## Engineering highlights
 
-### MapleStory
+### Clear external-service boundaries
 
-`!정보 <nickname>`, `!무릉 <nickname>`, `!유니온 <nickname>`, `!유챔 <nickname>`, `!장비 <nickname>`, `!경험치 <nickname>`, `!심볼 <area> <start> <target>`, `!심볼만렙`, `!보스`, `!보스수익 <boss> <difficulty> [party size]`, `!계산기 <expression>`, `!보스보상`, `!보스렙뻥`, `!보스포뻥`, `!메카베리 <level>`, `!메포효율`, `!공지`, `!이벤트`, `!썬데이`, `!선데이`, `!인벤`, `!마빡도로시`, and `!디코`.
+- Character, dojo, union, equipment, and experience data use the Nexon Open API.
+- Maple.GG and Maplescouter are link-only destinations; the bot does not crawl them or use private APIs.
+- Symbol and boss-income calculations use sourced, date-versioned static data and pure functions.
 
-`!보스수익 검마 하드 2인 / 세렌 노말 3인` calculates each player's crystal income by flooring `price / party size`. It uses versioned static data and makes no runtime request to the reference page.
+### Calculator without code evaluation
 
-`!계산기` is a separate safe arithmetic parser. For example, `!계산기 12 x 11` returns `132`, while `!계산기 12퍼 x 11개` returns `132퍼`. It supports decimals, parentheses, four basic operators, percent points, and count units without evaluating code. Meso fee splitting accepts `!계산기 2,530,000,000 2인 3%` and `!계산기 25.3억 2명 5퍼`.
+The bot accepts game-native Korean input such as `!계산기 25.3억 2명 5퍼`. A dedicated tokenizer and recursive-descent parser handles arithmetic, units, fees, and equal splits without `eval` or `Function`.
 
-Maple character data uses the Nexon Open API. Maple.GG and Maplescouter are link-only destinations; the bot does not crawl or automatically access them.
+### Failure isolation and mobile output
 
-### Mini-games
+- Timeouts, caches, and retries are isolated per provider.
+- A permitted recent-success fallback covers temporary public-board failures; access controls are never bypassed.
+- Long equipment responses retain the data and are split by the phone relay for KakaoTalk.
 
-`!부티크`, `!로얄`, `!원더베리`, `!루나스윗`, `!루나드림`, `!가위`, `!바위`, and `!보`.
+### Security and privacy by default
 
-Probability-based commands are simulations only. They do not purchase or grant cash items.
+- Deny-by-default rooms, a Bearer secret, kill switch, rate limits, and event-ID TTL are enforced.
+- API keys, shared secrets, and real room names are injected outside Git.
+- CloudWatch records command type, outcome, and latency—not message text or user identity.
+- `!통계` updates only one aggregate DynamoDB `TOTAL` item.
 
-### General features
+### Reproducible AWS operations
 
-`!날씨 <location>`, `!주식 <name>`, `!환율`, `!기름`, `!유가`, `!주유소 <region>`, `!골라 <items>`, `!뭐먹지`, `!ㅁㅁㅈ`, `!운세 <birth date> <gender> <calendar>`, `!로또`, `!넷플`, `!애니`, `!만화`, `!웹툰`, `!웹소설`, `!일본여행`, `!일본여행기`, `!일본음식점`, `!핫딜`, `!글카`, `!모니터`, `!금주의신상`, `!다이소 <product>`, `!통계`, and `!상태`.
+The initial Cloudflare Worker design was migrated to Lambda and API Gateway to build hands-on AWS operations, IAM, and IaC experience. Terraform restricts deployment to Tokyo and manages least-privilege IAM, encrypted DynamoDB, and Lambda configuration.
 
-`!핫딜` shows six Quasar Zone titles numbered from 0 with the listed time, plus up to five titles each from Arca Live and FMKorea in compact mobile-friendly sections.
+## Representative features
 
-The Lambda emits anonymous command-usage audit records only. A local script aggregates daily totals and a separate deterministic synthetic report is available for portfolio use; raw chat data is never committed.
+| Area                 | Example                                   | Engineering focus                                     |
+| -------------------- | ----------------------------------------- | ----------------------------------------------------- |
+| Character data       | `!정보 nickname`, `!장비 nickname`        | Schema validation, partial failure, mobile formatting |
+| Progress calculators | `!심볼 기어드락 1 11`, `!사우나 nickname` | Versioned data and boundary tests                     |
+| Boss income          | `!보스수익 검마 하드 2인 / 세렌 노말 3인` | Weekly/monthly rules, party validation, flooring      |
+| General calculator   | `!계산기 12퍼 x 11개`                     | Dedicated parser with no code evaluation              |
+| Notices and events   | `!공지`, `!이벤트`, `!썬데이`             | Official data, caching, keyword alerts                |
+| Utility data         | `!날씨 도쿄`, `!환율`, `!주유소 서울`     | Read-only providers and error isolation               |
+| Chat utilities       | `!짜장vs짬뽕`, `!뭐먹지`, `!로또`         | Pure local logic                                      |
+| Stocks               | `!주식 삼성전자`, `!주식 Tesla`           | Read-only data; no orders or account access           |
 
-`!통계` reads an anonymous aggregate counter stored as one encrypted, on-demand DynamoDB item in Tokyo. It does not store room names, sender names, or message text. The counter starts when the DynamoDB resource is deployed; earlier CloudWatch records are not retroactively imported.
+The complete input and error contract is in the [command specification](docs/04-command-specification.md).
 
-`!주식` is informational only and does not place orders or access accounts. `!운세` is a deterministic entertainment feature based on date, gender, calendar type, and Korea Standard Time; it does not call an LLM or a remote fortune MCP server.
+## Verifiable results
 
-## Data and safety policy
+| Check             | Observed result                                         | Evidence                                               |
+| ----------------- | ------------------------------------------------------- | ------------------------------------------------------ |
+| Automated tests   | **181 passed** (`core 63`, `providers 50`, `lambda 68`) | `pnpm test`                                            |
+| Static quality    | strict typecheck, ESLint, Prettier, policy check        | [Verification record](docs/10-local-verification.md)   |
+| Phone relay       | MessengerBot R JavaScript syntax check                  | `pnpm phone:check`                                     |
+| AWS deployment    | Tokyo Lambda/API Gateway, `/health` HTTP 200            | [Release gate](docs/12-release-gate.md)                |
+| Authenticated API | Help and boss-income responses from `/v1/messages`      | [Verification record](docs/10-local-verification.md)   |
+| KakaoTalk use     | In use in a limited group chat                          | User-confirmed; Android E2E not independently observed |
 
-- AWS is fixed to Tokyo, `ap-northeast-1`, for a single-region cost boundary.
-- The project is designed for a personal, zero-cash-cost portfolio scope. Free Tier does not guarantee a zero bill; budgets and usage monitoring are still required.
-- The usage counter uses DynamoDB on-demand billing. It has no fixed monthly table fee, but read/write request charges can apply after free allowances.
-- API keys, shared secrets, Kakao identifiers, room names, and chat logs are never committed.
-- Public-board providers use timeouts, caching, error isolation, and permitted stale fallback. The bot does not use proxy rotation, IP changes, or other access-control bypasses.
-- The phone relay contains only a placeholder. Replace `sharedSecret` and the consented room placeholder in the private phone copy only.
-- The public repository does not include the user's original chat screenshot.
+A healthy `/health` endpoint is not presented as proof of the complete KakaoTalk path. Repository checks, AWS-observed results, and user-device confirmation are documented separately.
 
-## Local development
+## Usage evidence
 
-Node.js 22 and pnpm 11 are expected.
+<p align="center">
+  <img src="docs/assets/kakao-bot-evidence-en.png" width="420" alt="Privacy-safe English portfolio view of Kakao Maple Bot usage" />
+</p>
+
+This is a privacy-safe translated presentation asset, not authoritative OCR or primary evidence of deployment. See the [evidence and publication policy](docs/17-portfolio-evidence.md).
+
+## Technology
+
+| Area           | Stack                                                                                  |
+| -------------- | -------------------------------------------------------------------------------------- |
+| Backend        | TypeScript 5, Node.js 22, AWS Lambda                                                   |
+| API / State    | API Gateway HTTP API, DynamoDB                                                         |
+| Infrastructure | Terraform, CloudFormation, IAM Identity Center                                         |
+| External data  | Nexon Open API, Open-Meteo, TMDB, Yahoo Finance, Tiingo, and other read-only providers |
+| Quality        | Vitest, TypeScript strict, ESLint, Prettier, dependency audit, policy check            |
+| Device relay   | MessengerBot R v40, JavaScript                                                         |
+
+## Repository layout
+
+```text
+apps/lambda/         AWS Lambda HTTP boundary
+apps/phone-relay/    MessengerBot R thin relay
+packages/core/       command, parser, calculator, formatter
+packages/providers/  external API adapters and schemas
+infra/terraform/     AWS infrastructure as code
+tests/               unit, provider-contract, Lambda-integration tests
+docs/                requirements, architecture, policy, operations, evidence
+```
+
+## Local verification
+
+Node.js 22 and pnpm 11 are expected. Mock-based tests run without real API keys.
 
 ```powershell
 pnpm install --ignore-scripts
@@ -82,30 +154,26 @@ pnpm phone:check
 pnpm audit
 ```
 
-The current verification result is 149 passing tests, with typecheck, lint, format, policy, phone syntax, Lambda dry-run, and audit checks passing.
+[.env.example](.env.example) contains empty variable names only. Allowed rooms also default to empty, so the bot does not respond until explicitly configured.
 
-## AWS deployment
-
-The project uses AWS Lambda + API Gateway HTTP API with pure CloudFormation and Terraform designs. SAM CLI is not required. Terraform `plan` is a review step; `apply` and deployment require explicit approval and valid IAM Identity Center credentials.
-
-All AWS requests must target `ap-northeast-1`. Use an assumed IAM Identity Center role rather than a root ARN. Keep `terraform.tfvars`, API keys, and shared secrets outside Git.
-
-The previously observed `/health` and authenticated message smoke tests are documented separately. No claim is made here about an unobserved device state or a new deployment.
-
-## Portfolio evidence
-
-- [Privacy-redacted Korean evidence image](docs/assets/kakao-bot-evidence-redacted.png)
-- [English translated portfolio image](docs/assets/kakao-bot-evidence-en.png)
-- [Japanese translated portfolio image](docs/assets/kakao-bot-evidence-ja.png)
-- [Evidence and publication scope](docs/17-portfolio-evidence.md)
-- [Troubleshooting record](docs/13-troubleshooting.md)
-
-The English and Japanese images are privacy-safe translation/simplification variants for presentation. They preserve the chatbot command-and-response concept but are not authoritative OCR copies of the original chat log.
+AWS deployment requires explicit approval and valid IAM Identity Center authentication. See the [Terraform operations guide](infra/terraform/README.md) and [release gate](docs/12-release-gate.md).
 
 ## Documentation
 
-See the [Korean documentation index](README.md#문서) for product requirements, architecture, command contracts, API policy, security operations, tests, release gates, troubleshooting, and the phone E2E checklist.
+- [Product requirements](docs/01-product-requirements.md) · [Functional and non-functional requirements](docs/02-requirements.md)
+- [Architecture](docs/03-architecture.md) · [Command contract](docs/04-command-specification.md)
+- [API and data policy](docs/05-api-data-policy.md) · [Security and operations](docs/06-security-operations.md)
+- [Test strategy](docs/07-test-strategy.md) · [Troubleshooting](docs/13-troubleshooting.md)
+- [Phone E2E checklist](docs/16-phone-e2e-checklist.md) · [Portfolio evidence policy](docs/17-portfolio-evidence.md)
+
+## Limitations
+
+- Automating a regular KakaoTalk account is not an official chatbot path and carries account-restriction risk.
+- Free Tier does not guarantee a zero bill; AWS Budgets and usage monitoring are still required.
+- Providers based on public HTML can fail when page structure or access policy changes.
+- An independent 24-hour Android soak test and reboot/network-recovery test remain pending.
+- Stock output is informational only; there is no trading, recommendation, or return guarantee.
 
 ## License
 
-No license has been granted. Until a separate license is added, this remains a personal, non-commercial portfolio repository.
+No license has been granted. This repository is published as a personal, non-commercial portfolio and does not grant permission to copy, redistribute, or use it commercially.

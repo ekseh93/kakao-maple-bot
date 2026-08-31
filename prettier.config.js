@@ -1,1 +1,1 @@
-export default { singleQuote: true, semi: true, printWidth: 100 };
+export default { singleQuote: true, semi: true, printWidth: 100, endOfLine: 'auto' };
