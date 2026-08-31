@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Kakao Maple Bot Lambda and HTTP API (deployment requires explicit approval).
+
+Parameters:
+  LambdaArtifactBucket:
+    Type: String
+    Description: Existing S3 bucket used for the Lambda ZIP artifact.
+  LambdaArtifactKey:
+    Type: String
+    Default: kakao-maple-bot/lambda.zip
+  BotSharedSecret:
+    Type: String
+    NoEcho: true
+    Default: ''
+  BotEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  AllowedRooms:
+    Type: String
+    Default: ''
+  StockEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  NoticeAlertEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  NoticeAlertKeywords:
+    Type: String
+    Default: '채널 점검,마이너버전,클라이언트'
+  NexonApiKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+  KrxAuthKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+  TiingoToken:
+    Type: String
+    NoEcho: true
+    Default: ''
+
+Resources:
+  KakaoMapleBotRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  KakaoMapleBotFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs22.x
+      Handler: bundle.handler
+      Role: !GetAtt KakaoMapleBotRole.Arn
+      Timeout: 5
+      MemorySize: 256
+      Code:
+        S3Bucket: !Ref LambdaArtifactBucket
+        S3Key: !Ref LambdaArtifactKey
+      Environment:
+        Variables:
+          BOT_SHARED_SECRET: !Ref BotSharedSecret
+          BOT_ENABLED: !Ref BotEnabled
+          ALLOWED_ROOMS: !Ref AllowedRooms
+          STOCK_ENABLED: !Ref StockEnabled
+          NOTICE_ALERT_ENABLED: !Ref NoticeAlertEnabled
+          NOTICE_ALERT_KEYWORDS: !Ref NoticeAlertKeywords
+          NEXON_API_KEY: !Ref NexonApiKey
+          KRX_AUTH_KEY: !Ref KrxAuthKey
+          TIINGO_TOKEN: !Ref TiingoToken
+
+  KakaoMapleBotApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: kakao-maple-bot-api
+      ProtocolType: HTTP
+
+  KakaoMapleBotIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref KakaoMapleBotApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt KakaoMapleBotFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  KakaoMapleBotHealthRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref KakaoMapleBotApi
+      RouteKey: GET /health
+      Target: !Sub integrations/${KakaoMapleBotIntegration}
+
+  KakaoMapleBotMessagesRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref KakaoMapleBotApi
+      RouteKey: POST /v1/messages
+      Target: !Sub integrations/${KakaoMapleBotIntegration}
+
+  KakaoMapleBotStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref KakaoMapleBotApi
+      StageName: '$default'
+      AutoDeploy: true
+
+  KakaoMapleBotApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref KakaoMapleBotFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${KakaoMapleBotApi}/*/*
+
+Outputs:
+  ApiUrl:
+    Description: HTTP API base URL
+    Value: !Sub https://${KakaoMapleBotApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}
+  LambdaFunctionName:
+    Value: !Ref KakaoMapleBotFunction

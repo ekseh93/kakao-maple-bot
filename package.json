@@ -1,0 +1,32 @@
+{
+  "name": "kakao-maple-bot",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format:check": "prettier --check \"apps/**/*.{ts,js,json,jsonc}\" \"packages/**/*.{ts,json}\" \"tests/**/*.ts\" \"*.{json,yaml,ts,js}\"",
+    "policy:check": "node scripts/policy-check.mjs",
+    "phone:check": "node --check apps/phone-relay/bot.js",
+    "audit": "pnpm audit --audit-level high",
+    "lambda:dry-run": "pnpm build && esbuild apps/lambda/src/index.ts --bundle --format=cjs --platform=node --target=node22 --outfile=apps/lambda/dist/bundle.js",
+    "lambda:package": "pnpm lambda:dry-run && node scripts/package-lambda.mjs",
+    "lambda:deploy": "pnpm lambda:package && node scripts/deploy-aws.mjs",
+    "usage:aggregate": "node scripts/aggregate-usage.mjs",
+    "usage:sample": "node scripts/generate-portfolio-sample.mjs",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.34.0",
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^22.10.2",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.34.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

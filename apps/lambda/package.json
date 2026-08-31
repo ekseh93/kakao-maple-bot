@@ -1,0 +1,10 @@
+{
+  "name": "@kakao-maple-bot/lambda",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1119.0",
+    "@kakao-maple-bot/core": "workspace:*",
+    "@kakao-maple-bot/providers": "workspace:*"
+  }
+}
