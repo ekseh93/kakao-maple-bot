@@ -1,7 +1,7 @@
 // MessengerBot R v40 relay. Keep business rules in AWS Lambda.
 // Replace only sharedSecret on the phone. Never commit the real value.
 var CONFIG = {
-  endpoint: 'https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com',
+  endpoint: 'https://YOUR_API_ID.execute-api.ap-northeast-1.amazonaws.com',
   sharedSecret: 'REPLACE_ON_PHONE_ONLY',
   // Replace this local-only placeholder with the one consented room name.
   fixedRoomName: 'YOUR_CONSENTED_ROOM_NAME',

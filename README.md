@@ -188,7 +188,7 @@ GitHub secret 등록, Nexon/KRX/Tiingo 키 발급, 공기계 설치·컴파일·
 
 현재 전환은 코드·문서·로컬 검증까지 완료했으며, Lambda/API Gateway 리소스는 도쿄 리전(`ap-northeast-1`)에 배포했습니다. `BOT_ENABLED=true`와 허용 방 설정은 사용자의 운영 환경에서 적용되었고, `/health`가 `200`으로 응답하는 것을 확인했습니다. 운영 secret은 저장소가 아닌 런타임·공기계 비공개 설정으로 관리합니다.
 
-배포 확인 URL: `https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com/health` (확인 결과 `200`, `{"status":"ok"}`)
+운영 API 주소는 무료 한도 보호와 불필요한 외부 요청 방지를 위해 공개 저장소에 게시하지 않습니다. 2026-08-31 기준 비공개 운영 주소의 `/health`가 `200`, `{"status":"ok"}`로 응답하는 것을 재확인했습니다.
 
 배포 API smoke test에서 `!도움말`, `!공지`, `!이벤트` 응답과 인증된 `!도움말` reply 필드를 확인했습니다. `!장비` 템플릿은 로컬 Lambda 경계 테스트로 확인하고 배포했으며, 공지·이벤트 응답에는 공식 넥슨 링크가 포함됩니다. 공기계 MessengerBot R과 카카오톡에서 실제 사용 중이라는 상태는 사용자가 확인한 운영 결과이며, 본 저장소 문서에서는 Codex의 직접 관측 결과와 구분합니다.
 

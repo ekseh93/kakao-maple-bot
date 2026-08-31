@@ -9,7 +9,7 @@ PC의 `apps/phone-relay/bot.js` 전체 내용을 공기계 MessengerBot R의 새
 엔드포인트는 도쿄 리전의 배포 URL을 사용합니다. 공개 저장소의 예시 파일에는 실제 방 이름과 secret을 넣지 않습니다.
 
 ```javascript
-endpoint: 'https://zbzdl5d4tk.execute-api.ap-northeast-1.amazonaws.com';
+endpoint: 'https://YOUR_API_ID.execute-api.ap-northeast-1.amazonaws.com';
 fixedRoomName: '동의한-방-이름';
 ```
 
