@@ -46,6 +46,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   it('parses PC quote budget, usage, and monitor option', () => {
     expect(parsePcQuoteArgs(['100만원', '게이밍', '모니터포함'])).toEqual({
       budgetKrw: 1_000_000,
+      budgetMaxKrw: 1_999_999,
       usage: 'gaming',
       monitorIncluded: true,
     });

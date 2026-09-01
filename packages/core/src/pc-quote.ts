@@ -1,5 +1,7 @@
 export type PcQuoteRequest = {
   budgetKrw: number;
+  /** Upper bound for the requested budget band (e.g. 100만원 => 1,999,999원). */
+  budgetMaxKrw?: number;
   usage: 'gaming' | 'work' | 'video' | 'office';
   monitorIncluded: boolean;
 };
@@ -41,25 +43,30 @@ function invalid(): never {
   throw new Error('INVALID_USAGE');
 }
 
-function parseBudget(value: string): number | undefined {
+function parseBudget(value: string): { minKrw: number; maxKrw: number } | undefined {
   const normalized = value.replace(/,/g, '').toLocaleLowerCase();
   const match = normalized.match(/^(\d+(?:\.\d+)?)(억|만원|만|원)(?:대)?$/);
   if (!match) return undefined;
   const amount = Number(match[1]);
   const multiplier = match[2] === '억' ? 100_000_000 : match[2] === '원' ? 1 : 10_000;
   const budget = amount * multiplier;
-  return Number.isSafeInteger(budget) && budget >= 100_000 ? budget : undefined;
+  if (!Number.isSafeInteger(budget) || budget < 100_000) return undefined;
+  const isWholeManwonBand = (match[2] === '만원' || match[2] === '만') && Number.isInteger(amount);
+  return {
+    minKrw: budget,
+    maxKrw: isWholeManwonBand ? budget + 999_999 : budget,
+  };
 }
 
 export function parsePcQuoteArgs(args: string[]): PcQuoteRequest {
   if (args.length === 0) throw new Error('PC_QUOTE_HELP');
-  const budgetKrw = parseBudget(args[0] ?? '');
-  if (budgetKrw === undefined) invalid();
+  const budget = parseBudget(args[0] ?? '');
+  if (budget === undefined) invalid();
   const monitorIncluded = args.some((arg) => /모니터/.test(arg));
   const usageToken = args.find((arg) => usageAliases[arg.toLocaleLowerCase()]);
   const usage = usageToken ? usageAliases[usageToken.toLocaleLowerCase()] : undefined;
   if (!usage) invalid();
-  return { budgetKrw, usage, monitorIncluded };
+  return { budgetKrw: budget.minKrw, budgetMaxKrw: budget.maxKrw, usage, monitorIncluded };
 }
 
 function formatKrw(value: number): string {

@@ -93,7 +93,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toContain('[게이밍 1,000,000원 견적]');
     expect(result.reply).toContain('균형형');
     expect(pcDeals.findQuotes).toHaveBeenCalledWith(
-      { budgetKrw: 1_000_000, usage: 'gaming', monitorIncluded: false },
+      { budgetKrw: 1_000_000, budgetMaxKrw: 1_999_999, usage: 'gaming', monitorIncluded: false },
       expect.any(AbortSignal),
     );
   });

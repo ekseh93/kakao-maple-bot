@@ -483,7 +483,8 @@ export async function handleMessage(
         const quotes = await client.findQuotes(request, timeoutSignal());
         // A provider may return the closest available build even when it exceeds
         // the requested budget. Never present that as an in-budget recommendation.
-        const inBudgetQuotes = quotes.filter((quote) => quote.totalKrw <= request.budgetKrw);
+        const maxBudgetKrw = request.budgetMaxKrw ?? request.budgetKrw;
+        const inBudgetQuotes = quotes.filter((quote) => quote.totalKrw <= maxBudgetKrw);
         pcQuoteCache.set(cacheKey, { value: inBudgetQuotes, expiresAt: now + 10 * 60_000 });
         return { reply: formatPcQuotes(request, inBudgetQuotes), requestId, cache: 'miss' };
       }

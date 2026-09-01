@@ -143,7 +143,7 @@ async function buildQuotes(request) {
   const variants = [0, 1, 2].map((variant) => {
     const selections = fetched.map(([label, values], index) => {
       const [, , weight] = selectedCategories[index];
-      const target = request.budgetKrw * weight;
+      const target = (request.budgetMaxKrw ?? request.budgetKrw) * weight;
       const candidates = values.slice(variant, variant + 3);
       const baseline = cheapest(values);
       const preferred = select(candidates.length ? candidates : values, target);
@@ -162,12 +162,12 @@ async function buildQuotes(request) {
       const current = chosen[index];
       const upgrade = selection.preferred;
       const delta = upgrade.priceKrw - current.priceKrw;
-      if (delta > 0 && totalKrw + delta <= request.budgetKrw) {
+      if (delta > 0 && totalKrw + delta <= (request.budgetMaxKrw ?? request.budgetKrw)) {
         chosen[index] = { category: selection.label, ...upgrade };
         totalKrw += delta;
       }
     }
-    if (totalKrw > request.budgetKrw) return undefined;
+    if (totalKrw > (request.budgetMaxKrw ?? request.budgetKrw)) return undefined;
     return {
       label: ['균형형', '가성비형', '여유형'][variant],
       totalKrw,
@@ -199,12 +199,15 @@ const server = createServer(async (request, response) => {
     const body = await readBody(request);
     if (
       !Number.isSafeInteger(body.budgetKrw) ||
+      (body.budgetMaxKrw !== undefined &&
+        (!Number.isSafeInteger(body.budgetMaxKrw) || body.budgetMaxKrw < body.budgetKrw)) ||
       body.budgetKrw < 100_000 ||
       !['gaming', 'work', 'video', 'office'].includes(body.usage)
     )
       return json(response, 400, { error: 'INVALID_USAGE' });
     const key = JSON.stringify({
       budgetKrw: body.budgetKrw,
+      budgetMaxKrw: body.budgetMaxKrw ?? body.budgetKrw,
       usage: body.usage,
       monitorIncluded: Boolean(body.monitorIncluded),
     });
