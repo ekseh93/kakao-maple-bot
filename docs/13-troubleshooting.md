@@ -46,6 +46,36 @@
 
 새 작업은 [Issue・PR・리뷰 운영](21-development-workflow.md)에 따라 Issue와 PR을 연결합니다. 단, 비밀값·실제 방 이름·사용자 식별정보·대화 원문·비식별화되지 않은 화면은 기록하지 않습니다.
 
+## 2026-09-01 PR #9 `verify` 포맷 검사 실패
+
+### 증상과 영향
+
+[PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9)의 push와 pull request 이벤트에서 실행된 `checks/verify`가 모두 `pnpm format:check` 단계에서 중단됐습니다. 이후 test·build 단계는 실행되지 않아 merge 조건을 충족할 수 없었습니다.
+
+### 재현 증거와 진단
+
+[실패한 GitHub Actions run](https://github.com/ekseh93/kakao-maple-bot/actions/runs/33514180736)은 다음 4개 파일을 동일하게 지목했습니다.
+
+- `apps/lambda/src/index.ts`
+- `packages/core/src/index.ts`
+- `packages/core/src/pc-deals.ts`
+- `packages/providers/src/index.ts`
+
+처음에는 Windows 작업 트리의 CRLF 경고로 추정했지만, Prettier 적용 전후 diff를 확인한 결과 긴 문자열·객체·조건식의 실제 포맷 불일치도 있었습니다. 따라서 줄바꿈 문제만으로 단정한 초기 가설을 기각했습니다.
+
+### 근본 원인과 수정
+
+기준 branch에 PC/Danawa 기능이 추가될 때 위 4개 TypeScript 파일이 저장소의 Prettier 결과와 일치하지 않았고, 이 PR이 해당 기준선 문제를 처음 원격 CI에서 다시 드러냈습니다. 동작은 변경하지 않고 동일 Prettier 버전으로 4개 파일을 포맷했습니다.
+
+### 검증과 잔여 범위
+
+- Repository local: 포맷 후 전체 `format:check`, policy, audit, lint, typecheck, 186 tests, build, Lambda dry-run 재실행
+- GitHub Actions: 수정 commit push 후 재실행 결과를 PR에 기록
+- AWS-observed: 해당 없음—runtime 동작 변경 없음
+- Android/KakaoTalk: 해당 없음—relay 동작 변경 없음
+
+추적: [Issue #8](https://github.com/ekseh93/kakao-maple-bot/issues/8) · [PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9)
+
 ## 2026-09-01 다나와 조회 무응답
 
 ### 증상

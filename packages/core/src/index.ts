@@ -8,7 +8,12 @@ export {
   type PcQuoteRequest,
 } from './pc-quote.js';
 export { formatCalculator } from './calculator.js';
-export { formatPcDeals, formatPcDealsHelp, type PcDealsOperation, type PcDealsRequest } from './pc-deals.js';
+export {
+  formatPcDeals,
+  formatPcDealsHelp,
+  type PcDealsOperation,
+  type PcDealsRequest,
+} from './pc-deals.js';
 export { formatExchangeRates, type ExchangeRateView } from './exchange.js';
 export {
   formatDaisoProducts,
@@ -282,7 +287,16 @@ export function parseCommand(message: string): ParsedCommand | null {
   if (!name) return null;
   if (name === 'help' && !value.startsWith('!')) return null;
   if (name === 'pcDeals') {
-    const operation = ({ 다나와부품: 'parts', 다나와최저가: 'lowest', 다나와가격비교: 'compare', 다나와가격이력: 'history', 다나와부품상세: 'detail', 다나와호환성: 'compatibility' } as Record<string, string>)[raw ?? ''];
+    const operation = (
+      {
+        다나와부품: 'parts',
+        다나와최저가: 'lowest',
+        다나와가격비교: 'compare',
+        다나와가격이력: 'history',
+        다나와부품상세: 'detail',
+        다나와호환성: 'compatibility',
+      } as Record<string, string>
+    )[raw ?? ''];
     return { name, args: [operation ?? '', ...args] };
   }
   return name === 'rps' ? { name, args: [raw ?? '', ...args] } : { name, args };

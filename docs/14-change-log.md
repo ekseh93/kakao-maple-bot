@@ -11,6 +11,7 @@
 - README 첫 화면을 messenger 기능 설명보다 backend boundary, 장애 격리, 보안, 자동 검증이 먼저 보이도록 보강했습니다.
 - 트러블슈팅 문서에 대표 사례 색인과 재사용 가능한 기록 템플릿을 추가했습니다.
 - 이 변경은 GitHub Issue #8에서 시작했으며, PR·리뷰·branch protection 결과는 실제 확인 후 해당 PR에 남깁니다.
+- PR #9의 첫 원격 CI가 기준 branch의 TypeScript 4개 파일 포맷 불일치를 발견해, 동작 변경 없이 저장소 Prettier 결과로 정리하고 진단 과정을 트러블슈팅에 남겼습니다.
 
 ### 다나와 조회 무응답 수정 및 Lambda Version 12 배포
 
