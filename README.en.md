@@ -87,6 +87,7 @@ The initial Cloudflare Worker design was migrated to Lambda and API Gateway to b
 | Boss income          | `!보스수익 검마 하드 2인 / 세렌 노말 3인` | Weekly/monthly rules, party validation, flooring      |
 | General calculator   | `!계산기 12퍼 x 11개`                     | Dedicated parser with no code evaluation              |
 | Notices and events   | `!공지`, `!이벤트`, `!썬데이`             | Official data, caching, keyword alerts                |
+| PC/Danawa lookup    | `!다나와견적`, `!다나와최저가`, `!다나와가격비교` | MCP tools through an authenticated ECS adapter |
 | Utility data         | `!날씨 도쿄`, `!환율`, `!주유소 서울`     | Read-only providers and error isolation               |
 | Chat utilities       | `!짜장vs짬뽕`, `!뭐먹지`, `!로또`         | Pure local logic                                      |
 | Stocks               | `!주식 삼성전자`, `!주식 Tesla`           | Read-only data; no orders or account access           |
