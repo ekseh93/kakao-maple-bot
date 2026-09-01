@@ -8,7 +8,7 @@ Issue
 Branch (`codex/issue-N-short-name`)
   ↓ focused implementation and documentation
 Draft PR (`Closes #N`)
-  ├─ deterministic CI: format / policy / phone / secret / audit / lint / typecheck / test / build
+  ├─ deterministic CI: format / policy / phone / secret / audit / lint / typecheck / test / build / Lambda dry-run
   └─ advisory AI review: architecture / risk / missing cases
         ↓ author evaluates and responds
 Fix + re-run checks
