@@ -178,6 +178,7 @@ AWS 배포는 명시적 승인과 유효한 IAM Identity Center 인증을 전제
 - [트러블슈팅](docs/13-troubleshooting.md) · [변경 기록](docs/14-change-log.md)
 - [PC 견적 명세](docs/18-pc-quote.md)
 - [PC 견적 Adapter](apps/pc-deals-adapter/README.md)
+- [App Runner 권한 요청서](docs/20-apprunner-access-request.md)
 - [공기계 E2E 체크리스트](docs/16-phone-e2e-checklist.md) · [포트폴리오 증거 기준](docs/17-portfolio-evidence.md)
 
 ## 한계와 운영 원칙
