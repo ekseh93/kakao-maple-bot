@@ -1222,7 +1222,7 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { ...env, ALLOWED_ROOMS: 'fuel-invalid-room' },
       { retail },
     );
-    expect(invalidStations.reply).toBe('사용법을 확인해 주세요.');
+    expect(invalidStations.reply).toContain('!주유소 <지역>');
     const exchangeResult = await handleMessage(
       { ...message('!환율'), roomId: 'exchange-room', senderId: 'exchange-sender' },
       { ...env, ALLOWED_ROOMS: 'exchange-room' },

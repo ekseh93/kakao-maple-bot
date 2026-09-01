@@ -237,19 +237,67 @@ function errorMessage(error: unknown, requestId: string): string {
   return errorText[key] ?? `처리 중 오류가 발생했습니다. 요청 ID: ${requestId}`;
 }
 
+const commandUsageMap: Record<string, string> = {
+  character: '[정보 사용법]\n!정보 <닉네임>\n예: !정보 아델',
+  equipment: '[장비 사용법]\n!장비 <닉네임>\n예: !장비 아델',
+  dojang: '[무릉 사용법]\n!무릉 <닉네임>\n예: !무릉 아델',
+  union: '[유니온 사용법]\n!유니온 <닉네임>\n예: !유니온 아델',
+  unionChampion: '[유챔 사용법]\n!유챔 <닉네임>\n예: !유챔 아델',
+  experience: '[경험치 사용법]\n!경험치 <닉네임>\n예: !경험치 아델',
+  nightmare: '[악몽 사용법]\n!악몽 <닉네임>\n예: !악몽 아델',
+  angler: '[앵글 사용법]\n!앵글 <닉네임>\n예: !앵글 아델',
+  mountain: '[마운틴 사용법]\n!마운틴 <닉네임>\n예: !마운틴 아델',
+  mekaBerry: '[메카베리 사용법]\n!메카베리 <레벨>\n지원 레벨: 280~299\n예: !메카베리 290',
+  sauna: '[사우나 사용법]\n!사우나 <레벨 또는 닉네임>\n예: !사우나 290',
+  mepoEfficiency: '[메포효율 사용법]\n!메포효율',
+  symbol: '[심볼 사용법]\n!심볼 <지역> <현재레벨> <목표레벨> [현재성장치]\n예: !심볼 기어드락 1 11',
+  symbolMax: '[심볼만렙 사용법]\n!심볼만렙',
+  boss: '[보스 사용법]\n!보스',
+  bossProfit: '[보스수익 사용법]\n!보스수익 <보스> <난이도> [인원]\n예: !보스수익 검마 하드 2인',
+  calculator: '[계산기 사용법]\n!계산기 <수식>\n!계산기 <가격> <인원> <3% 또는 5%>\n예: !계산기 12 x 11개\n예: !계산기 25.3억 2명 5퍼',
+  seedRing: '[시드링 사용법]\n!시드링',
+  blackAccessoryBox: '[칠흑깡 사용법]\n!칠흑깡',
+  bossRewards: '[보스보상 사용법]\n!보스보상',
+  bossLevelBoost: '[보스렙뻥 사용법]\n!보스렙뻥',
+  bossForceBoost: '[보스포뻥 사용법]\n!보스포뻥',
+  pcQuote: formatPcQuoteHelp(),
+  pcDeals: formatPcDealsHelp(),
+  weather: '[날씨 사용법]\n!날씨 <지역>\n예: !날씨 도쿄',
+  stock: '[주식 사용법]\n!주식 <종목명 또는 코드>\n예: !주식 삼성전자',
+  daiso: '[다이소 사용법]\n!다이소 <상품>\n예: !다이소 물티슈',
+  fuel: '[기름 사용법]\n!기름 또는 !유가',
+  fuelStations: '[주유소 사용법]\n!주유소 <지역>\n예: !주유소 서울',
+  exchangeRate: '[환율 사용법]\n!환율',
+  food: '[뭐먹지 사용법]\n!뭐먹지 [소재획 또는 재획비]\n예: !뭐먹지 소재획',
+  japanTravel: '[일본여행 사용법]\n!일본여행',
+  rps: '[가위바위보 사용법]\n!가위 또는 !바위 또는 !보',
+  netflix: '[넷플 사용법]\n!넷플',
+  anime: '[애니 사용법]\n!애니',
+  manga: '[만화 사용법]\n!만화',
+  webtoon: '[웹툰 사용법]\n!웹툰',
+  webNovel: '[웹소설 사용법]\n!웹소설',
+  lotto: '[로또 사용법]\n!로또',
+  notice: '[공지 사용법]\n!공지',
+  event: '[이벤트 사용법]\n!이벤트',
+  sunday: '[썬데이 사용법]\n!썬데이 또는 !선데이',
+  inven: '[인벤 사용법]\n!인벤',
+  hotDeals: '[핫딜 사용법]\n!핫딜',
+  graphicsCard: '[글카 사용법]\n!글카',
+  monitor: '[모니터 사용법]\n!모니터',
+  japanTravelPosts: '[일본여행기 사용법]\n!일본여행기',
+  japanRestaurantPosts: '[일본음식점 사용법]\n!일본음식점',
+  weeklyNewProduct: '[금주의신상 사용법]\n!금주의신상',
+  discord: '[디코 사용법]\n!디코',
+  boutiqueGift: '[부티크 사용법]\n!부티크',
+  royal: '[로얄 사용법]\n!로얄 [횟수] [결과표시 여부]',
+  wonderBerry: '[원더베리 사용법]\n!원더베리 [횟수] [결과표시 여부]',
+  lunaSweet: '[루나스윗 사용법]\n!루나스윗',
+  lunaDream: '[루나드림 사용법]\n!루나드림',
+  usageStats: '[통계 사용법]\n!통계',
+};
+
 function commandUsage(name: string): string | undefined {
-  switch (name) {
-    case 'pcQuote':
-      return formatPcQuoteHelp();
-    case 'fortune':
-      return '[운세 사용법]\n!운세 <생년월일> <성별> <양력/음력>\n예: !운세 931201 남성 양력';
-    case 'mekaBerry':
-      return '[메카베리 사용법]\n!메카베리 <레벨>\n지원 레벨: 280~299\n예: !메카베리 290';
-    case 'pcDeals':
-      return formatPcDealsHelp();
-    default:
-      return undefined;
-  }
+  return commandUsageMap[name];
 }
 
 function stalePostReply(
