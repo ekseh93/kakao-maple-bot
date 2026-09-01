@@ -170,6 +170,7 @@ pnpm build
 pnpm lambda:dry-run
 pnpm format:check
 pnpm policy:check
+pnpm secret:test
 pnpm secret:check
 pnpm phone:check
 pnpm audit

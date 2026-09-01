@@ -13,6 +13,7 @@
 - 이 변경은 GitHub Issue #8에서 시작했으며, PR·리뷰·branch protection 결과는 실제 확인 후 해당 PR에 남깁니다.
 - PR #9의 첫 원격 CI가 기준 branch의 TypeScript 4개 파일 포맷 불일치를 발견해, 동작 변경 없이 저장소 Prettier 결과로 정리하고 진단 과정을 트러블슈팅에 남겼습니다.
 - 다음 실행에서 secret scan이 자기 workflow의 정규식과 안전한 placeholder를 탐지하는 false positive를 확인했습니다. 추적 파일을 검사하되 실제 값을 출력하지 않고 placeholder를 구분하는 `secret:check`로 대체했습니다.
+- CodeRabbit의 3개 inline 리뷰를 검증해 private security reporting, CI 문서의 phone 검사, quoted/spaced secret 할당 탐지와 회귀 테스트를 반영했습니다.
 
 ### 다나와 조회 무응답 수정 및 Lambda Version 12 배포
 

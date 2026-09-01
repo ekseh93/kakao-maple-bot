@@ -86,6 +86,16 @@ workflow만 제외해 다시 검사하자 공개용 phone relay의 안전한 `RE
 - GitHub Actions: 수정 commit push 후 세 번째 실행 결과를 PR에 기록
 - 실제 secret 발견: 없음
 
+### CodeRabbit 리뷰 대응
+
+[CodeRabbit 리뷰](https://github.com/ekseh93/kakao-maple-bot/pull/9#pullrequestreview-5079155183)의 3개 inline 지적을 현재 코드와 대조해 모두 수용했습니다.
+
+- 공개 security 페이지 대신 GitHub private vulnerability report 링크와 `SECURITY.md`를 추가했습니다.
+- 실제 `verify`와 맞도록 개발 흐름의 deterministic CI 목록에 `phone` 검사를 추가했습니다.
+- 환경변수 secret 검사에 `=` 주변 공백과 single/double quote 입력을 추가하고 Node test로 compact·spaced·quoted·placeholder·redacted finding을 검증했습니다.
+
+Docstring coverage 경고는 이번 동작 변경과 무관한 기존 TypeScript formatter까지 일괄 주석화하라는 제안이므로 수용하지 않았습니다. PR 본문의 `Closes #8`과 3개 언어 README 링크는 실제 PR·파일에서 확인되므로 linked issue의 inconclusive 판정은 별도 코드 변경 사유로 사용하지 않았습니다.
+
 ## 2026-09-01 다나와 조회 무응답
 
 ### 증상
