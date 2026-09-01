@@ -46,7 +46,7 @@
 
 새 작업은 [Issue・PR・리뷰 운영](21-development-workflow.md)에 따라 Issue와 PR을 연결합니다. 단, 비밀값·실제 방 이름·사용자 식별정보·대화 원문·비식별화되지 않은 화면은 기록하지 않습니다.
 
-## 2026-09-01 PR #9 `verify` 포맷 검사 실패
+## 2026-09-01 PR #9 `verify` 연속 실패
 
 ### 증상과 영향
 
@@ -75,6 +75,16 @@
 - Android/KakaoTalk: 해당 없음—relay 동작 변경 없음
 
 추적: [Issue #8](https://github.com/ekseh93/kakao-maple-bot/issues/8) · [PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9)
+
+### 두 번째 실패: secret scan 자기 참조
+
+포맷 수정 후 실행은 test·build·Lambda dry-run까지 통과했지만 마지막 secret scan에서 실패했습니다. 로그를 확인하니 실제 secret이 아니라 `.github/workflows/checks.yml` 안에 검사 규칙으로 작성된 `Bearer` 정규식 자체를 `git grep`이 다시 탐지했습니다.
+
+workflow만 제외해 다시 검사하자 공개용 phone relay의 안전한 `REPLACE_WITH_SECRET` placeholder도 탐지되었습니다. 제외 경로를 계속 늘리지 않고 `scripts/secret-check.mjs`로 검사를 분리했습니다. 이 검사는 Git 추적 파일만 읽고, 알려진 placeholder를 허용하며, 문제가 있더라도 실제 값 대신 파일·줄·규칙 이름만 출력합니다.
+
+- Repository local: 전체 자동 검사와 `pnpm secret:check`의 placeholder·자기 참조 처리 확인
+- GitHub Actions: 수정 commit push 후 세 번째 실행 결과를 PR에 기록
+- 실제 secret 발견: 없음
 
 ## 2026-09-01 다나와 조회 무응답
 
