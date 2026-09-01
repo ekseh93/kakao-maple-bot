@@ -269,6 +269,7 @@ const commandUsageMap: Record<string, string> = {
   fuelStations: '[주유소 사용법]\n!주유소 <지역>\n예: !주유소 서울',
   exchangeRate: '[환율 사용법]\n!환율',
   food: '[뭐먹지 사용법]\n!뭐먹지 [소재획 또는 재획비]\n예: !뭐먹지 소재획',
+  fortune: '[운세 사용법]\n!운세 <생년월일> <성별> <양력/음력>\n예: !운세 931201 남성 양력',
   japanTravel: '[일본여행 사용법]\n!일본여행',
   rps: '[가위바위보 사용법]\n!가위 또는 !바위 또는 !보',
   netflix: '[넷플 사용법]\n!넷플',
