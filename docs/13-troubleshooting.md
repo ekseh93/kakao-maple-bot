@@ -205,11 +205,11 @@ HTTP 200이지만 응답 내용이 없습니다.
 
 #### English translation (intent-level)
 
-“Please add computer build recommendations by price range.” The follow-up discussion asks for a Danawa-PC-style result to be brought into the chat, notes that live API access may not be available, and asks whether the bot can output the information instead of only pointing to an external page. The screenshot is low-resolution and partially cropped, so this is a meaning-preserving translation rather than a verbatim transcript.
+“Please add computer build recommendations by price range.” The follow-up discussion asks for a Danawa-PC-style result to be brought into the chat, notes that live API access may not be available, and asks whether the bot could output the information directly rather than only pointing to an external page. The replacement screenshot confirms this intent; cropped message content is still recorded as a meaning-preserving translation rather than a verbatim transcript.
 
 #### 日本語訳（意図の要約）
 
-「価格帯別のPC構成おすすめを追加してください。」という要望です。その後の会話では、ダナワPCのような結果をチャットに表示したいこと、リアルタイムAPIが使えない場合があること、外部ページへのリンクだけでなく情報自体をボットが出力できるかが話されています。画像は低解像度で一部が切れているため、逐語訳ではなく意図を保った要約訳です。
+「価格帯別のPC構成おすすめを追加してください。」という要望です。その後の会話では、ダナワPCのような結果をチャットに表示したいこと、リアルタイムAPIが使えない場合があること、外部ページへのリンクだけでなく情報自体をボットが出力できるかが話されています。差し替え画像でこの意図を再確認しましたが、一部が切れているため逐語訳ではなく意図を保った要約訳です。
 
 ## 현재 관측 상태
 
