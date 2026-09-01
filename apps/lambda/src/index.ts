@@ -572,7 +572,7 @@ export async function handleMessage(
           return { reply: formatPcDealsHelp(), requestId, cache: 'bypass' };
         const client =
           deps.pcDealsTools ?? createPcDealsClient(env.PC_DEALS_API_URL, env.PC_DEALS_SHARED_SECRET);
-        const text = await client.run({ operation: operation as never, args }, timeoutSignal());
+        const text = await client.run({ operation: operation as never, args }, timeoutSignal(8000));
         return { reply: formatPcDeals(operation as never, text), requestId, cache: 'bypass' };
       }
       case 'seedRing': {

@@ -176,7 +176,7 @@ function response(room, message, sender, isGroupChat, replier, imageDB, packageN
     connection.requestBody(payload);
     connection.ignoreContentType(true);
     connection.ignoreHttpErrors(true);
-    connection.timeout(4500);
+    connection.timeout(15000);
     connection.method(org.jsoup.Connection.Method.POST);
 
     var result = connection.execute();
