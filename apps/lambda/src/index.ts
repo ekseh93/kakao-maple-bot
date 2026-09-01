@@ -481,8 +481,11 @@ export async function handleMessage(
         const client =
           deps.pcDeals ?? createPcQuoteClient(env.PC_DEALS_API_URL, env.PC_DEALS_SHARED_SECRET);
         const quotes = await client.findQuotes(request, timeoutSignal());
-        pcQuoteCache.set(cacheKey, { value: quotes, expiresAt: now + 10 * 60_000 });
-        return { reply: formatPcQuotes(request, quotes), requestId, cache: 'miss' };
+        // A provider may return the closest available build even when it exceeds
+        // the requested budget. Never present that as an in-budget recommendation.
+        const inBudgetQuotes = quotes.filter((quote) => quote.totalKrw <= request.budgetKrw);
+        pcQuoteCache.set(cacheKey, { value: inBudgetQuotes, expiresAt: now + 10 * 60_000 });
+        return { reply: formatPcQuotes(request, inBudgetQuotes), requestId, cache: 'miss' };
       }
       case 'seedRing': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');

@@ -127,6 +127,12 @@ function select(items, target) {
   );
 }
 
+function cheapest(items) {
+  return items
+    .filter((item) => Number.isSafeInteger(item.priceKrw) && item.priceKrw > 0)
+    .sort((a, b) => a.priceKrw - b.priceKrw)[0];
+}
+
 async function buildQuotes(request) {
   const selectedCategories = request.monitorIncluded
     ? categories
@@ -135,24 +141,43 @@ async function buildQuotes(request) {
     selectedCategories.map(async ([label, category]) => [label, await bridge.list(category)]),
   );
   const variants = [0, 1, 2].map((variant) => {
-    const items = fetched.flatMap(([label, values], index) => {
+    const selections = fetched.map(([label, values], index) => {
       const [, , weight] = selectedCategories[index];
       const target = request.budgetKrw * weight;
       const candidates = values.slice(variant, variant + 3);
-      const choice = select(candidates.length ? candidates : values, target);
-      return choice ? [{ category: label, ...choice }] : [];
+      const baseline = cheapest(values);
+      const preferred = select(candidates.length ? candidates : values, target);
+      return baseline && preferred
+        ? { label, baseline, preferred }
+        : undefined;
     });
-    const totalKrw = items.reduce((sum, item) => sum + item.priceKrw, 0);
+    if (selections.some((selection) => !selection)) return undefined;
+
+    const chosen = selections.map((selection) => ({
+      category: selection.label,
+      ...selection.baseline,
+    }));
+    let totalKrw = chosen.reduce((sum, item) => sum + item.priceKrw, 0);
+    for (const [index, selection] of selections.entries()) {
+      const current = chosen[index];
+      const upgrade = selection.preferred;
+      const delta = upgrade.priceKrw - current.priceKrw;
+      if (delta > 0 && totalKrw + delta <= request.budgetKrw) {
+        chosen[index] = { category: selection.label, ...upgrade };
+        totalKrw += delta;
+      }
+    }
+    if (totalKrw > request.budgetKrw) return undefined;
     return {
       label: ['균형형', '가성비형', '여유형'][variant],
       totalKrw,
-      items,
+      items: chosen,
       compatibility: '확인 필요',
       source: '다나와/컴퓨존 MCP',
       fetchedAt: new Date().toISOString(),
     };
   });
-  return variants.filter((quote) => quote.items.length >= 5);
+  return variants.filter((quote) => quote && quote.items.length >= 5);
 }
 
 async function readBody(request) {
