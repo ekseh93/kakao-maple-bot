@@ -6,6 +6,15 @@
 
 `TypeScript` · `AWS Lambda` · `API Gateway` · `DynamoDB` · `Terraform` · `Nexon Open API` · `Vitest`
 
+## 30초 기술 요약
+
+KakaoTalk은 이 프로젝트의 **사용 인터페이스**이며, 핵심은 특정 메신저에 종속되지 않는 서버리스 백엔드 설계입니다. Android는 얇은 HTTPS 릴레이로 제한하고, 인증·입력 검증·명령 라우팅·외부 API 장애 격리·캐시·관측성을 AWS에 모았습니다. 변경은 `Issue → PR → CI → 보조 AI 리뷰 → 검증 기록`으로 추적하며, 저장소 검사·AWS 관측·사용자 기기 확인을 서로 다른 증거로 관리합니다.
+
+- **Boundary design:** 레거시 Android 런타임과 TypeScript 도메인 로직을 HTTP 계약으로 분리
+- **Reliability:** provider별 timeout·cache·retry·stale fallback과 부분 실패 처리
+- **Security/operations:** deny-by-default 방 허용, Bearer 인증, 최소 권한 IaC, 개인정보 비저장
+- **Quality:** strict TypeScript, 186개 테스트, 정책·비밀정보·빌드·Lambda dry-run 자동 검사
+
 ## 프로젝트 한눈에 보기
 
 | 항목      | 내용                                                                            |
@@ -15,7 +24,7 @@
 | 담당 범위 | 요구사항 정의, 아키텍처 설계, TypeScript 구현, IaC, 테스트, AWS 배포, 운영 개선 |
 | 사용 환경 | 지인이 참여하는 제한된 KakaoTalk 그룹 채팅                                      |
 | 현재 상태 | 도쿄 리전 배포 및 백엔드 smoke test 완료, 실제 공기계 사용은 사용자 확인        |
-| 품질 기준 | 자동 테스트 181건, strict typecheck, lint, 정책 검사, phone script 검사         |
+| 품질 기준 | 자동 테스트 186건, strict typecheck, lint, 정책 검사, phone script 검사         |
 
 이 프로젝트는 기능 수를 늘리는 데서 끝내지 않고, **정책 위험이 있는 비공식 메신저 연동을 어떻게 안전하게 분리하고 실제로 운영할 것인가**를 중심으로 설계했습니다. AI 지원 도구를 개발 과정에 활용했으며, 변경 내용은 공식 문서·코드 검토·자동 테스트·배포 후 smoke test로 다시 확인합니다.
 
@@ -84,18 +93,18 @@ AWS Lambda (Node.js 22 / TypeScript)
 
 ## 대표 기능
 
-| 분류        | 명령 예시                                        | 구현 포인트                                      |
-| ----------- | ------------------------------------------------ | ------------------------------------------------ |
-| 캐릭터 조회 | `!정보 닉네임`, `!장비 닉네임`                   | Nexon API 응답 검증, 부분 실패 처리, 모바일 포맷 |
-| 성장 계산   | `!심볼 기어드락 1 11`, `!사우나 닉네임`          | 버전 관리된 데이터와 경계값 테스트               |
-| 보스 계산   | `!보스수익 검마 하드 2인 / 세렌 노말 3인`        | 주간·월간 구분, 인원 검증, 소수점 버림           |
-| 일반 계산   | `!계산기 12퍼 x 11개`, `!계산기 25.3억 2명 5퍼`  | 코드 평가 없는 전용 파서                         |
+| 분류        | 명령 예시                                                    | 구현 포인트                                      |
+| ----------- | ------------------------------------------------------------ | ------------------------------------------------ |
+| 캐릭터 조회 | `!정보 닉네임`, `!장비 닉네임`                               | Nexon API 응답 검증, 부분 실패 처리, 모바일 포맷 |
+| 성장 계산   | `!심볼 기어드락 1 11`, `!사우나 닉네임`                      | 버전 관리된 데이터와 경계값 테스트               |
+| 보스 계산   | `!보스수익 검마 하드 2인 / 세렌 노말 3인`                    | 주간·월간 구분, 인원 검증, 소수점 버림           |
+| 일반 계산   | `!계산기 12퍼 x 11개`, `!계산기 25.3억 2명 5퍼`              | 코드 평가 없는 전용 파서                         |
 | PC 견적     | `!다나와견적 100만원 게이밍`, `!다나와견적 200만원 영상편집` | 예산·용도 정규화, 가격/호환성 Adapter 경계       |
-| 다나와 조회 | `!다나와부품`, `!다나와최저가`, `!다나와가격비교` 등 | MCP 도구를 인증된 ECS Adapter로 중계             |
-| 공지·이벤트 | `!공지`, `!이벤트`, `!썬데이`                    | 공식 데이터, 캐시, 키워드 알림                   |
-| 생활 정보   | `!날씨 도쿄`, `!환율`, `!주유소 서울`            | 읽기 전용 provider와 오류 격리                   |
-| 채팅 기능   | `!짜장vs짬뽕`, `!뭐먹지`, `!로또`                | 외부 호출 없는 순수 로직                         |
-| 주식 시세   | `!주식 삼성전자`, `!주식 Tesla`                  | 조회 전용, 주문·계좌 기능 제외                   |
+| 다나와 조회 | `!다나와부품`, `!다나와최저가`, `!다나와가격비교` 등         | MCP 도구를 인증된 ECS Adapter로 중계             |
+| 공지·이벤트 | `!공지`, `!이벤트`, `!썬데이`                                | 공식 데이터, 캐시, 키워드 알림                   |
+| 생활 정보   | `!날씨 도쿄`, `!환율`, `!주유소 서울`                        | 읽기 전용 provider와 오류 격리                   |
+| 채팅 기능   | `!짜장vs짬뽕`, `!뭐먹지`, `!로또`                            | 외부 호출 없는 순수 로직                         |
+| 주식 시세   | `!주식 삼성전자`, `!주식 Tesla`                              | 조회 전용, 주문·계좌 기능 제외                   |
 
 전체 명령과 입력·오류 계약은 [명령어 명세](docs/04-command-specification.md)에서 확인할 수 있습니다.
 
@@ -109,7 +118,7 @@ AWS Lambda (Node.js 22 / TypeScript)
 
 | 검증 항목       | 확인된 결과                                             | 증거                                            |
 | --------------- | ------------------------------------------------------- | ----------------------------------------------- |
-| 자동 테스트     | **181 passed** (`core 63`, `providers 50`, `lambda 68`) | `pnpm test`                                     |
+| 자동 테스트     | **186 passed** (`core 66`, `providers 51`, `lambda 69`) | `pnpm test`                                     |
 | 정적 품질       | strict typecheck, ESLint, Prettier, policy check 통과   | [로컬 검증 기록](docs/10-local-verification.md) |
 | 공기계 스크립트 | MessengerBot R용 JavaScript 구문 검사                   | `pnpm phone:check`                              |
 | AWS 배포        | `ap-northeast-1` Lambda/API Gateway, `/health` HTTP 200 | [출시 승인 게이트](docs/12-release-gate.md)     |
@@ -117,6 +126,12 @@ AWS Lambda (Node.js 22 / TypeScript)
 | 실제 Kakao 사용 | 제한된 그룹 채팅에서 사용 중                            | 사용자 확인, 독립 Android E2E는 미관측          |
 
 `/health`가 정상이라는 사실만으로 카카오톡 전체 흐름을 검증했다고 주장하지 않습니다. 저장소 자동 검증, AWS에서 관측한 결과, 사용자 기기 확인을 구분해 기록했습니다.
+
+## 개발·리뷰 흐름
+
+새 변경은 문제와 완료 조건을 Issue에 먼저 기록하고, 전용 branch와 `Closes #N` PR로 연결합니다. GitHub Actions의 결정적 검사 결과를 merge 기준으로 삼고, CodeRabbit의 일본어 리뷰는 누락과 경계조건을 찾는 보조 수단으로 사용합니다. AI 지적은 작성자가 근거를 확인한 뒤 수용·수정·기각 이유를 PR에 남깁니다.
+
+자세한 branch 보호 원칙, 증거 계층, 리뷰 대응 방식은 [Issue・PR・리뷰 운영](docs/21-development-workflow.md), 실제 장애 기록은 [트러블슈팅](docs/13-troubleshooting.md)에서 확인할 수 있습니다.
 
 ## 사용 화면
 
@@ -178,6 +193,7 @@ AWS 배포는 명시적 승인과 유효한 IAM Identity Center 인증을 전제
 - [시스템 아키텍처](docs/03-architecture.md) · [명령어 명세](docs/04-command-specification.md)
 - [API·데이터·저작권 정책](docs/05-api-data-policy.md) · [보안·운영 설계](docs/06-security-operations.md)
 - [테스트 전략](docs/07-test-strategy.md) · [요구사항 추적성](docs/11-traceability.md)
+- [개발·리뷰 흐름](docs/21-development-workflow.md) · [포트폴리오 증거 기준](docs/17-portfolio-evidence.md)
 - [트러블슈팅](docs/13-troubleshooting.md) · [변경 기록](docs/14-change-log.md)
 - [PC 견적 명세](docs/18-pc-quote.md)
 - [PC 견적 Adapter](apps/pc-deals-adapter/README.md)

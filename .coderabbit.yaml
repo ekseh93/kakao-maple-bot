@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: ja-JP
+early_access: false
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+  path_filters:
+    - '!dist/**'
+    - '!node_modules/**'
+    - '!pnpm-lock.yaml'
+    - '!docs/assets/**'
+  path_instructions:
+    - path: apps/lambda/**
+      instructions: >-
+        Verify authentication and allow-list checks run before business logic,
+        request schemas are validated, secrets and personal data are never logged,
+        and provider failures map to safe user-facing responses.
+    - path: packages/core/**
+      instructions: >-
+        Prefer deterministic pure logic. Reject eval-like execution and check
+        normal, boundary, invalid-input, and overflow cases without coupling to a provider.
+    - path: packages/providers/**
+      instructions: >-
+        Keep adapters read-only and isolated. Check response schemas, timeouts,
+        bounded retry/cache/stale behavior, and ensure no access-control bypass or prohibited crawling.
+    - path: apps/phone-relay/**
+      instructions: >-
+        Keep MessengerBot R as a thin legacy-compatible relay. Business logic and
+        secrets must stay in the backend; validate room handling, timeouts, and long-message splitting.
+    - path: infra/terraform/**
+      instructions: >-
+        Enforce ap-northeast-1, least privilege, encryption, explicit deployment
+        approval, no committed secrets, and no fixed-cost paid resource by default.
+    - path: tests/**
+      instructions: >-
+        Check requirement traceability and cover normal, boundary, and error paths
+        with deterministic fixtures that contain no real personal data.
+    - path: 'docs/**.md'
+      instructions: >-
+        Check that claims match repository evidence, AWS observations, or explicitly
+        labeled user confirmation; keep Japanese clear and exclude private identifiers.
