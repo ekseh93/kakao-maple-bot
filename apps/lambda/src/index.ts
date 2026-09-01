@@ -237,6 +237,21 @@ function errorMessage(error: unknown, requestId: string): string {
   return errorText[key] ?? `처리 중 오류가 발생했습니다. 요청 ID: ${requestId}`;
 }
 
+function commandUsage(name: string): string | undefined {
+  switch (name) {
+    case 'pcQuote':
+      return formatPcQuoteHelp();
+    case 'fortune':
+      return '[운세 사용법]\n!운세 <생년월일> <성별> <양력/음력>\n예: !운세 931201 남성 양력';
+    case 'mekaBerry':
+      return '[메카베리 사용법]\n!메카베리 <레벨>\n지원 레벨: 280~299\n예: !메카베리 290';
+    case 'pcDeals':
+      return formatPcDealsHelp();
+    default:
+      return undefined;
+  }
+}
+
 function stalePostReply(
   cache: ResilientPostCache | undefined,
   now: number,
@@ -1326,7 +1341,12 @@ export async function handleMessage(
         requestId,
         cache: 'miss',
       };
-    return { reply: errorMessage(error, requestId), requestId, cache: 'miss' };
+    const raw = error instanceof Error ? error.message : '';
+    return {
+      reply: raw === 'INVALID_USAGE' ? (commandUsage(parsed.name) ?? errorMessage(error, requestId)) : errorMessage(error, requestId),
+      requestId,
+      cache: 'miss',
+    };
   }
 }
 

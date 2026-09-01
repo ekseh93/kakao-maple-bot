@@ -14,7 +14,9 @@ node apps/pc-deals-adapter/server.mjs
 
 The process starts `npx -y kr-pc-deals-mcp` by default. Set `MCP_COMMAND` and
 JSON-encoded `MCP_ARGS` when running from a pinned local installation. The
-adapter exposes `GET /health` and an authenticated `POST /v1/quote` endpoint.
+adapter exposes `GET /health`, an authenticated `POST /v1/quote` endpoint, and
+an authenticated `POST /v1/tool` endpoint for Danawa-prefixed lookup commands.
+The tool endpoint accepts `{ "operation": "parts|lowest|compare|history|detail|compatibility", "args": [] }`.
 
 ## Container run
 

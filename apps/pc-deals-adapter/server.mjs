@@ -228,8 +228,8 @@ async function readBody(request) {
 const server = createServer(async (request, response) => {
   if (request.method === 'GET' && request.url === '/health')
     return json(response, 200, { ok: true });
-  if (request.method !== 'POST' || request.url !== '/v1/quote')
-    if (request.method !== 'POST' || request.url !== '/v1/tool') return json(response, 404, { error: 'NOT_FOUND' });
+  if (request.method !== 'POST' || !['/v1/quote', '/v1/tool'].includes(request.url))
+    return json(response, 404, { error: 'NOT_FOUND' });
   if (!authorized(request)) return json(response, 401, { error: 'UNAUTHORIZED' });
   try {
     const body = await readBody(request);
