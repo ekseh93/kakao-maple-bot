@@ -73,6 +73,25 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(nexon.findCharacter).not.toHaveBeenCalled();
   });
 
+  it('filters MapleStory commands and uses general-only help when disabled', async () => {
+    const generalEnv = {
+      ...env,
+      MAPLE_COMMANDS_ENABLED: 'false',
+      ALLOWED_ROOMS: 'general-room',
+    };
+    const maple = await handleMessage({ ...message('!보스'), roomId: 'general-room' }, generalEnv);
+    expect(maple.reply).toBeNull();
+    const help = await handleMessage({ ...message('!도움말'), roomId: 'general-room' }, generalEnv);
+    expect(help.reply).toContain('[일반 봇 도움말]');
+    expect(help.reply).not.toContain('!보스');
+    expect(help.reply).toContain('!뭐먹지');
+    const generalLotto = await handleMessage(
+      { ...message('!로또'), roomId: 'general-room' },
+      generalEnv,
+    );
+    expect(generalLotto.reply).toContain('[로또 랜덤 뽑기]');
+  });
+
   it('formats today fortune for a birth year', async () => {
     const result = await handleMessage(
       { ...message('!운세 2000-01-01 남자 양력'), roomId: 'fortune-room' },

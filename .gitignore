@@ -7,6 +7,12 @@
 !*.example
 local-config.js
 apps/phone-relay/local-config.js
+infra/terraform-general/.terraform/
+infra/terraform-general/*.tfstate
+infra/terraform-general/*.tfstate.*
+infra/terraform-general/*.tfplan
+infra/terraform-general/terraform.tfvars
+infra/terraform-general/crash.log
 
 # Dependencies and build
 node_modules/

@@ -121,9 +121,10 @@
 15. [트러블슈팅 기록](docs/13-troubleshooting.md)
 16. [Terraform AWS 설계](infra/terraform/README.md)
 17. [포트폴리오 인증·공개 범위](docs/17-portfolio-evidence.md)
-18. [변경 기록](docs/14-change-log.md)
-19. [공기계 E2E 체크리스트](docs/16-phone-e2e-checklist.md)
-20. [익명 명령어 사용 통계](docs/portfolio/command-usage.md)
+18. [별도 일반 기능 봇 서비스](docs/18-general-bot-service.md)
+19. [변경 기록](docs/14-change-log.md)
+20. [공기계 E2E 체크리스트](docs/16-phone-e2e-checklist.md)
+21. [익명 명령어 사용 통계](docs/portfolio/command-usage.md)
 
 ## 구현 원칙
 

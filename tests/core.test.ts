@@ -39,6 +39,7 @@ import {
   formatHotDealSections,
   formatUsageStats,
   FORMATTED_HELP,
+  FORMATTED_GENERAL_HELP,
 } from '@kakao-maple-bot/core';
 
 describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
@@ -74,6 +75,13 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     );
     expect(FORMATTED_HELP).toContain('• !통계');
     expect(FORMATTED_HELP).toContain('• !계산기 <수식> / <가격> <인원> <3%·5%>');
+  });
+  it('provides a general-only help list without MapleStory commands', () => {
+    expect(FORMATTED_GENERAL_HELP).toContain('[일반 봇 도움말]');
+    expect(FORMATTED_GENERAL_HELP).toContain('• !계산기 <수식> / <가격> <인원> <3%·5%>');
+    expect(FORMATTED_GENERAL_HELP).toContain('• !뭐먹지 !ㅁㅁㅈ');
+    expect(FORMATTED_GENERAL_HELP).not.toContain('!보스');
+    expect(FORMATTED_GENERAL_HELP).not.toContain('!시드링');
   });
   it('formats the anonymous total command count', () => {
     expect(formatUsageStats(1234)).toBe('[봇 사용 통계]\n현재까지 명령어 호출: 1,234회');

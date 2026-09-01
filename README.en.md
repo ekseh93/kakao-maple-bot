@@ -37,6 +37,8 @@ The phone script is intentionally thin. Command rules, calculations, caching, pr
 
 `!시드링` now lists five White Jade and five Black Jade boss ring draws. `!뭐먹지` includes separate `소재획` and `재획비` choices with boosted weights.
 
+`infra/terraform-general` and `apps/phone-relay/general-bot.js` provide a separate general-purpose bot service. It reuses the backend with MapleStory commands disabled and requires its own room allowlist and phone secret.
+
 Maple character data uses the Nexon Open API. Maple.GG and Maplescouter are link-only destinations; the bot does not crawl or automatically access them.
 
 ### Mini-games

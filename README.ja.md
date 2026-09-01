@@ -37,6 +37,8 @@ AWS Lambda
 
 `!시드링`は白玉5回と黒玉5回のボスリング結果を表示し、`!뭐먹지`には`소재획`と`재획비`の別々の候補を追加しています。
 
+`infra/terraform-general`と`apps/phone-relay/general-bot.js`は、MapleStoryコマンドを無効にした別の一般機能ボットサービスです。専用の許可ルームとスマホ用secretを設定します。
+
 MapleのキャラクターデータはNexon Open APIから取得します。Maple.GGとMaplescouterはリンク表示のみで、自動クロールや自動HTTPアクセスは行いません。
 
 ### ミニゲーム

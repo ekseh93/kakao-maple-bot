@@ -10,6 +10,7 @@ import {
   formatLunaCrystalDreamDraw,
   formatSymbol,
   FORMATTED_HELP,
+  FORMATTED_GENERAL_HELP,
   parseCommand,
   parseRoyalOptions,
   playRps,
@@ -92,6 +93,7 @@ import { createDynamoUsageStatsStore, type UsageStatsStore } from './usage-stats
 export interface Env {
   BOT_SHARED_SECRET?: string;
   BOT_ENABLED?: string;
+  MAPLE_COMMANDS_ENABLED?: string;
   ALLOWED_ROOMS?: string;
   ADMIN_SENDERS?: string;
   NEXON_API_KEY?: string;
@@ -112,6 +114,39 @@ export type Message = {
   sentAt?: string;
 };
 const defaultNoticeAlertKeywords = ['채널 점검', '마이너버전', '클라이언트'];
+const mapleCommandNames = new Set([
+  'character',
+  'dojang',
+  'union',
+  'unionChampion',
+  'equipment',
+  'notice',
+  'inven',
+  'mabbakDorosi',
+  'event',
+  'sunday',
+  'experience',
+  'nightmare',
+  'angler',
+  'mountain',
+  'mekaBerry',
+  'sauna',
+  'mepoEfficiency',
+  'symbol',
+  'symbolMax',
+  'boss',
+  'bossProfit',
+  'seedRing',
+  'blackAccessoryBox',
+  'bossRewards',
+  'bossLevelBoost',
+  'bossForceBoost',
+  'royal',
+  'wonderBerry',
+  'boutiqueGift',
+  'lunaSweet',
+  'lunaDream',
+]);
 type Dependencies = {
   nexon?: NexonClient;
   inven?: InvenClient;
@@ -385,6 +420,8 @@ export async function handleMessage(
     };
   const parsed = parseCommand(message.message);
   if (!parsed) return { reply: null, requestId, cache: 'bypass' };
+  if (env.MAPLE_COMMANDS_ENABLED === 'false' && mapleCommandNames.has(parsed.name))
+    return { reply: null, requestId, cache: 'bypass' };
   const recent = (roomRequests.get(message.roomId) ?? []).filter((time) => now - time < 10_000);
   const senderRecent = (senderRequests.get(message.senderId) ?? []).filter(
     (time) => now - time < 60_000,
@@ -408,7 +445,7 @@ export async function handleMessage(
     switch (parsed.name) {
       case 'help':
         return {
-          reply: FORMATTED_HELP,
+          reply: env.MAPLE_COMMANDS_ENABLED === 'false' ? FORMATTED_GENERAL_HELP : FORMATTED_HELP,
           requestId,
           cache: 'bypass',
         };

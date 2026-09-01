@@ -16,6 +16,10 @@ Parameters:
     Type: String
     Default: 'false'
     AllowedValues: ['true', 'false']
+  MapleCommandsEnabled:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
   AllowedRooms:
     Type: String
     Default: ''
@@ -72,6 +76,7 @@ Resources:
         Variables:
           BOT_SHARED_SECRET: !Ref BotSharedSecret
           BOT_ENABLED: !Ref BotEnabled
+          MAPLE_COMMANDS_ENABLED: !Ref MapleCommandsEnabled
           ALLOWED_ROOMS: !Ref AllowedRooms
           STOCK_ENABLED: !Ref StockEnabled
           NOTICE_ALERT_ENABLED: !Ref NoticeAlertEnabled

@@ -73,6 +73,7 @@ resource "aws_lambda_function" "bot" {
     variables = {
       BOT_SHARED_SECRET      = var.bot_shared_secret
       BOT_ENABLED            = tostring(var.bot_enabled)
+      MAPLE_COMMANDS_ENABLED = tostring(var.maple_commands_enabled)
       ALLOWED_ROOMS          = var.allowed_rooms
       ADMIN_SENDERS          = var.admin_senders
       STOCK_ENABLED          = tostring(var.stock_enabled)

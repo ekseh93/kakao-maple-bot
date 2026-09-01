@@ -4,6 +4,11 @@
 
 ## 2026-09-01
 
+### 별도 일반 기능 봇 서비스 설계
+
+- `MAPLE_COMMANDS_ENABLED=false`로 MapleStory 명령을 차단하고 일반 기능만 제공하는 별도 Lambda/API Gateway 서비스 구성을 추가했습니다.
+- 별도 Terraform 상태·리소스 이름·DynamoDB 사용량 테이블과 `apps/phone-relay/general-bot.js` 릴레이 스크립트를 제공합니다.
+
 ### 메뉴·보스 상자 확률 업데이트
 
 - `!뭐먹지`의 `재획` 선택지를 `소재획`과 `재획비`로 나누고 각각 기본 메뉴 대비 3000% 높은 가중치(31배)를 적용했습니다.

@@ -1,5 +1,5 @@
 variable "aws_region" {
-  description = "AWS region for the stack. This project is Tokyo-only."
+  description = "AWS region for the general bot service."
   type        = string
   default     = "ap-northeast-1"
 
@@ -10,9 +10,9 @@ variable "aws_region" {
 }
 
 variable "project_name" {
-  description = "Stable prefix for AWS resource names."
+  description = "Stable prefix for the separate general bot service."
   type        = string
-  default     = "kakao-maple-bot"
+  default     = "kakao-general-bot"
 }
 
 variable "lambda_zip_path" {
@@ -22,26 +22,20 @@ variable "lambda_zip_path" {
 }
 
 variable "bot_shared_secret" {
-  description = "Bearer secret for the phone relay. Keep this outside Git."
+  description = "Bearer secret for the second phone relay. Keep this outside Git."
   type        = string
   sensitive   = true
   default     = ""
 }
 
 variable "bot_enabled" {
-  description = "Enable command processing after a private test room is ready."
+  description = "Enable the separate general bot after a private room is ready."
   type        = bool
   default     = false
 }
 
-variable "maple_commands_enabled" {
-  description = "Enable MapleStory-specific commands for this service."
-  type        = bool
-  default     = true
-}
-
 variable "allowed_rooms" {
-  description = "Comma-separated allowlist of room IDs."
+  description = "Comma-separated allowlist for the second bot."
   type        = string
   default     = ""
 }
@@ -53,69 +47,64 @@ variable "admin_senders" {
 }
 
 variable "stock_enabled" {
-  description = "Enable read-only KRX and Tiingo stock lookup."
+  description = "Enable read-only stock lookup for the general bot."
   type        = bool
   default     = false
 }
 
 variable "notice_alert_enabled" {
-  description = "Enable proactive Nexon notice keyword alerts through the phone relay."
+  description = "Unused for the general-only service."
   type        = bool
   default     = false
 }
 
 variable "notice_alert_keywords" {
-  description = "Comma-separated Nexon notice title keywords for proactive alerts."
+  description = "Retained for shared module compatibility."
   type        = string
-  default     = "채널 점검,마이너버전,클라이언트"
+  default     = ""
 }
 
 variable "nexon_api_key" {
-  description = "Nexon Open API key. Keep this outside Git."
+  description = "Unused by the general-only service."
   type        = string
   sensitive   = true
   default     = ""
 }
 
 variable "krx_auth_key" {
-  description = "KRX Open API auth key. Keep this outside Git."
+  description = "Optional KRX key for read-only stock lookup."
   type        = string
   sensitive   = true
   default     = ""
 }
 
 variable "tiingo_token" {
-  description = "Tiingo API token. Keep this outside Git."
+  description = "Optional Tiingo token for read-only stock lookup."
   type        = string
   sensitive   = true
   default     = ""
 }
 
 variable "tmdb_read_access_token" {
-  description = "TMDB API Read Access Token. Keep this outside Git."
+  description = "Optional TMDB token for Netflix recommendations."
   type        = string
   sensitive   = true
   default     = ""
 }
 
 variable "tmdb_region" {
-  description = "ISO 3166-1 region used for Netflix availability filtering."
+  description = "ISO country code used for Netflix filtering."
   type        = string
   default     = "KR"
 
   validation {
     condition     = length(var.tmdb_region) == 2 && var.tmdb_region == upper(var.tmdb_region)
-    error_message = "tmdb_region must be a two-letter uppercase ISO country code, such as KR or JP."
+    error_message = "tmdb_region must be a two-letter uppercase ISO country code."
   }
 }
 
 variable "usage_stats_table_name" {
-  description = "DynamoDB table for the anonymous aggregate command counter."
+  description = "Separate anonymous aggregate counter table."
   type        = string
-  default     = "kakao-maple-bot-usage-stats"
-
-  validation {
-    condition     = can(regex("^[A-Za-z0-9_.-]{3,255}$", var.usage_stats_table_name))
-    error_message = "usage_stats_table_name must be 3-255 characters using letters, numbers, dot, underscore, or hyphen."
-  }
+  default     = "kakao-general-bot-usage-stats"
 }

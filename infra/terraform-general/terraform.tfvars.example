@@ -1,0 +1,15 @@
+aws_region             = "ap-northeast-1"
+project_name           = "kakao-general-bot"
+lambda_zip_path        = "../../apps/lambda/dist/lambda.zip"
+bot_enabled            = false
+allowed_rooms          = ""
+admin_senders          = ""
+stock_enabled          = false
+notice_alert_keywords  = ""
+bot_shared_secret      = ""
+nexon_api_key          = ""
+krx_auth_key           = ""
+tiingo_token           = ""
+tmdb_read_access_token = ""
+tmdb_region            = "KR"
+usage_stats_table_name = "kakao-general-bot-usage-stats"

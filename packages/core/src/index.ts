@@ -87,7 +87,6 @@ const helpRows = {
     ['!심볼만렙', '어센틱 심볼 만렙 효과'],
     ['!보스', '보스 결정 가격표'],
     ['!보스수익 <보스> <난이도>', '결정 개인 수익 계산'],
-    ['!계산기 <수식> / <가격> <인원> <3%·5%>', '일반 계산·수수료 n빵'],
     ['!시드링', '백옥·흑옥 상자 각 5회·링/레벨 확률'],
     ['!칠흑깡', '가중치 적용 칠흑 상자 1회'],
     ['!보스보상', '스우~벨로나 보상표'],
@@ -109,6 +108,7 @@ const helpRows = {
     ['!가위 / !바위 / !보', '가위바위보'],
   ],
   other: [
+    ['!계산기 <수식> / <가격> <인원> <3%·5%>', '일반 계산·수수료 n빵'],
     ['!날씨 <지역>', '현재 날씨'],
     ['!주식 <이름>', '주식 시세'],
     ['!환율', '달러·엔화 환율'],
@@ -155,6 +155,16 @@ export const FORMATTED_HELP = [
   ...formatHelpSection('미니 게임', helpRows.miniGames),
   '',
   ...formatHelpSection('기타 기능', helpRows.other),
+].join('\n');
+
+export const FORMATTED_GENERAL_HELP = [
+  '[일반 봇 도움말]',
+  ...formatHelpSection(
+    '미니 게임',
+    helpRows.miniGames.filter(([command]) => ['!가위 / !바위 / !보'].includes(command)),
+  ),
+  '',
+  ...formatHelpSection('일반 기능', helpRows.other),
 ].join('\n');
 
 // Kept as a compatibility export for consumers that imported the old help constant.
