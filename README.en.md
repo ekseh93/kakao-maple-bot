@@ -93,6 +93,10 @@ The initial Cloudflare Worker design was migrated to Lambda and API Gateway to b
 
 The complete input and error contract is in the [command specification](docs/04-command-specification.md).
 
+## From user feedback to a feature
+
+On 2026-09-01, a user in a restricted chat room asked for “computer build recommendations by price range.” The expected experience was similar to Danawa PC's budget-based recommendations: show a parts list and estimated total directly in KakaoTalk rather than returning only a link. This feedback led to `!견적 <budget> <use case> [include monitor]`, up to three candidates, and an isolated PC-price adapter boundary. Participant names, room identifiers, and the original conversation image are not stored; only the requirement and verification decision are documented. See the [troubleshooting record](docs/13-troubleshooting.md).
+
 ## Verifiable results
 
 | Check             | Observed result                                         | Evidence                                               |

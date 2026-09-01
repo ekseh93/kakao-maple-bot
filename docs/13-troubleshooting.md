@@ -192,6 +192,25 @@ HTTP 200이지만 응답 내용이 없습니다.
 
 `!핫딜`, `!모니터`, `!일본여행기`, `!일본음식점`, `!만화` 등은 외부 사이트의 구조 변경·429·403·일시 장애에 영향을 받습니다. 정상 결과는 캐시하고, 허용된 stale fallback이 있으면 마지막 정상 결과를 표시하며, 없으면 표준 외부 서비스 오류를 반환합니다. `!핫딜`은 퀘이사존·아카라이브·에펨코리아를 사이트별 파서로 조회하고, 한 사이트의 실패가 다른 사이트 결과를 막지 않도록 분리합니다. 참고한 [user-hotdeal-bot](https://github.com/krepe90/user-hotdeal-bot)의 게시판별 크롤러 구조와 1페이지 조회 원칙을 현재 TypeScript/Lambda 계약에 맞게 재구성했으며, 원본 코드를 복사하지 않았습니다. Cloudflare 챌린지 페이지를 게시글 HTML로 오인하지 않으며, User-Agent 로테이션·프록시·IP 변경 등 차단 우회는 사용하지 않습니다. Maple.GG와 Maplescouter에는 자동 HTTP 요청을 하지 않고 링크만 생성합니다.
 
+## QA·사용자 문의 기록
+
+### QA-2026-09-01: 가격대별 PC 견적 추천 요청
+
+- **문의 요지:** 사용자가 채팅방에서 “가격대별 컴퓨터 견적 추천” 기능을 요청했습니다.
+- **기대:** 다나와 PC의 가격대별 추천 견적과 비슷하게, 링크만이 아니라 부품 목록과 예상 합계를 카카오톡에서 바로 보고 싶어 했습니다.
+- **제약:** 외부 가격 사이트를 API 없이 실시간으로 조회하면 이용약관·차단·요청량 문제가 생길 수 있습니다.
+- **반영:** `!견적 <예산> <용도> [모니터포함]`, 최대 3개 후보, 부품별 가격·총액·호환성·출처·조회 시각, 별도 `PcQuoteClient`/HTTP Adapter를 추가했습니다.
+- **검증:** mock provider 자동 테스트는 통과했습니다. 실제 가격 Adapter 운영 배포와 카카오톡 E2E는 호스팅·정책 검토 후 진행합니다.
+- **개인정보:** 첨부 이미지의 방 이름·프로필·참여자 식별정보·대화 원문은 저장소에 복사하지 않았습니다.
+
+#### English translation (intent-level)
+
+“Please add computer build recommendations by price range.” The follow-up discussion asks for a Danawa-PC-style result to be brought into the chat, notes that live API access may not be available, and asks whether the bot can output the information instead of only pointing to an external page. The screenshot is low-resolution and partially cropped, so this is a meaning-preserving translation rather than a verbatim transcript.
+
+#### 日本語訳（意図の要約）
+
+「価格帯別のPC構成おすすめを追加してください。」という要望です。その後の会話では、ダナワPCのような結果をチャットに表示したいこと、リアルタイムAPIが使えない場合があること、外部ページへのリンクだけでなく情報自体をボットが出力できるかが話されています。画像は低解像度で一部が切れているため、逐語訳ではなく意図を保った要約訳です。
+
 ## 현재 관측 상태
 
 - Terraform을 통한 도쿄 리전 Lambda/API Gateway 구성 변경 및 no-op plan 결과를 확인했습니다.
