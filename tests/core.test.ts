@@ -28,6 +28,7 @@ import {
   formatFortune,
   formatBoutiqueGiftDraw,
   formatWhiteJadeBossRingBoxDraw,
+  formatBlackJadeBossRingBoxDraw,
   formatBlackAccessoryBoxDraw,
   formatRoyalDraw,
   formatLunaCrystalSweetDraw,
@@ -53,7 +54,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(FORMATTED_HELP).toContain('• !시드링');
     expect(FORMATTED_HELP).toContain('• !칠흑깡');
     expect(FORMATTED_HELP).toContain('  └ 현재 장비·전투력·잠재 합계');
-    expect(FORMATTED_HELP).toContain('  └ 백옥 상자 5회·링/레벨 최종확률');
+    expect(FORMATTED_HELP).toContain('  └ 백옥·흑옥 상자 각 5회·링/레벨 확률');
     expect(FORMATTED_HELP).toContain('• !주유소 <지역>');
     expect(FORMATTED_HELP).toContain('• !일본여행기');
     expect(FORMATTED_HELP).toContain('디시인사이드 일본여행 최신 글 3개');
@@ -371,6 +372,10 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).not.toContain('실제 구매가 아닌');
     expect(output).toContain('리스트레인트 링 3레벨 (총 확률 9.29%)');
     expect(output).not.toMatch(/^\d+\. 3 \(/m);
+    const black = formatBlackJadeBossRingBoxDraw(() => 0);
+    expect(black).toContain('[흑옥의 보스 반지 상자 5회 뽑기]');
+    expect(black.match(/^\d+\./gm) ?? []).toHaveLength(5);
+    expect(black).toContain('리스트레인트 링 1레벨 (총 확률 3.13%)');
   });
   it('formats the Black Accessory Box draw and its special Loose Control message', () => {
     expect(parseCommand('!칠흑깡')).toEqual({ name: 'blackAccessoryBox', args: [] });
@@ -381,7 +386,7 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(formatBlackAccessoryBoxDraw(() => 0.99)).toBe(
       '축하합니다! ***고통의 근원*** 나왔습니다\n올ㅋ 이게뜨네 ㅋ',
     );
-    expect(formatBlackAccessoryBoxDraw(() => 0.3)).toContain('***마력이 깃든 안대***');
+    expect(formatBlackAccessoryBoxDraw(() => 0.45)).toContain('***마력이 깃든 안대***');
     expect(formatBlackAccessoryBoxDraw(() => 0.7)).toContain('***커맨더 포스 이어링***');
   });
   it('labels rare Wonder Berry results and omits metadata', () => {
@@ -611,15 +616,17 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   it('T-013 recommends one item with expanded food categories and a boosted farming option', () => {
     const probabilities = foodProbabilities();
     const normal = probabilities.find((item) => item.name === '김치찌개')!;
-    const farming = probabilities.find((item) => item.name === '재획')!;
+    const smallFarming = probabilities.find((item) => item.name === '소재획')!;
+    const farmingPotion = probabilities.find((item) => item.name === '재획비')!;
     const output = formatFoodRecommendation([], () => 0);
     expect(output).toContain('[오늘 뭐먹지]');
     expect(output).toContain('추천:');
     expect(output).not.toContain('전체 요리 확률');
     expect(output.split('\n')).toHaveLength(2);
-    expect(farming.weight / normal.weight).toBeCloseTo(11, 3);
+    expect(smallFarming.weight / normal.weight).toBeCloseTo(31, 3);
+    expect(farmingPotion.weight / normal.weight).toBeCloseTo(31, 3);
     expect(probabilities.map((item) => item.name)).toEqual(
-      expect.arrayContaining(['감자튀김', '마카롱', '두부김치']),
+      expect.arrayContaining(['감자튀김', '마카롱', '두부김치', '소재획', '재획비']),
     );
   });
   it('recommends a Japan prefecture and city without external calls', () => {

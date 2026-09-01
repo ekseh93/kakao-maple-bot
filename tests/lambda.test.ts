@@ -803,7 +803,8 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply).toContain('[백옥의 보스 반지 상자 5회 뽑기]');
-    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(5);
+    expect(result.reply).toContain('[흑옥의 보스 반지 상자 5회 뽑기]');
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
     expect(nexon.findWhiteJadeBossRingBox).toHaveBeenCalledTimes(1);
   });
   it('handles the static Black Accessory Box draw', async () => {

@@ -35,6 +35,8 @@ The phone script is intentionally thin. Command rules, calculations, caching, pr
 
 `!계산기` is a separate safe arithmetic parser. For example, `!계산기 12 x 11` returns `132`, while `!계산기 12퍼 x 11개` returns `132퍼`. It supports decimals, parentheses, four basic operators, percent points, and count units without evaluating code. Meso fee splitting accepts `!계산기 2,530,000,000 2인 3%` and `!계산기 25.3억 2명 5퍼`.
 
+`!시드링` now lists five White Jade and five Black Jade boss ring draws. `!뭐먹지` includes separate `소재획` and `재획비` choices with boosted weights.
+
 Maple character data uses the Nexon Open API. Maple.GG and Maplescouter are link-only destinations; the bot does not crawl or automatically access them.
 
 ### Mini-games

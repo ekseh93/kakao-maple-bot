@@ -4,6 +4,7 @@ import {
   formatWonderBerryDraw,
   formatBoutiqueGiftDraw,
   formatWhiteJadeBossRingBoxDraw,
+  formatBlackJadeBossRingBoxDraw,
   formatBlackAccessoryBoxDraw,
   formatLunaCrystalSweetDraw,
   formatLunaCrystalDreamDraw,
@@ -460,12 +461,15 @@ export async function handleMessage(
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
         if (whiteJadeBossRingBoxCache && whiteJadeBossRingBoxCache.expiresAt > now)
           return {
-            reply: formatWhiteJadeBossRingBoxDraw(
-              whiteJadeBossRingBoxCache.value.items,
-              5,
-              Math.random,
-              whiteJadeBossRingBoxCache.value.levelProbabilities,
-            ),
+            reply: [
+              formatWhiteJadeBossRingBoxDraw(
+                whiteJadeBossRingBoxCache.value.items,
+                5,
+                Math.random,
+                whiteJadeBossRingBoxCache.value.levelProbabilities,
+              ),
+              formatBlackJadeBossRingBoxDraw(),
+            ].join('\n\n'),
             requestId,
             cache: 'hit',
           };
@@ -474,7 +478,10 @@ export async function handleMessage(
         const box = await client.findWhiteJadeBossRingBox(timeoutSignal());
         whiteJadeBossRingBoxCache = { value: box, expiresAt: now + 5 * 60_000 };
         return {
-          reply: formatWhiteJadeBossRingBoxDraw(box.items, 5, Math.random, box.levelProbabilities),
+          reply: [
+            formatWhiteJadeBossRingBoxDraw(box.items, 5, Math.random, box.levelProbabilities),
+            formatBlackJadeBossRingBoxDraw(),
+          ].join('\n\n'),
           requestId,
           cache: 'miss',
         };

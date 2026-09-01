@@ -19,6 +19,8 @@
 | FR-016        | `packages/core` boss profit calculator | BP-001~BP-008             | 로컬 통과 |
 | FR-017        | `packages/core` arithmetic calculator  | CAL-001~CAL-006           | 로컬 통과 |
 | FR-018        | `packages/core` fee and n-way calculator | CAL-007~CAL-010         | 로컬 통과 |
+| FR-019        | `packages/core` food weighted choices   | FOOD-001~FOOD-002      | 로컬 통과 |
+| FR-020        | `packages/core`, Lambda seed ring draw  | RING-001~RING-003      | 로컬 통과 |
 
 ## 비기능 요구사항
 

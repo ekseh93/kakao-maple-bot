@@ -88,7 +88,7 @@ const helpRows = {
     ['!보스', '보스 결정 가격표'],
     ['!보스수익 <보스> <난이도>', '결정 개인 수익 계산'],
     ['!계산기 <수식> / <가격> <인원> <3%·5%>', '일반 계산·수수료 n빵'],
-    ['!시드링', '백옥 상자 5회·링/레벨 최종확률'],
+    ['!시드링', '백옥·흑옥 상자 각 5회·링/레벨 확률'],
     ['!칠흑깡', '가중치 적용 칠흑 상자 1회'],
     ['!보스보상', '스우~벨로나 보상표'],
     ['!보스렙뻥', '보스 레벨 보정표'],
@@ -542,19 +542,22 @@ const menus: Record<string, string[]> = {
   술안주: ['오돌뼈', '막창', '닭똥집', '두부김치', '골뱅이무침', '오징어숙회', '육회'],
 };
 
-const foodBoostWeight = 11;
+const foodBoostWeight = 31;
 
 export type FoodProbability = { name: string; probability: number; weight: number };
 
 function allFoodItems(): string[] {
-  return [...new Set(Object.values(menus).flat())].concat('재획');
+  return [...new Set(Object.values(menus).flat())].concat('소재획', '재획비');
 }
 
 export function foodProbabilities(): FoodProbability[] {
   const items = allFoodItems();
-  const total = items.reduce((sum, name) => sum + (name === '재획' ? foodBoostWeight : 1), 0);
+  const total = items.reduce(
+    (sum, name) => sum + (name === '소재획' || name === '재획비' ? foodBoostWeight : 1),
+    0,
+  );
   return items.map((name) => {
-    const weight = name === '재획' ? foodBoostWeight : 1;
+    const weight = name === '소재획' || name === '재획비' ? foodBoostWeight : 1;
     return { name, weight, probability: (weight / total) * 100 };
   });
 }
@@ -1572,12 +1575,12 @@ export function choose<T>(items: T[], random = Math.random): T {
 }
 
 const blackAccessoryBoxItems = [
-  { name: '루즈 컨트롤 머신 마크', weight: 2 },
+  { name: '루즈 컨트롤 머신 마크', weight: 22 },
   { name: '마력이 깃든 안대', weight: 1.8 },
   { name: '몽환의 벨트', weight: 1 },
   { name: '저주받은 마도서 선택 상자', weight: 1 },
   { name: '거대한 공포', weight: 1 },
-  { name: '커맨더 포스 이어링', weight: 2 },
+  { name: '커맨더 포스 이어링', weight: 22 },
   { name: '고통의 근원', weight: 1 },
 ] as const;
 
@@ -1719,6 +1722,38 @@ export function formatWhiteJadeBossRingBoxDraw(
   });
   return [
     `[백옥의 보스 반지 상자 ${count}회 뽑기]`,
+    ...draws.map((value, i) => `${i + 1}. ${value}`),
+  ].join('\n');
+}
+
+const blackJadeBossRingBoxItems = [
+  { name: '리스트레인트 링', probability: 12.5 },
+  { name: '컨티뉴어스 링', probability: 12.5 },
+  { name: '웨폰퍼프-S/D/I/L링', probability: 8.33333 },
+  { name: '얼티메이덤 링', probability: 8.33333 },
+  { name: '리스크테이커 링', probability: 8.33333 },
+  { name: '링 오브 썸', probability: 8.33333 },
+  { name: '크리데미지 링', probability: 8.33333 },
+  { name: '크라이시스-HM링', probability: 8.33333 },
+] as const;
+
+const blackJadeBossRingLevels = [
+  { level: 1, probability: 25 },
+  { level: 2, probability: 25 },
+  { level: 3, probability: 30 },
+  { level: 4, probability: 20 },
+] as const;
+
+export function formatBlackJadeBossRingBoxDraw(random = Math.random): string {
+  const itemTotal = blackJadeBossRingBoxItems.reduce((sum, item) => sum + item.probability, 0);
+  const levelTotal = blackJadeBossRingLevels.reduce((sum, item) => sum + item.probability, 0);
+  const draws = Array.from({ length: 5 }, () => {
+    const item = drawWeightedItem(blackJadeBossRingBoxItems, itemTotal, random);
+    const level = drawWeightedItem(blackJadeBossRingLevels, levelTotal, random);
+    return `${item.name} ${level.level}레벨 (총 확률 ${((item.probability * level.probability) / 100).toFixed(2)}%)`;
+  });
+  return [
+    '[흑옥의 보스 반지 상자 5회 뽑기]',
     ...draws.map((value, i) => `${i + 1}. ${value}`),
   ].join('\n');
 }
