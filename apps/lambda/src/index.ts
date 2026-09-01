@@ -462,6 +462,15 @@ export async function handleMessage(
     };
   const parsed = parseCommand(message.message);
   if (!parsed) return { reply: null, requestId, cache: 'bypass' };
+  const asksForUsage = /^(도움말|help)$/i.test(parsed.args.at(-1) ?? '');
+  if (
+    asksForUsage &&
+    (parsed.args.length === 1 || (parsed.name === 'pcDeals' && parsed.args.length === 2))
+  ) {
+    const usage = commandUsage(parsed.name);
+    if (usage)
+      return { reply: usage, requestId, cache: 'bypass' };
+  }
   const recent = (roomRequests.get(message.roomId) ?? []).filter((time) => now - time < 10_000);
   const senderRecent = (senderRequests.get(message.senderId) ?? []).filter(
     (time) => now - time < 60_000,
