@@ -4,6 +4,17 @@
 
 ## 2026-09-01
 
+### Issue・PR・자동 리뷰 운영 기반
+
+- Issue form과 PR template에 문제, 완료 조건, 증거 계층, 개인정보·비용·provider 정책 경계를 명시했습니다.
+- `.coderabbit.yaml`에 일본어 보조 리뷰와 경로별 검토 기준을 코드로 기록했습니다. AI 리뷰는 advisory로 두고 기존 GitHub Actions `verify`를 merge 기준으로 유지합니다.
+- README 첫 화면을 messenger 기능 설명보다 backend boundary, 장애 격리, 보안, 자동 검증이 먼저 보이도록 보강했습니다.
+- 트러블슈팅 문서에 대표 사례 색인과 재사용 가능한 기록 템플릿을 추가했습니다.
+- 이 변경은 GitHub Issue #8에서 시작했으며, PR·리뷰·branch protection 결과는 실제 확인 후 해당 PR에 남깁니다.
+- PR #9의 첫 원격 CI가 기준 branch의 TypeScript 4개 파일 포맷 불일치를 발견해, 동작 변경 없이 저장소 Prettier 결과로 정리하고 진단 과정을 트러블슈팅에 남겼습니다.
+- 다음 실행에서 secret scan이 자기 workflow의 정규식과 안전한 placeholder를 탐지하는 false positive를 확인했습니다. 추적 파일을 검사하되 실제 값을 출력하지 않고 placeholder를 구분하는 `secret:check`로 대체했습니다.
+- CodeRabbit 최초·증분 리뷰의 4개 inline 지적을 검증해 private security reporting, CI 문서의 phone·Lambda dry-run 검사, quoted/spaced secret 할당 탐지와 회귀 테스트를 반영했습니다.
+
 ### 다나와 조회 무응답 수정 및 Lambda Version 12 배포
 
 - MCP 외부 조회 지연으로 릴레이 timeout이 먼저 발생하던 문제를 확인했습니다.

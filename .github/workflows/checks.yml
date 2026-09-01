@@ -21,8 +21,5 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm lambda:dry-run
-      - name: Secret scan
-        run: |
-          if git grep -n -I -E '(NEXON_API_KEY=.{8,}|KIS_APP_SECRET=.{8,}|BOT_SHARED_SECRET=.{8,}|Bearer [A-Za-z0-9_-]{20,})' -- ':!pnpm-lock.yaml'; then exit 1; fi
-          if git grep -n -I -E "sharedSecret[[:space:]]*:[[:space:]]*'[A-Za-z0-9_-]{20,}" -- ':!pnpm-lock.yaml'; then exit 1; fi
-          if git grep -n -I -E 'sharedSecret[[:space:]]*:[[:space:]]*"[A-Za-z0-9_-]{20,}' -- ':!pnpm-lock.yaml'; then exit 1; fi
+      - run: pnpm secret:test
+      - run: pnpm secret:check

@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a reproducible defect without exposing private data.
+title: 'bug: '
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Replace personal data, credentials, room names, and message captures with safe placeholders before submitting.
+
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Symptom and impact
+      description: What was observed and what stopped working?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest safe sequence that reproduces the problem.
+      placeholder: |
+        1. Send or call ...
+        2. Observe ...
+        Expected:
+        Actual:
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Include timestamps, status codes, or log fields only after removing secrets and identifiers.
+      placeholder: Repository / AWS / device evidence and its collection time
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Branch or commit, Node version, AWS region, phone relay version
+    validations:
+      required: true
+
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Initial hypothesis and known boundaries
+      description: Clearly distinguish confirmed facts from hypotheses and unverified areas.
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed secrets, real room names, user identifiers, and private conversation content.
+          required: true

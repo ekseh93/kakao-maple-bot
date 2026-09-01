@@ -10,6 +10,8 @@
     "lint": "eslint .",
     "format:check": "prettier --check \"apps/**/*.{ts,js,json,jsonc}\" \"packages/**/*.{ts,json}\" \"tests/**/*.ts\" \"*.{json,yaml,ts,js}\"",
     "policy:check": "node scripts/policy-check.mjs",
+    "secret:check": "node scripts/secret-check.mjs",
+    "secret:test": "node --test scripts/secret-check.test.mjs",
     "phone:check": "node --check apps/phone-relay/bot.js",
     "pc-deals:check": "node --check apps/pc-deals-adapter/server.mjs",
     "audit": "pnpm audit --audit-level high",

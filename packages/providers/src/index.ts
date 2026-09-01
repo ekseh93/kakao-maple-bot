@@ -1200,61 +1200,61 @@ export function createNexonClient(
       const cachedPlace = weatherPlaceCache.get(placeKey);
       let place = cachedPlace && cachedPlace.expiresAt > Date.now() ? cachedPlace.place : undefined;
       if (!place) {
-      const geocodeUrl = new URL('https://geocoding-api.open-meteo.com/v1/search');
-      geocodeUrl.search = new URLSearchParams({
-        name: searchRegion,
-        count: '1',
-        language: 'en',
-        format: 'json',
-      }).toString();
-      const geocodeResponse = await fetchWithRetry(fetcher, geocodeUrl.toString(), { signal });
-      if (!geocodeResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
-      const geocodeBody = (await geocodeResponse.json()) as {
-        results?: Array<{
-          name?: string;
-          latitude?: number;
-          longitude?: number;
-          country?: string;
-        }> | null;
-      };
-      place = Array.isArray(geocodeBody.results) ? geocodeBody.results[0] : undefined;
-      if (!place) {
-        const fallbackUrl = new URL('https://nominatim.openstreetmap.org/search');
-        fallbackUrl.search = new URLSearchParams({
-          q: region,
-          format: 'jsonv2',
-          limit: '1',
-          'accept-language': 'ko',
+        const geocodeUrl = new URL('https://geocoding-api.open-meteo.com/v1/search');
+        geocodeUrl.search = new URLSearchParams({
+          name: searchRegion,
+          count: '1',
+          language: 'en',
+          format: 'json',
         }).toString();
-        const fallbackResponse = await fetchWithRetry(fetcher, fallbackUrl.toString(), {
-          headers: {
-            Accept: 'application/json',
-            'User-Agent': 'KakaoMapleBot/1.0 (weather lookup)',
-          },
-          signal,
-        });
-        if (!fallbackResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
-        const fallbackBody = (await fallbackResponse.json()) as Array<{
-          name?: string;
-          display_name?: string;
-          lat?: string;
-          lon?: string;
-          address?: { country?: string };
-        }>;
-        const fallbackPlace = fallbackBody[0];
-        if (fallbackPlace) {
-          const latitude = Number(fallbackPlace.lat);
-          const longitude = Number(fallbackPlace.lon);
-          if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
-            throw new Error('PROVIDER_SCHEMA');
-          place = {
-            name: fallbackPlace.name ?? fallbackPlace.display_name ?? region,
-            latitude,
-            longitude,
-            ...(fallbackPlace.address?.country ? { country: fallbackPlace.address.country } : {}),
-          };
+        const geocodeResponse = await fetchWithRetry(fetcher, geocodeUrl.toString(), { signal });
+        if (!geocodeResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
+        const geocodeBody = (await geocodeResponse.json()) as {
+          results?: Array<{
+            name?: string;
+            latitude?: number;
+            longitude?: number;
+            country?: string;
+          }> | null;
+        };
+        place = Array.isArray(geocodeBody.results) ? geocodeBody.results[0] : undefined;
+        if (!place) {
+          const fallbackUrl = new URL('https://nominatim.openstreetmap.org/search');
+          fallbackUrl.search = new URLSearchParams({
+            q: region,
+            format: 'jsonv2',
+            limit: '1',
+            'accept-language': 'ko',
+          }).toString();
+          const fallbackResponse = await fetchWithRetry(fetcher, fallbackUrl.toString(), {
+            headers: {
+              Accept: 'application/json',
+              'User-Agent': 'KakaoMapleBot/1.0 (weather lookup)',
+            },
+            signal,
+          });
+          if (!fallbackResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
+          const fallbackBody = (await fallbackResponse.json()) as Array<{
+            name?: string;
+            display_name?: string;
+            lat?: string;
+            lon?: string;
+            address?: { country?: string };
+          }>;
+          const fallbackPlace = fallbackBody[0];
+          if (fallbackPlace) {
+            const latitude = Number(fallbackPlace.lat);
+            const longitude = Number(fallbackPlace.lon);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
+              throw new Error('PROVIDER_SCHEMA');
+            place = {
+              name: fallbackPlace.name ?? fallbackPlace.display_name ?? region,
+              latitude,
+              longitude,
+              ...(fallbackPlace.address?.country ? { country: fallbackPlace.address.country } : {}),
+            };
+          }
         }
-      }
       }
       if (!place) return null;
       if (
@@ -2138,11 +2138,16 @@ export function createPcDealsClient(
       if (!endpoint || !sharedSecret) throw new Error('NOT_CONFIGURED');
       const response = await fetcher(`${endpoint.replace(/\/$/, '')}/v1/tool`, {
         method: 'POST',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${sharedSecret}` },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sharedSecret}`,
+        },
         body: JSON.stringify(request),
         signal,
       });
-      if (!response.ok) throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
       const body = await response.json();
       if (!body || typeof body.text !== 'string') throw new Error('PROVIDER_SCHEMA');
       return body.text;

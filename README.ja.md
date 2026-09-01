@@ -6,6 +6,15 @@
 
 `TypeScript` · `AWS Lambda` · `API Gateway` · `DynamoDB` · `Terraform` · `Nexon Open API` · `Vitest`
 
+## 30秒で分かる技術要点
+
+KakaoTalkはこのシステムの**ユーザーインターフェース**であり、技術的な中心は特定messengerに依存しないserverless backendです。Androidを薄いHTTPS relayに限定し、認証、入力検証、command routing、外部API障害の局所化、cache、observabilityをAWS側へ集約しました。変更は `Issue → PR → CI → 補助AI review → 検証記録` で追跡し、repository、AWS、利用端末の証拠を分けて扱います。
+
+- **Boundary design:** legacy Android runtimeとTypeScript domain logicをHTTP contractで分離
+- **Reliability:** provider別timeout、cache、retry、stale fallback、部分失敗処理
+- **Security/operations:** deny-by-default、Bearer認証、最小権限IaC、個人情報を保存しないlogging
+- **Quality:** strict TypeScript、186 tests、policy・secret・build・Lambda dry-runの自動検証
+
 ## プロジェクト概要
 
 | 項目       | 内容                                                                             |
@@ -15,7 +24,7 @@
 | 担当範囲   | 要件定義、アーキテクチャ設計、TypeScript実装、IaC、テスト、AWSデプロイ、運用改善 |
 | 利用環境   | 知人が参加する限定的なKakaoTalkグループチャット                                  |
 | 現在の状態 | 東京リージョンへデプロイ済み、バックエンドのsmoke test完了                       |
-| 品質確認   | 自動テスト181件、strict typecheck、lint、ポリシー検査、端末スクリプト検査        |
+| 品質確認   | 自動テスト186件、strict typecheck、lint、ポリシー検査、端末スクリプト検査        |
 
 単に機能を増やすのではなく、**非公式メッセンジャー連携のリスクを分離し、検証可能な形で実運用すること**を重視しました。開発にはAI支援ツールも利用していますが、変更内容は公式ドキュメント、コード確認、自動テスト、デプロイ後のsmoke testで検証しています。
 
@@ -82,17 +91,17 @@ AWS Lambda (Node.js 22 / TypeScript)
 
 ## 代表機能
 
-| 分類         | コマンド例                                | 実装ポイント                                   |
-| ------------ | ----------------------------------------- | ---------------------------------------------- |
-| キャラクター | `!정보 닉네임`, `!장비 닉네임`            | API schema検証、部分失敗処理、モバイル向け整形 |
-| 成長計算     | `!심볼 기어드락 1 11`, `!사우나 닉네임`   | バージョン管理データと境界値テスト             |
-| ボス収益     | `!보스수익 검마 하드 2인 / 세렌 노말 3인` | 週次・月次、人数上限、切り捨て計算             |
-| 一般計算     | `!계산기 12퍼 x 11개`                     | コード評価を使わない専用parser                 |
-| お知らせ     | `!공지`, `!이벤트`, `!썬데이`             | 公式データ、cache、キーワード通知              |
-| PC/Danawa検索 | `!다나와견적`, `!다나와최저가`, `!다나와가격비교` | 認証済みECS Adapter経由のMCP検索 |
-| 生活情報     | `!날씨 도쿄`, `!환율`, `!주유소 서울`     | 読み取り専用providerと障害分離                 |
-| チャット機能 | `!짜장vs짬뽕`, `!뭐먹지`, `!로또`         | 外部通信のないpure logic                       |
-| 株価情報     | `!주식 삼성전자`, `!주식 Tesla`           | 参照専用、注文・口座機能は対象外               |
+| 分類          | コマンド例                                        | 実装ポイント                                   |
+| ------------- | ------------------------------------------------- | ---------------------------------------------- |
+| キャラクター  | `!정보 닉네임`, `!장비 닉네임`                    | API schema検証、部分失敗処理、モバイル向け整形 |
+| 成長計算      | `!심볼 기어드락 1 11`, `!사우나 닉네임`           | バージョン管理データと境界値テスト             |
+| ボス収益      | `!보스수익 검마 하드 2인 / 세렌 노말 3인`         | 週次・月次、人数上限、切り捨て計算             |
+| 一般計算      | `!계산기 12퍼 x 11개`                             | コード評価を使わない専用parser                 |
+| お知らせ      | `!공지`, `!이벤트`, `!썬데이`                     | 公式データ、cache、キーワード通知              |
+| PC/Danawa検索 | `!다나와견적`, `!다나와최저가`, `!다나와가격비교` | 認証済みECS Adapter経由のMCP検索               |
+| 生活情報      | `!날씨 도쿄`, `!환율`, `!주유소 서울`             | 読み取り専用providerと障害分離                 |
+| チャット機能  | `!짜장vs짬뽕`, `!뭐먹지`, `!로또`                 | 外部通信のないpure logic                       |
+| 株価情報      | `!주식 삼성전자`, `!주식 Tesla`                   | 参照専用、注文・口座機能は対象外               |
 
 全コマンドと入力・エラー契約は[コマンド仕様](docs/04-command-specification.md)で確認できます。
 
@@ -104,7 +113,7 @@ AWS Lambda (Node.js 22 / TypeScript)
 
 | 項目          | 確認結果                                                | 根拠                                      |
 | ------------- | ------------------------------------------------------- | ----------------------------------------- |
-| 自動テスト    | **181 passed** (`core 63`, `providers 50`, `lambda 68`) | `pnpm test`                               |
+| 自動テスト    | **186 passed** (`core 66`, `providers 51`, `lambda 69`) | `pnpm test`                               |
 | 静的品質      | strict typecheck、ESLint、Prettier、policy check        | [検証記録](docs/10-local-verification.md) |
 | 端末relay     | MessengerBot R向けJavaScript構文検査                    | `pnpm phone:check`                        |
 | AWS           | 東京Lambda/API Gateway、`/health` HTTP 200              | [リリースゲート](docs/12-release-gate.md) |
@@ -112,6 +121,12 @@ AWS Lambda (Node.js 22 / TypeScript)
 | KakaoTalk利用 | 限定グループチャットで利用中                            | ユーザー確認、Android E2Eは独自未観測     |
 
 `/health`だけを根拠にKakaoTalk全体の動作を主張していません。リポジトリの自動検証、AWSで確認した結果、利用者の端末確認を分けて記録しています。
+
+## 開発・レビューの流れ
+
+新しい変更は、問題とacceptance criteriaをIssueへ先に記録し、専用branchと`Closes #N`を含むPRで接続します。GitHub Actionsのdeterministic checksをmerge条件とし、CodeRabbitの日本語reviewは見落としと境界条件を探す補助手段として利用します。AIの指摘は自動採用せず、作成者が根拠を確認して採用・修正・却下の理由をPRへ残します。
+
+branch protection、証拠の区分、review対応の詳細は[Issue・PR・レビュー運用](docs/21-development-workflow.md)、実際の障害と検証範囲は[トラブルシューティング](docs/13-troubleshooting.md)に記録しています。
 
 ## 利用画面
 
@@ -157,6 +172,8 @@ pnpm build
 pnpm lambda:dry-run
 pnpm format:check
 pnpm policy:check
+pnpm secret:test
+pnpm secret:check
 pnpm phone:check
 pnpm audit
 ```
@@ -171,6 +188,7 @@ AWSデプロイには明示的な承認と有効なIAM Identity Center認証が�
 - [アーキテクチャ](docs/03-architecture.md) · [コマンド仕様](docs/04-command-specification.md)
 - [API・データポリシー](docs/05-api-data-policy.md) · [セキュリティ・運用](docs/06-security-operations.md)
 - [テスト戦略](docs/07-test-strategy.md) · [トラブルシューティング](docs/13-troubleshooting.md)
+- [Issue・PR・レビュー運用](docs/21-development-workflow.md) · [変更記録](docs/14-change-log.md)
 - [端末E2Eチェックリスト](docs/16-phone-e2e-checklist.md) · [ポートフォリオ証拠基準](docs/17-portfolio-evidence.md)
 
 ## 制約

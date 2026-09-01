@@ -254,7 +254,8 @@ const commandUsageMap: Record<string, string> = {
   symbolMax: '[심볼만렙 사용법]\n!심볼만렙',
   boss: '[보스 사용법]\n!보스',
   bossProfit: '[보스수익 사용법]\n!보스수익 <보스> <난이도> [인원]\n예: !보스수익 검마 하드 2인',
-  calculator: '[계산기 사용법]\n!계산기 <수식>\n!계산기 <가격> <인원> <3% 또는 5%>\n예: !계산기 12 x 11개\n예: !계산기 25.3억 2명 5퍼',
+  calculator:
+    '[계산기 사용법]\n!계산기 <수식>\n!계산기 <가격> <인원> <3% 또는 5%>\n예: !계산기 12 x 11개\n예: !계산기 25.3억 2명 5퍼',
   seedRing: '[시드링 사용법]\n!시드링',
   blackAccessoryBox: '[칠흑깡 사용법]\n!칠흑깡',
   bossRewards: '[보스보상 사용법]\n!보스보상',
@@ -469,8 +470,7 @@ export async function handleMessage(
     (parsed.args.length === 1 || (parsed.name === 'pcDeals' && parsed.args.length === 2))
   ) {
     const usage = commandUsage(parsed.name);
-    if (usage)
-      return { reply: usage, requestId, cache: 'bypass' };
+    if (usage) return { reply: usage, requestId, cache: 'bypass' };
   }
   const recent = (roomRequests.get(message.roomId) ?? []).filter((time) => now - time < 10_000);
   const senderRecent = (senderRequests.get(message.senderId) ?? []).filter(
@@ -571,7 +571,8 @@ export async function handleMessage(
         if (!operation || args.length === 0)
           return { reply: formatPcDealsHelp(), requestId, cache: 'bypass' };
         const client =
-          deps.pcDealsTools ?? createPcDealsClient(env.PC_DEALS_API_URL, env.PC_DEALS_SHARED_SECRET);
+          deps.pcDealsTools ??
+          createPcDealsClient(env.PC_DEALS_API_URL, env.PC_DEALS_SHARED_SECRET);
         const text = await client.run({ operation: operation as never, args }, timeoutSignal(8000));
         return { reply: formatPcDeals(operation as never, text), requestId, cache: 'bypass' };
       }
@@ -1401,7 +1402,10 @@ export async function handleMessage(
       };
     const raw = error instanceof Error ? error.message : '';
     return {
-      reply: raw === 'INVALID_USAGE' ? (commandUsage(parsed.name) ?? errorMessage(error, requestId)) : errorMessage(error, requestId),
+      reply:
+        raw === 'INVALID_USAGE'
+          ? (commandUsage(parsed.name) ?? errorMessage(error, requestId))
+          : errorMessage(error, requestId),
       requestId,
       cache: 'miss',
     };

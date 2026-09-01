@@ -1,5 +1,101 @@
 # 트러블슈팅 기록
 
+이 문서는 오류 목록이 아니라 **관측 → 진단 → 수정 → 검증 → 재발 방지**의 판단 근거를 남깁니다. 저장소·AWS·사용자 기기에서 확인한 결과를 구분하며, 존재하지 않는 과거 Issue나 PR 링크를 사후에 만들지 않습니다.
+
+## 대표 사례 빠르게 보기
+
+| 사례                                                               | 기술적으로 보여주는 내용                                      | 미확인 범위              |
+| ------------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------ |
+| [다나와 조회 무응답](#2026-09-01-다나와-조회-무응답)               | 분산 timeout budget, 예외가 무응답으로 보이는 failure mapping | 수정 후 Android 재확인   |
+| [HTTP 200이지만 답장 없음](#12-http-200인데-reply가-비어-있음)     | API 성공과 device E2E 분리, room contract 진단                | 단말별 환경 차이         |
+| [두 번째 방 무응답](#13-방-하나는-되지만-다른-오픈채팅방은-무응답) | allow-list와 runtime payload 불일치, 실제 식별자 검증         | Android 재시작·알림 권한 |
+| [AWS SSO 만료](#10-sso-세션-만료)                                  | 자격증명 수명주기와 배포 중단 원칙                            | 재인증 전 plan/apply     |
+
+## 새 기록 템플릿
+
+새 장애는 아래 형식을 복사합니다. 확인하지 않은 항목은 `미관측` 또는 `해당 없음`으로 남기며 추측으로 채우지 않습니다.
+
+```markdown
+## YYYY-MM-DD 짧은 제목
+
+### 증상과 영향
+
+### 안전하게 비식별화한 재현 절차·증거
+
+### 진단 과정과 기각한 가설
+
+### 근본 원인
+
+### 수정과 설계 판단
+
+### 검증
+
+- Repository:
+- AWS-observed:
+- Android/KakaoTalk:
+
+### 재발 방지와 잔여 위험
+
+### 추적 링크
+
+- Issue: 해당 없음
+- PR: 해당 없음
+- Commit: 해당 없음
+- Deployment: 해당 없음
+```
+
+새 작업은 [Issue・PR・리뷰 운영](21-development-workflow.md)에 따라 Issue와 PR을 연결합니다. 단, 비밀값·실제 방 이름·사용자 식별정보·대화 원문·비식별화되지 않은 화면은 기록하지 않습니다.
+
+## 2026-09-01 PR #9 `verify` 연속 실패
+
+### 증상과 영향
+
+[PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9)의 push와 pull request 이벤트에서 실행된 `checks/verify`가 모두 `pnpm format:check` 단계에서 중단됐습니다. 이후 test·build 단계는 실행되지 않아 merge 조건을 충족할 수 없었습니다.
+
+### 재현 증거와 진단
+
+[실패한 GitHub Actions run](https://github.com/ekseh93/kakao-maple-bot/actions/runs/33514180736)은 다음 4개 파일을 동일하게 지목했습니다.
+
+- `apps/lambda/src/index.ts`
+- `packages/core/src/index.ts`
+- `packages/core/src/pc-deals.ts`
+- `packages/providers/src/index.ts`
+
+처음에는 Windows 작업 트리의 CRLF 경고로 추정했지만, Prettier 적용 전후 diff를 확인한 결과 긴 문자열·객체·조건식의 실제 포맷 불일치도 있었습니다. 따라서 줄바꿈 문제만으로 단정한 초기 가설을 기각했습니다.
+
+### 근본 원인과 수정
+
+기준 branch에 PC/Danawa 기능이 추가될 때 위 4개 TypeScript 파일이 저장소의 Prettier 결과와 일치하지 않았고, 이 PR이 해당 기준선 문제를 처음 원격 CI에서 다시 드러냈습니다. 동작은 변경하지 않고 동일 Prettier 버전으로 4개 파일을 포맷했습니다.
+
+### 검증과 잔여 범위
+
+- Repository local: 포맷 후 전체 `format:check`, policy, audit, lint, typecheck, 186 tests, build, Lambda dry-run 재실행
+- GitHub Actions: 수정 commit push 후 재실행 결과를 PR에 기록
+- AWS-observed: 해당 없음—runtime 동작 변경 없음
+- Android/KakaoTalk: 해당 없음—relay 동작 변경 없음
+
+추적: [Issue #8](https://github.com/ekseh93/kakao-maple-bot/issues/8) · [PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9)
+
+### 두 번째 실패: secret scan 자기 참조
+
+포맷 수정 후 실행은 test·build·Lambda dry-run까지 통과했지만 마지막 secret scan에서 실패했습니다. 로그를 확인하니 실제 secret이 아니라 `.github/workflows/checks.yml` 안에 검사 규칙으로 작성된 `Bearer` 정규식 자체를 `git grep`이 다시 탐지했습니다.
+
+workflow만 제외해 다시 검사하자 공개용 phone relay의 안전한 `REPLACE_WITH_SECRET` placeholder도 탐지되었습니다. 제외 경로를 계속 늘리지 않고 `scripts/secret-check.mjs`로 검사를 분리했습니다. 이 검사는 Git 추적 파일만 읽고, 알려진 placeholder를 허용하며, 문제가 있더라도 실제 값 대신 파일·줄·규칙 이름만 출력합니다.
+
+- Repository local: 전체 자동 검사와 `pnpm secret:check`의 placeholder·자기 참조 처리 확인
+- GitHub Actions: 수정 commit push 후 세 번째 실행 결과를 PR에 기록
+- 실제 secret 발견: 없음
+
+### CodeRabbit 리뷰 대응
+
+[CodeRabbit 최초 리뷰](https://github.com/ekseh93/kakao-maple-bot/pull/9#pullrequestreview-5079155183)의 3개 inline 지적과 [증분 리뷰](https://github.com/ekseh93/kakao-maple-bot/pull/9#pullrequestreview-5079260905)의 1개 지적을 현재 코드와 대조해 모두 수용했습니다.
+
+- 공개 security 페이지 대신 GitHub private vulnerability report 링크와 `SECURITY.md`를 추가했습니다.
+- 실제 `verify`와 맞도록 개발 흐름의 deterministic CI 목록에 `phone` 검사와 `Lambda dry-run`을 추가했습니다.
+- 환경변수 secret 검사에 `=` 주변 공백과 single/double quote 입력을 추가하고 Node test로 compact·spaced·quoted·placeholder·redacted finding을 검증했습니다.
+
+Docstring coverage 경고는 이번 동작 변경과 무관한 기존 TypeScript formatter까지 일괄 주석화하라는 제안이므로 수용하지 않았습니다. PR 본문의 `Closes #8`과 3개 언어 README 링크는 실제 PR·파일에서 확인되므로 linked issue의 inconclusive 판정은 별도 코드 변경 사유로 사용하지 않았습니다.
+
 ## 2026-09-01 다나와 조회 무응답
 
 ### 증상
