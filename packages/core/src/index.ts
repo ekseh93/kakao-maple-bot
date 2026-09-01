@@ -1592,7 +1592,7 @@ export function formatBlackAccessoryBoxDraw(random = Math.random): string {
     return cursor < 0;
   });
   const item = selected?.name ?? blackAccessoryBoxItems[blackAccessoryBoxItems.length - 1]!.name;
-  return item === '루즈 컨트롤 머신 마크'
+  return item === '루즈 컨트롤 머신 마크' || item === '커맨더 포스 이어링'
     ? `축하합니다! ***${item}*** 나왔습니다\n쟌넨-, 떠도 이게뜨네 ㅋ`
     : `축하합니다! ***${item}*** 나왔습니다\n올ㅋ 이게뜨네 ㅋ`;
 }
