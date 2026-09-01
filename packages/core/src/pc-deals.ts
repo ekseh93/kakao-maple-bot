@@ -3,7 +3,7 @@ export type PcDealsOperation = 'parts' | 'lowest' | 'compare' | 'history' | 'det
 export type PcDealsRequest = { operation: PcDealsOperation; args: string[] };
 
 export function formatPcDealsHelp(): string {
-  return ['[다나와 PC 명령어]', '!다나와부품 <검색어>', '!다나와최저가 <검색어>', '!다나와가격비교 <검색어>', '!다나와가격이력 <검색어> [3개월|6개월|12개월]', '!다나와부품상세 <검색어>', '!다나와호환성 <CPU> <메인보드> <RAM>'].join('\n');
+  return ['[다나와 PC 명령어]', '!다나와 도움말', '!다나와견적 <예산> <용도> [모니터포함]', '!다나와부품 <검색어>', '!다나와최저가 <검색어>', '!다나와가격비교 <검색어>', '!다나와가격이력 <제품코드> [1|3|6|12]', '!다나와부품상세 <제품코드>', '!다나와호환성 <부품 목록>'].join('\n');
 }
 
 export function formatPcDeals(operation: PcDealsOperation, text: string): string {

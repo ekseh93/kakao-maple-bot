@@ -196,6 +196,7 @@ export type WeatherSnapshot = {
   pm10?: number;
   fetchedAt: string;
 };
+type WeatherPlace = { name?: string; latitude?: number; longitude?: number; country?: string };
 export type StockQuote = {
   code: string;
   name?: string;
@@ -690,6 +691,7 @@ export function createNexonClient(
   apiKey: string | undefined,
   fetcher: typeof fetch = fetch,
 ): NexonClient {
+  const weatherPlaceCache = new Map<string, { place: WeatherPlace; expiresAt: number }>();
   const findOcid = async (name: string, signal: AbortSignal): Promise<string | null> => {
     if (!apiKey) throw new Error('NOT_CONFIGURED');
     const base = 'https://open.api.nexon.com/maplestory/v1';
@@ -1194,6 +1196,10 @@ export function createNexonClient(
     },
     async findWeather(region, signal) {
       const searchRegion = weatherSearchAliases[region.trim()] ?? region;
+      const placeKey = searchRegion.trim().toLocaleLowerCase();
+      const cachedPlace = weatherPlaceCache.get(placeKey);
+      let place = cachedPlace && cachedPlace.expiresAt > Date.now() ? cachedPlace.place : undefined;
+      if (!place) {
       const geocodeUrl = new URL('https://geocoding-api.open-meteo.com/v1/search');
       geocodeUrl.search = new URLSearchParams({
         name: searchRegion,
@@ -1211,7 +1217,7 @@ export function createNexonClient(
           country?: string;
         }> | null;
       };
-      let place = Array.isArray(geocodeBody.results) ? geocodeBody.results[0] : undefined;
+      place = Array.isArray(geocodeBody.results) ? geocodeBody.results[0] : undefined;
       if (!place) {
         const fallbackUrl = new URL('https://nominatim.openstreetmap.org/search');
         fallbackUrl.search = new URLSearchParams({
@@ -1249,6 +1255,7 @@ export function createNexonClient(
           };
         }
       }
+      }
       if (!place) return null;
       if (
         typeof place.name !== 'string' ||
@@ -1258,6 +1265,15 @@ export function createNexonClient(
         !Number.isFinite(place.longitude)
       )
         throw new Error('PROVIDER_SCHEMA');
+      weatherPlaceCache.set(placeKey, {
+        place: {
+          name: place.name,
+          latitude: place.latitude,
+          longitude: place.longitude,
+          ...(place.country ? { country: place.country } : {}),
+        },
+        expiresAt: Date.now() + 60 * 60_000,
+      });
       const query = new URLSearchParams({
         latitude: String(place.latitude),
         longitude: String(place.longitude),
