@@ -1575,12 +1575,12 @@ export function choose<T>(items: T[], random = Math.random): T {
 }
 
 const blackAccessoryBoxItems = [
-  { name: '루즈 컨트롤 머신 마크', weight: 22 },
+  { name: '루즈 컨트롤 머신 마크', weight: 20 },
   { name: '마력이 깃든 안대', weight: 1.8 },
   { name: '몽환의 벨트', weight: 1 },
   { name: '저주받은 마도서 선택 상자', weight: 1 },
   { name: '거대한 공포', weight: 1 },
-  { name: '커맨더 포스 이어링', weight: 22 },
+  { name: '커맨더 포스 이어링', weight: 20 },
   { name: '고통의 근원', weight: 1 },
 ] as const;
 
