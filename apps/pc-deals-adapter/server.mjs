@@ -104,9 +104,45 @@ class McpBridge {
     if (typeof text !== 'string') throw new Error('MCP_SCHEMA');
     return parseItems(text);
   }
+
+  async tool(name, args) {
+    await this.ready;
+    const result = await this.call('tools/call', { name, arguments: args });
+    const text = result?.content?.find((item) => item.type === 'text')?.text;
+    if (typeof text !== 'string') throw new Error('MCP_SCHEMA');
+    return text;
+  }
 }
 
 const bridge = new McpBridge();
+const toolNames = {
+  parts: 'search_parts',
+  lowest: 'find_lowest_price',
+  compare: 'compare_prices',
+  history: 'get_price_history',
+  detail: 'get_product_detail',
+  compatibility: 'build_check_compatibility',
+};
+
+async function runTool(operation, args) {
+  const query = args.join(' ').trim();
+  if (!query) throw new Error('INVALID_USAGE');
+  const tool = toolNames[operation];
+  if (!tool) throw new Error('INVALID_USAGE');
+  if (operation === 'history') {
+    const last = args.at(-1);
+    const months = ['1', '3', '6', '12'].includes((last ?? '').replace('개월', ''))
+      ? (last ?? '').replace('개월', '')
+      : '3';
+    const productCode = args.slice(-1)[0]?.endsWith('개월') ? args.slice(0, -1).join(' ') : query;
+    return bridge.tool(tool, { productCode, period: months });
+  }
+  if (operation === 'compatibility')
+    return bridge.tool(tool, {});
+  if (operation === 'detail') return bridge.tool(tool, { productCode: query, source: 'danawa' });
+  if (operation === 'parts') return bridge.tool(tool, { query, source: 'all', limit: 5 });
+  return bridge.tool(tool, { query });
+}
 const categories = [
   ['CPU', 'cpu', 0.18],
   ['그래픽카드', 'gpu', 0.38],
@@ -193,10 +229,15 @@ const server = createServer(async (request, response) => {
   if (request.method === 'GET' && request.url === '/health')
     return json(response, 200, { ok: true });
   if (request.method !== 'POST' || request.url !== '/v1/quote')
-    return json(response, 404, { error: 'NOT_FOUND' });
+    if (request.method !== 'POST' || request.url !== '/v1/tool') return json(response, 404, { error: 'NOT_FOUND' });
   if (!authorized(request)) return json(response, 401, { error: 'UNAUTHORIZED' });
   try {
     const body = await readBody(request);
+    if (request.url === '/v1/tool') {
+      if (!['parts', 'lowest', 'compare', 'history', 'detail', 'compatibility'].includes(body.operation) || !Array.isArray(body.args))
+        return json(response, 400, { error: 'INVALID_USAGE' });
+      return json(response, 200, { text: await runTool(body.operation, body.args) });
+    }
     if (
       !Number.isSafeInteger(body.budgetKrw) ||
       (body.budgetMaxKrw !== undefined &&

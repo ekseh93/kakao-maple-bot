@@ -8,6 +8,7 @@ export {
   type PcQuoteRequest,
 } from './pc-quote.js';
 export { formatCalculator } from './calculator.js';
+export { formatPcDeals, formatPcDealsHelp, type PcDealsOperation, type PcDealsRequest } from './pc-deals.js';
 export { formatExchangeRates, type ExchangeRateView } from './exchange.js';
 export {
   formatDaisoProducts,
@@ -31,6 +32,7 @@ export type CommandName =
   | 'bossProfit'
   | 'calculator'
   | 'pcQuote'
+  | 'pcDeals'
   | 'bossRewards'
   | 'bossLevelBoost'
   | 'bossForceBoost'
@@ -118,7 +120,13 @@ const helpRows = {
     ['!가위 / !바위 / !보', '가위바위보'],
   ],
   other: [
-    ['!견적 <예산> <용도> [모니터포함]', 'PC 부품 견적·가격 비교'],
+    ['!다나와견적 <예산> <용도> [모니터포함]', '다나와 PC 부품 견적'],
+    ['!다나와부품 <검색어>', '다나와·컴퓨존 부품 검색'],
+    ['!다나와최저가 <검색어>', '통합 최저가 검색'],
+    ['!다나와가격비교 <검색어>', '다나와·컴퓨존 가격 비교'],
+    ['!다나와가격이력 <검색어> [기간]', '가격 변동 이력'],
+    ['!다나와부품상세 <검색어>', '상품 상세 정보'],
+    ['!다나와호환성 <부품 목록>', 'CPU·메인보드·RAM 호환성'],
     ['!날씨 <지역>', '현재 날씨'],
     ['!주식 <이름>', '주식 시세'],
     ['!환율', '달러·엔화 환율'],
@@ -182,6 +190,13 @@ const aliases: Record<string, CommandName> = {
   보스수익: 'bossProfit',
   계산기: 'calculator',
   견적: 'pcQuote',
+  다나와견적: 'pcQuote',
+  다나와부품: 'pcDeals',
+  다나와최저가: 'pcDeals',
+  다나와가격비교: 'pcDeals',
+  다나와가격이력: 'pcDeals',
+  다나와부품상세: 'pcDeals',
+  다나와호환성: 'pcDeals',
   보스보상: 'bossRewards',
   보스렙뻥: 'bossLevelBoost',
   보스포뻥: 'bossForceBoost',
@@ -264,6 +279,10 @@ export function parseCommand(message: string): ParsedCommand | null {
   const name = aliases[normalizedRaw];
   if (!name) return null;
   if (name === 'help' && !value.startsWith('!')) return null;
+  if (name === 'pcDeals') {
+    const operation = ({ 다나와부품: 'parts', 다나와최저가: 'lowest', 다나와가격비교: 'compare', 다나와가격이력: 'history', 다나와부품상세: 'detail', 다나와호환성: 'compatibility' } as Record<string, string>)[raw ?? ''];
+    return { name, args: [operation ?? '', ...args] };
+  }
   return name === 'rps' ? { name, args: [raw ?? '', ...args] } : { name, args };
 }
 

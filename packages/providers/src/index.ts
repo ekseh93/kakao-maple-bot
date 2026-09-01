@@ -1,5 +1,6 @@
 import type { PcQuote, PcQuoteRequest } from '@kakao-maple-bot/core';
 export type { PcQuote, PcQuoteRequest } from '@kakao-maple-bot/core';
+import type { PcDealsRequest } from '@kakao-maple-bot/core';
 
 export type Character = {
   name: string;
@@ -2106,6 +2107,32 @@ export function createExchangeRateClient(
 export type PcQuoteClient = {
   findQuotes(request: PcQuoteRequest, signal: AbortSignal): Promise<PcQuote[]>;
 };
+
+export type PcDealsClient = {
+  run(request: PcDealsRequest, signal: AbortSignal): Promise<string>;
+};
+
+export function createPcDealsClient(
+  endpoint: string | undefined,
+  sharedSecret: string | undefined,
+  fetcher: typeof fetch = fetch,
+): PcDealsClient {
+  return {
+    async run(request, signal) {
+      if (!endpoint || !sharedSecret) throw new Error('NOT_CONFIGURED');
+      const response = await fetcher(`${endpoint.replace(/\/$/, '')}/v1/tool`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${sharedSecret}` },
+        body: JSON.stringify(request),
+        signal,
+      });
+      if (!response.ok) throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = await response.json();
+      if (!body || typeof body.text !== 'string') throw new Error('PROVIDER_SCHEMA');
+      return body.text;
+    },
+  };
+}
 
 export function createPcQuoteClient(
   endpoint: string | undefined,

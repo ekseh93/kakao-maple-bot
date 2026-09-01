@@ -25,6 +25,8 @@ import {
   formatPcQuoteHelp,
   formatPcQuotes,
   parsePcQuoteArgs,
+  formatPcDeals,
+  formatPcDealsHelp,
   formatBossRewardSummaries,
   formatBossLevelBoost,
   formatBossForceBoost,
@@ -54,6 +56,7 @@ import {
   createMcpRetailClient,
   createExchangeRateClient,
   createPcQuoteClient,
+  createPcDealsClient,
   createWebNovelClient,
   type Character,
   type DojangCharacter,
@@ -90,6 +93,7 @@ import {
   type ExchangeRateClient,
   type PcQuoteClient,
   type PcQuote,
+  type PcDealsClient,
 } from '@kakao-maple-bot/providers';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import { createDynamoUsageStatsStore, type UsageStatsStore } from './usage-stats.js';
@@ -131,6 +135,7 @@ type Dependencies = {
   retail?: McpRetailClient;
   exchange?: ExchangeRateClient;
   pcDeals?: PcQuoteClient;
+  pcDealsTools?: PcDealsClient;
   usageStats?: UsageStatsStore;
   now?: () => Date;
   seen?: Set<string>;
@@ -487,6 +492,15 @@ export async function handleMessage(
         const inBudgetQuotes = quotes.filter((quote) => quote.totalKrw <= maxBudgetKrw);
         pcQuoteCache.set(cacheKey, { value: inBudgetQuotes, expiresAt: now + 10 * 60_000 });
         return { reply: formatPcQuotes(request, inBudgetQuotes), requestId, cache: 'miss' };
+      }
+      case 'pcDeals': {
+        const [operation, ...args] = parsed.args;
+        if (!operation || args.length === 0)
+          return { reply: formatPcDealsHelp(), requestId, cache: 'bypass' };
+        const client =
+          deps.pcDealsTools ?? createPcDealsClient(env.PC_DEALS_API_URL, env.PC_DEALS_SHARED_SECRET);
+        const text = await client.run({ operation: operation as never, args }, timeoutSignal());
+        return { reply: formatPcDeals(operation as never, text), requestId, cache: 'bypass' };
       }
       case 'seedRing': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
