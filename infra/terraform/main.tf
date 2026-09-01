@@ -84,6 +84,8 @@ resource "aws_lambda_function" "bot" {
       TMDB_READ_ACCESS_TOKEN = var.tmdb_read_access_token
       TMDB_REGION            = var.tmdb_region
       USAGE_STATS_TABLE_NAME = var.usage_stats_table_name
+      PC_DEALS_API_URL       = var.pc_deals_api_url
+      PC_DEALS_SHARED_SECRET = var.pc_deals_shared_secret
     }
   }
 

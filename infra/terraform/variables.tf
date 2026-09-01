@@ -113,3 +113,16 @@ variable "usage_stats_table_name" {
     error_message = "usage_stats_table_name must be 3-255 characters using letters, numbers, dot, underscore, or hyphen."
   }
 }
+
+variable "pc_deals_api_url" {
+  description = "Optional internal HTTP adapter for PC quote requests."
+  type        = string
+  default     = ""
+}
+
+variable "pc_deals_shared_secret" {
+  description = "Bearer secret for the optional PC quote adapter. Keep this outside Git."
+  type        = string
+  sensitive   = true
+  default     = ""
+}

@@ -9,9 +9,36 @@ import {
   createExchangeRateClient,
   createStockClient,
   createTmdbNetflixClient,
+  createPcQuoteClient,
 } from '@kakao-maple-bot/providers';
 
 describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
+  it('validates the PC quote adapter response and sends the bearer secret', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            label: '균형형',
+            totalKrw: 987000,
+            compatibility: '정상',
+            source: '테스트',
+            fetchedAt: '2026-09-01 17:30',
+            items: [{ category: 'CPU', name: '테스트 CPU', priceKrw: 300000 }],
+          },
+        ]),
+        { status: 200 },
+      ),
+    );
+    const result = await createPcQuoteClient('https://quotes.test', 'secret', fetcher).findQuotes(
+      { budgetKrw: 1_000_000, usage: 'gaming', monitorIncluded: false },
+      new AbortController().signal,
+    );
+    expect(result[0]?.totalKrw).toBe(987000);
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
+      method: 'POST',
+      headers: expect.objectContaining({ Authorization: 'Bearer secret' }),
+    });
+  });
   it('converts USD-base public rates into KRW rates for USD and JPY', async () => {
     const fetcher = vi.fn().mockResolvedValue(
       new Response(

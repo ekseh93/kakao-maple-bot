@@ -22,6 +22,9 @@ import {
   formatBossRewards,
   formatBossProfit,
   formatCalculator,
+  formatPcQuoteHelp,
+  formatPcQuotes,
+  parsePcQuoteArgs,
   formatBossRewardSummaries,
   formatBossLevelBoost,
   formatBossForceBoost,
@@ -50,6 +53,7 @@ import {
   createTmdbNetflixClient,
   createMcpRetailClient,
   createExchangeRateClient,
+  createPcQuoteClient,
   createWebNovelClient,
   type Character,
   type DojangCharacter,
@@ -84,6 +88,8 @@ import {
   type FuelPrice,
   type ExchangeRate,
   type ExchangeRateClient,
+  type PcQuoteClient,
+  type PcQuote,
 } from '@kakao-maple-bot/providers';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import { createDynamoUsageStatsStore, type UsageStatsStore } from './usage-stats.js';
@@ -102,6 +108,8 @@ export interface Env {
   NOTICE_ALERT_ENABLED?: string;
   NOTICE_ALERT_KEYWORDS?: string;
   USAGE_STATS_TABLE_NAME?: string;
+  PC_DEALS_API_URL?: string;
+  PC_DEALS_SHARED_SECRET?: string;
 }
 export type Message = {
   eventId: string;
@@ -122,10 +130,12 @@ type Dependencies = {
   netflix?: NetflixClient;
   retail?: McpRetailClient;
   exchange?: ExchangeRateClient;
+  pcDeals?: PcQuoteClient;
   usageStats?: UsageStatsStore;
   now?: () => Date;
   seen?: Set<string>;
 };
+const pcQuoteCache = new Map<string, { expiresAt: number; value: PcQuote[] }>();
 const seen = new Map<string, number>();
 const roomRequests = new Map<string, number[]>();
 const senderRequests = new Map<string, number[]>();
@@ -456,6 +466,24 @@ export async function handleMessage(
         return { reply: formatBossProfit(parsed.args), requestId, cache: 'bypass' };
       case 'calculator':
         return { reply: formatCalculator(parsed.args), requestId, cache: 'bypass' };
+      case 'pcQuote': {
+        if (parsed.args.length === 0)
+          return { reply: formatPcQuoteHelp(), requestId, cache: 'bypass' };
+        const request = parsePcQuoteArgs(parsed.args);
+        const cacheKey = JSON.stringify(request);
+        const cached = pcQuoteCache.get(cacheKey);
+        if (cached && cached.expiresAt > now)
+          return {
+            reply: formatPcQuotes(request, cached.value),
+            requestId,
+            cache: 'hit',
+          };
+        const client =
+          deps.pcDeals ?? createPcQuoteClient(env.PC_DEALS_API_URL, env.PC_DEALS_SHARED_SECRET);
+        const quotes = await client.findQuotes(request, timeoutSignal());
+        pcQuoteCache.set(cacheKey, { value: quotes, expiresAt: now + 10 * 60_000 });
+        return { reply: formatPcQuotes(request, quotes), requestId, cache: 'miss' };
+      }
       case 'seedRing': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
         if (whiteJadeBossRingBoxCache && whiteJadeBossRingBoxCache.expiresAt > now)

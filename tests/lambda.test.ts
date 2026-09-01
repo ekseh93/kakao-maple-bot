@@ -72,6 +72,31 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(result.reply).toBe('[일반 계산기]\n12퍼 × 11개 = 132퍼');
     expect(nexon.findCharacter).not.toHaveBeenCalled();
   });
+  it('routes PC quote requests through the isolated provider adapter', async () => {
+    const pcDeals = {
+      findQuotes: vi.fn().mockResolvedValue([
+        {
+          label: '균형형',
+          totalKrw: 987_000,
+          compatibility: '정상',
+          source: '테스트 공급자',
+          fetchedAt: '2026-09-01 17:30',
+          items: [{ category: 'CPU', name: '테스트 CPU', priceKrw: 300_000 }],
+        },
+      ]),
+    };
+    const result = await handleMessage(
+      { ...message('!견적 100만원 게이밍'), roomId: 'pc-quote-room' },
+      { ...env, ALLOWED_ROOMS: 'pc-quote-room' },
+      { pcDeals },
+    );
+    expect(result.reply).toContain('[게이밍 1,000,000원 견적]');
+    expect(result.reply).toContain('균형형');
+    expect(pcDeals.findQuotes).toHaveBeenCalledWith(
+      { budgetKrw: 1_000_000, usage: 'gaming', monitorIncluded: false },
+      expect.any(AbortSignal),
+    );
+  });
 
   it('formats today fortune for a birth year', async () => {
     const result = await handleMessage(

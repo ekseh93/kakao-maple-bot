@@ -1,3 +1,6 @@
+import type { PcQuote, PcQuoteRequest } from '@kakao-maple-bot/core';
+export type { PcQuote, PcQuoteRequest } from '@kakao-maple-bot/core';
+
 export type Character = {
   name: string;
   world?: string;
@@ -2096,6 +2099,75 @@ export function createExchangeRateClient(
           ? { updatedAt: asString(body.time_last_update_utc) }
           : {}),
       };
+    },
+  };
+}
+
+export type PcQuoteClient = {
+  findQuotes(request: PcQuoteRequest, signal: AbortSignal): Promise<PcQuote[]>;
+};
+
+export function createPcQuoteClient(
+  endpoint: string | undefined,
+  sharedSecret: string | undefined,
+  fetcher: typeof fetch = fetch,
+): PcQuoteClient {
+  return {
+    async findQuotes(request, signal) {
+      if (!endpoint || !sharedSecret) throw new Error('NOT_CONFIGURED');
+      const response = await fetcher(`${endpoint.replace(/\/$/, '')}/v1/quote`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sharedSecret}`,
+        },
+        body: JSON.stringify(request),
+        signal,
+      });
+      if (!response.ok)
+        throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_UNAVAILABLE');
+      const body = await response.json();
+      if (!Array.isArray(body)) throw new Error('PROVIDER_SCHEMA');
+      return body.map((value) => {
+        const item = asRecord(value);
+        const items = item ? item.items : undefined;
+        const totalKrw = item?.totalKrw;
+        if (
+          !item ||
+          typeof item.label !== 'string' ||
+          typeof totalKrw !== 'number' ||
+          !Number.isSafeInteger(totalKrw) ||
+          !Array.isArray(items)
+        )
+          throw new Error('PROVIDER_SCHEMA');
+        return {
+          label: item.label,
+          totalKrw,
+          compatibility:
+            item.compatibility === '확인 필요' ? ('확인 필요' as const) : ('정상' as const),
+          source: typeof item.source === 'string' ? item.source : 'PC 가격 공급자',
+          fetchedAt: typeof item.fetchedAt === 'string' ? item.fetchedAt : '조회 시각 미상',
+          items: items.map((rawItem) => {
+            const component = asRecord(rawItem);
+            const priceKrw = component?.priceKrw;
+            if (
+              !component ||
+              typeof component.category !== 'string' ||
+              typeof component.name !== 'string' ||
+              typeof priceKrw !== 'number' ||
+              !Number.isSafeInteger(priceKrw)
+            )
+              throw new Error('PROVIDER_SCHEMA');
+            return {
+              category: component.category,
+              name: component.name,
+              priceKrw,
+              ...(typeof component.url === 'string' ? { url: component.url } : {}),
+            };
+          }),
+        };
+      });
     },
   };
 }

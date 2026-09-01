@@ -38,9 +38,37 @@ import {
   formatHotDealSections,
   formatUsageStats,
   FORMATTED_HELP,
+  parsePcQuoteArgs,
+  formatPcQuotes,
 } from '@kakao-maple-bot/core';
 
 describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
+  it('parses PC quote budget, usage, and monitor option', () => {
+    expect(parsePcQuoteArgs(['100만원', '게이밍', '모니터포함'])).toEqual({
+      budgetKrw: 1_000_000,
+      usage: 'gaming',
+      monitorIncluded: true,
+    });
+  });
+
+  it('formats up to three PC quote candidates with source metadata', () => {
+    const reply = formatPcQuotes(
+      { budgetKrw: 1_000_000, usage: 'gaming', monitorIncluded: false },
+      [
+        {
+          label: '균형형',
+          totalKrw: 987_000,
+          compatibility: '정상',
+          source: '테스트 공급자',
+          fetchedAt: '2026-09-01 17:30',
+          items: [{ category: 'CPU', name: '테스트 CPU', priceKrw: 300_000 }],
+        },
+      ],
+    );
+    expect(reply).toContain('균형형');
+    expect(reply).toContain('987,000원');
+    expect(reply).toContain('출처: 테스트 공급자');
+  });
   it('keeps help commands grouped and aligned in two sections', () => {
     expect(FORMATTED_HELP).toContain('【메이플스토리】');
     expect(FORMATTED_HELP).toContain('【미니 게임】');
@@ -118,6 +146,12 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
   it('accepts both Sunday Maple command spellings', () => {
     expect(parseCommand('!썬데이')).toEqual({ name: 'sunday', args: [] });
     expect(parseCommand('!선데이')).toEqual({ name: 'sunday', args: [] });
+  });
+  it('parses the PC quote command', () => {
+    expect(parseCommand('!견적 100만원 게이밍')).toEqual({
+      name: 'pcQuote',
+      args: ['100만원', '게이밍'],
+    });
   });
   it('parses the Naver webtoon recommendation command', () =>
     expect(parseCommand('!웹툰')).toEqual({ name: 'webtoon', args: [] }));

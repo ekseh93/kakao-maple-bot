@@ -1,4 +1,12 @@
 import { calculateDailyFortune } from './fortune-mcp-adapter.js';
+export {
+  formatPcQuoteHelp,
+  formatPcQuotes,
+  parsePcQuoteArgs,
+  type PcQuote,
+  type PcQuoteItem,
+  type PcQuoteRequest,
+} from './pc-quote.js';
 export { formatCalculator } from './calculator.js';
 export { formatExchangeRates, type ExchangeRateView } from './exchange.js';
 export {
@@ -22,6 +30,7 @@ export type CommandName =
   | 'boss'
   | 'bossProfit'
   | 'calculator'
+  | 'pcQuote'
   | 'bossRewards'
   | 'bossLevelBoost'
   | 'bossForceBoost'
@@ -109,6 +118,7 @@ const helpRows = {
     ['!가위 / !바위 / !보', '가위바위보'],
   ],
   other: [
+    ['!견적 <예산> <용도> [모니터포함]', 'PC 부품 견적·가격 비교'],
     ['!날씨 <지역>', '현재 날씨'],
     ['!주식 <이름>', '주식 시세'],
     ['!환율', '달러·엔화 환율'],
@@ -171,6 +181,7 @@ const aliases: Record<string, CommandName> = {
   보스: 'boss',
   보스수익: 'bossProfit',
   계산기: 'calculator',
+  견적: 'pcQuote',
   보스보상: 'bossRewards',
   보스렙뻥: 'bossLevelBoost',
   보스포뻥: 'bossForceBoost',
