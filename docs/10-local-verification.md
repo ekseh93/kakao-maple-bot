@@ -49,6 +49,18 @@ AWS Lambda TypeScript 번들은 `pnpm lambda:dry-run`으로 로컬 빌드하고,
 - MessengerBot R 앱 컴파일 및 Android 공기계 E2E의 독립 재현
 - 24시간 soak test, 재부팅·네트워크 단절 복구
 
+## 2026-09-01 메뉴·보스 상자 확률 배포 검증
+
+- 배포 코드 커밋: `8702e98`
+- 로컬 검증: Vitest 181개, typecheck, lint, build, format check, policy check, phone syntax check, dependency audit 통과
+- AWS 인증: `kakao-maple-bot` SSO의 비-root 역할과 도쿄 리전 확인
+- Terraform 사전 plan/apply: `0 added, 1 changed, 0 destroyed`로 Lambda 코드만 인플레이스 변경
+- 배포 후 Terraform plan: `No changes` 확인
+- 공개 `/health`: HTTP 200과 `{"status":"ok"}` 확인
+- 인증된 `/v1/messages`에서 `!시드링`을 호출해 백옥 5개와 흑옥 5개 목록 및 아이템·레벨 조합 확률을 확인했습니다.
+- 인증된 `/v1/messages`에서 `!뭐먹지`를 호출해 `소재획` 선택지 응답을 확인하고, `!칠흑깡`의 가중치 조정 대상 출력도 확인했습니다.
+- 실제 카카오톡 공기계 화면 E2E는 Codex가 직접 관측하지 않았습니다.
+
 위 항목은 별도 사용자 승인과 계정·기기 준비 후에만 수행합니다.
 
 ## 2026-08-29 `!보스` 출력 배포
