@@ -4,6 +4,13 @@
 
 ## 2026-09-01
 
+### 다나와 조회 무응답 수정 및 Lambda Version 12 배포
+
+- MCP 외부 조회 지연으로 릴레이 timeout이 먼저 발생하던 문제를 확인했습니다.
+- 다나와 도구 호출 timeout을 8초, MessengerBot R 메시지 POST timeout을 15초로 조정했습니다.
+- 테스트 186개와 실제 ECS/Lambda 조회를 확인한 뒤 Lambda Version 12를 배포했습니다.
+- 커밋 이유: `fix: extend Danawa lookup timeouts` (`1a51f8f`)
+
 ### 배포 후 기록 운영 규칙
 
 - 배포가 완료된 기능은 변경 내용·자동 테스트·실제 API 확인 결과를 이 문서에 계속 추가합니다.
