@@ -113,6 +113,22 @@ ECS Adapter와 MCP 조회 자체는 정상이나, Lambda provider 제한 3초와
 - Lambda `/v1/messages`에서 두 명령어의 `[다나와 최저가]` 응답 확인
 - 이후 공기계 MessengerBot R 재컴파일·재실행 후 카카오톡에서 재확인이 필요합니다.
 
+## 2026-09-04 `!통계` 관리자 sender 불일치
+
+### 증상
+
+관리자 제한을 적용한 뒤 본인이 `!통계`를 입력해도 응답이 없었습니다.
+
+### 원인과 조치
+
+Lambda `ADMIN_SENDERS` 환경변수에 과거 PowerShell 인코딩 오류로 깨진 값이 남아 있었습니다. 카카오톡 릴레이가 전달하는 발신자 표시명 `비쓰킷`을 정확히 등록하고, 다른 환경변수와 secret은 변경하지 않았습니다.
+
+### 검증
+
+- 관리자 발신자 `비쓰킷`: `[봇 사용 통계]` 응답 확인
+- 비관리자 probe: `reply: null` 확인
+- Lambda 환경 상태: `Active`, `LastUpdateStatus: Successful`
+
 ## 2026-09-01 명령어별 도움말·다나와·날씨 개선
 
 ### 증상

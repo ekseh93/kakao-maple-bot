@@ -9,6 +9,12 @@
 - 테스트 187개 통과 후 Lambda Version 13을 배포했습니다. 비관리자 실제 API 요청은 `reply: null`을 확인했습니다.
 - 커밋 이유: `fix: restrict usage statistics to admins` (`582205b`)
 
+### 관리자 sender 설정 복구
+
+- 손상된 `ADMIN_SENDERS` 값을 카카오톡 발신자 표시명 `비쓰킷`으로 교체했습니다.
+- 관리자·비관리자 실제 API 응답을 재검증했습니다.
+- Lambda 환경변수만 갱신했으며 secret 값은 기록하지 않았습니다.
+
 ## 2026-09-01
 
 ### Issue・PR・자동 리뷰 운영 기반
