@@ -1820,6 +1820,7 @@ export function formatLunaCrystalSweetDraw(
     (item) =>
       Math.abs(item.probability - 3.9) < 0.001 ||
       item.category?.includes('쁘띠') ||
+      item.name.includes('설아') ||
       item.name.includes('쁘띠')
         ? `[쁘띠] ${item.name}`
         : `[스윗] ${item.name}`,

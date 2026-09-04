@@ -539,6 +539,18 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(luna).not.toContain('기준: Nexon');
     expect(luna).not.toContain('https://example.com/luna');
   });
+  it('labels Seola as a Luna petit pet', () => {
+    const output = formatLunaCrystalSweetDraw(
+      '일반',
+      [{ name: '설아', probability: 9.6 }],
+      'https://example.com/luna',
+      '2026-09-04T00:00:00.000Z',
+      1,
+      true,
+      () => 0,
+    );
+    expect(output).toContain('[쁘띠] 설아');
+  });
   it('labels Luna Dream and petit pets from official categories', () => {
     const dream = formatLunaCrystalDreamDraw(
       '일반',
