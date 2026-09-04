@@ -131,11 +131,11 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
 
   it('allows the private admin phrase only for the configured sender', async () => {
     const allowed = await handleMessage(
-      { ...message('!씨발련들아'), roomId: 'admin-phrase-room', senderId: '비쓰킷' },
+      { ...message('!씨발놈'), roomId: 'admin-phrase-room', senderId: '비쓰킷' },
       { ...env, ALLOWED_ROOMS: 'admin-phrase-room' },
     );
     const denied = await handleMessage(
-      { ...message('!씨발련들아'), roomId: 'admin-phrase-denied-room', senderId: 'not-admin' },
+      { ...message('!씨발놈'), roomId: 'admin-phrase-denied-room', senderId: 'not-admin' },
       { ...env, ALLOWED_ROOMS: 'admin-phrase-denied-room' },
     );
     expect(allowed.reply).toBe('제론쀼 응기잇');
