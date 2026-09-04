@@ -480,6 +480,11 @@ describe('core commands (FR-001..008, T-001, T-009..013, T-019)', () => {
     expect(output).not.toContain('실제 아이템을 지급하지 않는');
     expect(output).not.toContain('https://example.com/boutique');
   });
+  it('adds the Boutique Gift taunt at a 20 percent chance', () => {
+    const items = [{ name: '일반', probability: 100 }];
+    expect(formatBoutiqueGiftDraw(items, items, () => 0)).toContain('어차피 안떠요');
+    expect(formatBoutiqueGiftDraw(items, items, () => 1)).not.toContain('어차피 안떠요');
+  });
   it('labels only Royal special-label items and Luna petit pets', () => {
     const royal = formatRoyalDraw(
       [

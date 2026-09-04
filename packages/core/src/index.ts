@@ -1737,8 +1737,10 @@ export function formatBoutiqueGiftDraw(
 ): string {
   const normalDraws = drawRoyalStyles(normalItems, 9, random);
   const feverDraw = drawRoyalStyles(feverItems, 1, random)[0]!;
+  const taunt = random() < 0.2 ? ['어차피 안떠요'] : [];
   return [
     '[부티크 기프트 10개 열기]',
+    ...taunt,
     ...normalDraws.map(
       (item, index) => `${index + 1}. ${item.name} (${item.probability.toFixed(2)}%)`,
     ),
