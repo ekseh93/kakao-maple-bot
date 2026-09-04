@@ -85,7 +85,7 @@ AWS Lambda (Node.js 22 / TypeScript)
 - 기본 거부 방식의 허용 방 목록, Bearer secret, kill switch, rate limit, event ID TTL을 적용했습니다.
 - API 키·shared secret·실제 방 이름은 Git 밖에서 주입합니다.
 - CloudWatch에는 명령 종류·결과·응답시간만 기록하며 대화 원문과 사용자 식별자는 저장하지 않습니다.
-- `!통계`는 DynamoDB의 단일 `TOTAL` 항목만 갱신합니다.
+- `!통계` 결과는 관리자만 볼 수 있으며 DynamoDB의 익명 `TOTAL` 카운터를 표시합니다.
 
 ### 5. 재현 가능한 AWS 운영
 

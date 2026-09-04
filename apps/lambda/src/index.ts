@@ -508,6 +508,8 @@ export async function handleMessage(
           cache: 'bypass',
         };
       case 'usageStats':
+        if (!allowed(message.senderId, env.ADMIN_SENDERS))
+          return { reply: null, requestId, cache: 'bypass' };
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
         if (usageTotal === undefined)
           throw new Error(usageStatsFailed ? 'USAGE_STATS_UNAVAILABLE' : 'NOT_CONFIGURED');

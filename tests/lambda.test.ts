@@ -111,10 +111,21 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     const usageStats = { increment: vi.fn().mockResolvedValue(42) };
     const result = await handleMessage(
       { ...message('!통계'), roomId: 'usage-stats-room' },
-      { ...env, ALLOWED_ROOMS: 'usage-stats-room' },
+      { ...env, ALLOWED_ROOMS: 'usage-stats-room', ADMIN_SENDERS: 'sender' },
       { usageStats, now: () => new Date(Date.now() + 120_000) },
     );
     expect(result.reply).toBe('[봇 사용 통계]\n현재까지 명령어 호출: 42회');
+    expect(usageStats.increment).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides usage statistics from non-admin senders', async () => {
+    const usageStats = { increment: vi.fn().mockResolvedValue(99) };
+    const result = await handleMessage(
+      { ...message('!통계'), roomId: 'non-admin-stats-room', senderId: 'not-admin' },
+      { ...env, ALLOWED_ROOMS: 'non-admin-stats-room', ADMIN_SENDERS: 'admin-only' },
+      { usageStats },
+    );
+    expect(result.reply).toBeNull();
     expect(usageStats.increment).toHaveBeenCalledTimes(1);
   });
 
