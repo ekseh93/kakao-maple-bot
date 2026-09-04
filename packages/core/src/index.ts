@@ -82,7 +82,8 @@ export type CommandName =
   | 'fuelStations'
   | 'exchangeRate'
   | 'usageStats'
-  | 'status';
+  | 'status'
+  | 'adminPhrase';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
 const helpRows = {
@@ -204,6 +205,7 @@ const aliases: Record<string, CommandName> = {
   다나와가격이력: 'pcDeals',
   다나와부품상세: 'pcDeals',
   다나와호환성: 'pcDeals',
+  씨발련들아: 'adminPhrase',
   보스보상: 'bossRewards',
   보스렙뻥: 'bossLevelBoost',
   보스포뻥: 'bossForceBoost',

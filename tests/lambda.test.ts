@@ -129,6 +129,19 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     expect(usageStats.increment).toHaveBeenCalledTimes(1);
   });
 
+  it('allows the private admin phrase only for the configured sender', async () => {
+    const allowed = await handleMessage(
+      { ...message('!씨발련들아'), roomId: 'admin-phrase-room', senderId: '비쓰킷' },
+      { ...env, ALLOWED_ROOMS: 'admin-phrase-room' },
+    );
+    const denied = await handleMessage(
+      { ...message('!씨발련들아'), roomId: 'admin-phrase-denied-room', senderId: 'not-admin' },
+      { ...env, ALLOWED_ROOMS: 'admin-phrase-denied-room' },
+    );
+    expect(allowed.reply).toBe('제론쀼 응기잇');
+    expect(denied.reply).toBeNull();
+  });
+
   it('formats Inven 10-recommendation titles and board link', async () => {
     const inven = {
       findTopPosts: vi.fn().mockResolvedValue({

@@ -514,6 +514,10 @@ export async function handleMessage(
         if (usageTotal === undefined)
           throw new Error(usageStatsFailed ? 'USAGE_STATS_UNAVAILABLE' : 'NOT_CONFIGURED');
         return { reply: formatUsageStats(usageTotal), requestId, cache: 'bypass' };
+      case 'adminPhrase':
+        if (parsed.args.length > 0 || message.senderId !== '비쓰킷')
+          return { reply: null, requestId, cache: 'bypass' };
+        return { reply: '제론쀼 응기잇', requestId, cache: 'bypass' };
       case 'rps':
         return {
           reply: playRps(
