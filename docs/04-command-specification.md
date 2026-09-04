@@ -373,9 +373,9 @@ Nexon 공식 공지 목록을 공기계 릴레이가 약 60초마다 확인합�
 
     !시드링
 
-백옥의 보스 반지 상자 공식 확률표를 기준으로 5회 결과를 가중치에 따라 시뮬레이션합니다. 스킬 반지 아이템 획득 확률과 스킬 반지 레벨 확률(3레벨 65%, 4레벨 35%)을 독립적으로 추첨한 뒤 곱해 `아이템 확률 × 레벨 확률`의 최종 확률을 표시합니다. 결과는 `리스트레인트 링 4레벨 (총 확률 5.00%)`처럼 출력하며, 실제 아이템을 지급하지 않는 미니게임입니다.
+백옥과 흑옥의 보스 반지 상자 공식 확률표를 기준으로 각각 5회 결과를 가중치에 따라 시뮬레이션합니다. 스킬 반지 아이템 획득 확률과 상자별 레벨 확률을 독립적으로 추첨한 뒤 곱해 `아이템 확률 × 레벨 확률`의 최종 확률을 표시합니다. 결과는 백옥·흑옥 상자별 5개 목록으로 출력하며, 실제 아이템을 지급하지 않는 미니게임입니다.
 
-기준 페이지: <https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxWhiteJade>
+기준 페이지: <https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxWhiteJade>, <https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxBlackJade>
 
 ### !칠흑깡
 
