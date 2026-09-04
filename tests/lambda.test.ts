@@ -845,6 +845,21 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
           'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxWhiteJade',
         fetchedAt: '2026-08-29T00:00:00.000Z',
       }),
+      findBlackJadeBossRingBox: vi.fn().mockResolvedValue({
+        items: [
+          { name: '리스트레인트 링', probability: 12.5 },
+          { name: '컨티뉴어스 링', probability: 12.5 },
+        ],
+        levelProbabilities: [
+          { level: 1, probability: 25 },
+          { level: 2, probability: 25 },
+          { level: 3, probability: 30 },
+          { level: 4, probability: 20 },
+        ],
+        sourceUrl:
+          'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxBlackJade',
+        fetchedAt: '2026-08-29T00:00:00.000Z',
+      }),
     };
     const result = await handleMessage(
       { ...message('!시드링'), roomId: 'seed-ring-room', senderId: 'seed-ring-sender' },
@@ -852,8 +867,10 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply).toContain('[백옥의 보스 반지 상자 5회 뽑기]');
-    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(5);
+    expect(result.reply).toContain('[흑옥의 보스 반지 상자 5회 뽑기]');
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
     expect(nexon.findWhiteJadeBossRingBox).toHaveBeenCalledTimes(1);
+    expect(nexon.findBlackJadeBossRingBox).toHaveBeenCalledTimes(1);
   });
   it('handles the static Black Accessory Box draw', async () => {
     const result = await handleMessage(

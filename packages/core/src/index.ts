@@ -1748,7 +1748,8 @@ export function formatBoutiqueGiftDraw(
   ].join('\n');
 }
 
-export function formatWhiteJadeBossRingBoxDraw(
+export function formatBossRingBoxDraw(
+  label: '백옥' | '흑옥',
   items: RoyalStyleItem[],
   count = 5,
   random = Math.random,
@@ -1768,9 +1769,21 @@ export function formatWhiteJadeBossRingBoxDraw(
     return `${item.name} ${level.level}레벨 (총 확률 ${((item.probability * level.probability) / 100).toFixed(2)}%)`;
   });
   return [
-    `[백옥의 보스 반지 상자 ${count}회 뽑기]`,
+    `[${label}의 보스 반지 상자 ${count}회 뽑기]`,
     ...draws.map((value, i) => `${i + 1}. ${value}`),
   ].join('\n');
+}
+
+export function formatWhiteJadeBossRingBoxDraw(
+  items: RoyalStyleItem[],
+  count = 5,
+  random = Math.random,
+  levelProbabilities: Array<{ level: number; probability: number }> = [
+    { level: 3, probability: 65 },
+    { level: 4, probability: 35 },
+  ],
+): string {
+  return formatBossRingBoxDraw('백옥', items, count, random, levelProbabilities);
 }
 
 function drawWeightedItem<T extends { probability: number }>(

@@ -4,6 +4,7 @@ import {
   formatWonderBerryDraw,
   formatBoutiqueGiftDraw,
   formatWhiteJadeBossRingBoxDraw,
+  formatBossRingBoxDraw,
   formatBlackAccessoryBoxDraw,
   formatLunaCrystalSweetDraw,
   formatLunaCrystalDreamDraw,
@@ -178,6 +179,7 @@ let royalCache: { value: RoyalStyleList; expiresAt: number } | undefined;
 let wonderBerryCache: { value: WonderBerryList; expiresAt: number; provider?: object } | undefined;
 let boutiqueGiftCache: { value: BoutiqueGiftList; expiresAt: number } | undefined;
 let whiteJadeBossRingBoxCache: { value: BossRingBoxList; expiresAt: number } | undefined;
+let blackJadeBossRingBoxCache: { value: BossRingBoxList; expiresAt: number } | undefined;
 const lunaSweetCache = new Map<
   '일반' | '스페셜',
   { value: LunaCrystalSweetList; expiresAt: number }
@@ -438,6 +440,8 @@ export async function handleMessage(
   if (boutiqueGiftCache && boutiqueGiftCache.expiresAt <= now) boutiqueGiftCache = undefined;
   if (whiteJadeBossRingBoxCache && whiteJadeBossRingBoxCache.expiresAt <= now)
     whiteJadeBossRingBoxCache = undefined;
+  if (blackJadeBossRingBoxCache && blackJadeBossRingBoxCache.expiresAt <= now)
+    blackJadeBossRingBoxCache = undefined;
   for (const [kind, entry] of lunaSweetCache)
     if (entry.expiresAt <= now) lunaSweetCache.delete(kind);
   for (const [kind, entry] of lunaDreamCache)
@@ -584,23 +588,46 @@ export async function handleMessage(
       }
       case 'seedRing': {
         if (parsed.args.length > 0) throw new Error('INVALID_USAGE');
-        if (whiteJadeBossRingBoxCache && whiteJadeBossRingBoxCache.expiresAt > now)
+        if (
+          whiteJadeBossRingBoxCache &&
+          whiteJadeBossRingBoxCache.expiresAt > now &&
+          blackJadeBossRingBoxCache &&
+          blackJadeBossRingBoxCache.expiresAt > now
+        )
           return {
-            reply: formatWhiteJadeBossRingBoxDraw(
+            reply: [
+              formatWhiteJadeBossRingBoxDraw(
               whiteJadeBossRingBoxCache.value.items,
               5,
               Math.random,
               whiteJadeBossRingBoxCache.value.levelProbabilities,
-            ),
+              ),
+              formatBossRingBoxDraw(
+                '흑옥',
+                blackJadeBossRingBoxCache.value.items,
+                5,
+                Math.random,
+                blackJadeBossRingBoxCache.value.levelProbabilities,
+              ),
+            ].join('\n\n'),
             requestId,
             cache: 'hit',
           };
         const client = deps.nexon ?? createNexonClient(env.NEXON_API_KEY);
         if (!client.findWhiteJadeBossRingBox) throw new Error('NOT_CONFIGURED');
-        const box = await client.findWhiteJadeBossRingBox(timeoutSignal());
-        whiteJadeBossRingBoxCache = { value: box, expiresAt: now + 5 * 60_000 };
+        if (!client.findWhiteJadeBossRingBox || !client.findBlackJadeBossRingBox)
+          throw new Error('NOT_CONFIGURED');
+        const [whiteBox, blackBox] = await Promise.all([
+          client.findWhiteJadeBossRingBox(timeoutSignal()),
+          client.findBlackJadeBossRingBox(timeoutSignal()),
+        ]);
+        whiteJadeBossRingBoxCache = { value: whiteBox, expiresAt: now + 5 * 60_000 };
+        blackJadeBossRingBoxCache = { value: blackBox, expiresAt: now + 5 * 60_000 };
         return {
-          reply: formatWhiteJadeBossRingBoxDraw(box.items, 5, Math.random, box.levelProbabilities),
+          reply: [
+            formatWhiteJadeBossRingBoxDraw(whiteBox.items, 5, Math.random, whiteBox.levelProbabilities),
+            formatBossRingBoxDraw('흑옥', blackBox.items, 5, Math.random, blackBox.levelProbabilities),
+          ].join('\n\n'),
           requestId,
           cache: 'miss',
         };

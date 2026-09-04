@@ -29,6 +29,7 @@ export type NexonClient = {
   findWonderBerry?(signal: AbortSignal): Promise<WonderBerryList>;
   findBoutiqueGift?(signal: AbortSignal): Promise<BoutiqueGiftList>;
   findWhiteJadeBossRingBox?(signal: AbortSignal): Promise<BossRingBoxList>;
+  findBlackJadeBossRingBox?(signal: AbortSignal): Promise<BossRingBoxList>;
   findLunaCrystalSweet?(
     kind: '일반' | '스페셜',
     signal: AbortSignal,
@@ -1162,6 +1163,17 @@ export function createNexonClient(
     async findWhiteJadeBossRingBox(signal) {
       const sourceUrl =
         'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxWhiteJade';
+      const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      const html = await response.text();
+      return {
+        ...parseProbabilityPage(html, sourceUrl, 'first'),
+        levelProbabilities: parseRingLevelProbabilities(html),
+      };
+    },
+    async findBlackJadeBossRingBox(signal) {
+      const sourceUrl =
+        'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxBlackJade';
       const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
       if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
       const html = await response.text();
