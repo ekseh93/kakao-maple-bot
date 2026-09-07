@@ -1021,6 +1021,34 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     });
     expect(fetcher).toHaveBeenCalledTimes(3);
   });
+  it('returns weather when the optional air-quality provider is unavailable', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ results: [{ name: '서울', latitude: 37.56, longitude: 126.98 }] }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            current: { temperature_2m: 24, relative_humidity_2m: 55, weather_code: 1 },
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response('upstream unavailable', { status: 503 }));
+
+    const result = await createNexonClient(undefined, fetcher).findWeather?.(
+      '서울',
+      new AbortController().signal,
+    );
+
+    expect(result).toMatchObject({ location: '서울', temperatureC: 24, humidityPercent: 55 });
+    expect(result?.pm25).toBeUndefined();
+    expect(result?.pm10).toBeUndefined();
+  });
   it('maps eight official experience history snapshots', async () => {
     const fetcher = vi
       .fn()
