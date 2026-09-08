@@ -1021,3 +1021,5 @@
 
 - 한국 주요 도시, 일본 도도부현, 미국·캐나다·유럽·아시아·오세아니아·중남미 주요 도시와 국가 별칭을 사전에 추가했습니다.
 - 별칭에 없는 지역은 영문·현지 표기를 Open-Meteo 글로벌 Geocoding에 직접 전달합니다.
+- 테스트 195개·타입 검사·ESLint 통과 후 Lambda Version 21을 배포하고 `/health` 200 응답을 확인했습니다.
+- 커밋 이유: `feat: expand global weather aliases` (`269ddad`)
