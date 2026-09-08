@@ -16,6 +16,10 @@ Development uses AI assistance. Requirements and operating decisions, generated 
 
 Read the [three engineering case studies (Japanese)](docs/22-engineering-case-studies.ja.md), [actual review and fixes in PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9), and [verification scope](docs/23-portfolio-verification.md).
 
+[View the synthetic anonymous-usage chart](docs/assets/command-usage-sample.svg)
+
+This chart is a fixed portfolio sample, not production telemetry. See the [usage-statistics note](docs/portfolio/command-usage.md) for the aggregation fields and privacy boundary.
+
 ## Architecture
 
 ```mermaid

@@ -29,3 +29,9 @@ pnpm usage:sample
 ```
 
 위 명령은 실제 대화에서 추출하지 않은 고정 가상 데이터로 [command-usage.sample.json](./command-usage.sample.json)을 생성합니다. 파일의 `sample: true` 필드로 실제 운영 데이터와 구분합니다.
+
+### 포트폴리오 시각화
+
+아래 이미지는 같은 고정 샘플 JSON을 사람이 빠르게 읽을 수 있도록 표현한 자료입니다. 파란 막대는 일일 호출 수, 노란 선은 평균 응답시간의 상대적 흐름을 나타내며 실제 운영 성능이나 사용자 통계를 의미하지 않습니다.
+
+![익명 명령어 통계 가상 샘플](../assets/command-usage-sample.svg)

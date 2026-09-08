@@ -16,6 +16,10 @@ KakaoTalkは韓国で使われるメッセンジャーです。本プロジェ�
 
 まずは[技術事例3件](docs/22-engineering-case-studies.ja.md)、[実際のレビュー・修正PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9)、[検証範囲](docs/23-portfolio-verification.md)をご覧ください。
 
+[匿名統計の合成サンプルを表示](docs/assets/command-usage-sample.svg)
+
+この図は実運用データではなく、固定したポートフォリオ用サンプルです。集計項目と個人情報の扱いは[統計資料](docs/portfolio/command-usage.md)をご覧ください。
+
 ## 構成
 
 ```mermaid
