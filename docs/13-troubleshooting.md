@@ -2,6 +2,14 @@
 
 이 문서는 오류 목록이 아니라 **관측 → 진단 → 수정 → 검증 → 재발 방지**의 판단 근거를 남깁니다. 저장소·AWS·사용자 기기에서 확인한 결과를 구분하며, 존재하지 않는 과거 Issue나 PR 링크를 사후에 만들지 않습니다.
 
+## 2026-09-08 GitHub Actions Node 20 경고
+
+- 증상: 검사 자체는 성공했지만 `actions/checkout@v4`, `actions/setup-node@v4`, `pnpm/action-setup@v4`에 대해 Node 20 실행 환경 폐기 예정 경고가 표시됐습니다.
+- 원인: 프로젝트의 `node-version: 22`는 애플리케이션용 Node 버전이며, `uses:`로 호출하는 GitHub Action의 실행 런타임과 별개입니다.
+- 수정: 공식 Action의 Node 24 호환 major 버전으로 갱신했습니다. pnpm 버전과 프로젝트의 Node 22 설정은 유지했습니다.
+- 검증: Issue #12 연결 PR의 quality, security, test-build, verify 및 병합 후 main CI를 확인합니다.
+- 범위: 이 변경은 CI 유지보수이며 AWS 배포·공기계·시크릿 설정은 변경하지 않습니다.
+
 ## 대표 사례 빠르게 보기
 
 채용 담당자용 일본어 요약: [기술 사례 3개](22-engineering-case-studies.ja.md). 최근 검수의 증거 범위는 [검증 기록](23-portfolio-verification.md)에 있습니다.
