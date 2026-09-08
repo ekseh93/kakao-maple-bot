@@ -8,7 +8,10 @@ Issue
 Branch (`codex/issue-N-short-name`)
   ↓ focused implementation and documentation
 Draft PR (`Closes #N`)
-  ├─ deterministic CI: format / policy / phone / secret / audit / lint / typecheck / test / build / Lambda dry-run
+  ├─ quality: format / lint / phone / PC adapter syntax
+  ├─ security: policy / secret scanner tests / secret scan / dependency audit
+  ├─ test-build: typecheck / regression tests / Lambda dry-run
+  ├─ verify: every independent suite must succeed
   └─ advisory AI review: architecture / risk / missing cases
         ↓ author evaluates and responds
 Fix + re-run checks
@@ -59,6 +62,8 @@ PR本文は「変更ファイルの一覧」ではなく、問題、設計判断
 
 ## 5. main branchの保護方針
 
+PR必須ルールはrulesetで設定し、必要承認数は0とします。個人開発でもPRの記録を残し、他者の形式的な承認待ちを作らないためです。必須チェック `verify` は独立した全検査の成功をまとめます。設定の実観測結果はIssue #10に接続したPRで確認します。
+
 - mainへの変更はPR経由
 - `verify`成功とconversation解決を要求
 - force pushとbranch deletionを禁止
@@ -70,6 +75,10 @@ PR本文は「変更ファイルの一覧」ではなく、問題、設計判断
 障害は[トラブルシューティング記録](13-troubleshooting.md)のテンプレートで、症状、再現証拠、原因、修正、検証、再発防止、未確認範囲を記録します。Issue、PR、commit、deploymentが存在する場合だけ実リンクを追加し、存在しない過去リンクは作りません。
 
 ## 한국어 운영 요약
+
+- 최근 후속 브랜치처럼 서로 다른 기능을 한 브랜치에 계속 누적하지 않습니다. 이미 쌓인 작업은 통합 이유와 범위를 PR에 밝히고, 이후 새 이슈마다 main에서 짧은 브랜치를 만듭니다.
+- GitHub Projects는 선택 사항입니다. 읽기 권한이 없는 계정에서 새 권한을 요청하거나 보드를 만들었다고 주장하지 않고 Issues와 PR로 추적합니다.
+- 배포 기록에는 배포된 소스 커밋, 검증 시각과 결과를 기록합니다. 과거 기록을 새 배포처럼 Release로 발행하지 않습니다.
 
 - 문제를 Issue로 먼저 정의하고, 완료 조건과 증거 범위를 적습니다.
 - 하나의 작업 브랜치와 PR에서 해결하며 `Closes #N`으로 연결합니다.

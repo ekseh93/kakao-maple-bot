@@ -75,6 +75,8 @@ resource "aws_lambda_function" "bot" {
       BOT_ENABLED            = tostring(var.bot_enabled)
       ALLOWED_ROOMS          = var.allowed_rooms
       ADMIN_SENDERS          = var.admin_senders
+      PRIVATE_COMMAND_SENDER = var.private_command_sender
+      PRIVATE_COMMAND_REPLY  = var.private_command_reply
       STOCK_ENABLED          = tostring(var.stock_enabled)
       NOTICE_ALERT_ENABLED   = tostring(var.notice_alert_enabled)
       NOTICE_ALERT_KEYWORDS  = var.notice_alert_keywords

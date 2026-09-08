@@ -82,7 +82,8 @@ export type CommandName =
   | 'fuelStations'
   | 'exchangeRate'
   | 'usageStats'
-  | 'status';
+  | 'status'
+  | 'adminPhrase';
 export type ParsedCommand = { name: CommandName; args: string[] };
 
 const helpRows = {
@@ -204,6 +205,7 @@ const aliases: Record<string, CommandName> = {
   다나와가격이력: 'pcDeals',
   다나와부품상세: 'pcDeals',
   다나와호환성: 'pcDeals',
+  씨발놈: 'adminPhrase',
   보스보상: 'bossRewards',
   보스렙뻥: 'bossLevelBoost',
   보스포뻥: 'bossForceBoost',
@@ -1735,8 +1737,10 @@ export function formatBoutiqueGiftDraw(
 ): string {
   const normalDraws = drawRoyalStyles(normalItems, 9, random);
   const feverDraw = drawRoyalStyles(feverItems, 1, random)[0]!;
+  const taunt = random() < 0.2 ? ['어차피 안떠요'] : [];
   return [
     '[부티크 기프트 10개 열기]',
+    ...taunt,
     ...normalDraws.map(
       (item, index) => `${index + 1}. ${item.name} (${item.probability.toFixed(2)}%)`,
     ),
@@ -1744,7 +1748,8 @@ export function formatBoutiqueGiftDraw(
   ].join('\n');
 }
 
-export function formatWhiteJadeBossRingBoxDraw(
+export function formatBossRingBoxDraw(
+  label: '백옥' | '흑옥',
   items: RoyalStyleItem[],
   count = 5,
   random = Math.random,
@@ -1764,9 +1769,21 @@ export function formatWhiteJadeBossRingBoxDraw(
     return `${item.name} ${level.level}레벨 (총 확률 ${((item.probability * level.probability) / 100).toFixed(2)}%)`;
   });
   return [
-    `[백옥의 보스 반지 상자 ${count}회 뽑기]`,
+    `[${label}의 보스 반지 상자 ${count}회 뽑기]`,
     ...draws.map((value, i) => `${i + 1}. ${value}`),
   ].join('\n');
+}
+
+export function formatWhiteJadeBossRingBoxDraw(
+  items: RoyalStyleItem[],
+  count = 5,
+  random = Math.random,
+  levelProbabilities: Array<{ level: number; probability: number }> = [
+    { level: 3, probability: 65 },
+    { level: 4, probability: 35 },
+  ],
+): string {
+  return formatBossRingBoxDraw('백옥', items, count, random, levelProbabilities);
 }
 
 function drawWeightedItem<T extends { probability: number }>(
@@ -1803,6 +1820,7 @@ export function formatLunaCrystalSweetDraw(
     (item) =>
       Math.abs(item.probability - 3.9) < 0.001 ||
       item.category?.includes('쁘띠') ||
+      item.name.includes('설아') ||
       item.name.includes('쁘띠')
         ? `[쁘띠] ${item.name}`
         : `[스윗] ${item.name}`,

@@ -29,6 +29,7 @@ export type NexonClient = {
   findWonderBerry?(signal: AbortSignal): Promise<WonderBerryList>;
   findBoutiqueGift?(signal: AbortSignal): Promise<BoutiqueGiftList>;
   findWhiteJadeBossRingBox?(signal: AbortSignal): Promise<BossRingBoxList>;
+  findBlackJadeBossRingBox?(signal: AbortSignal): Promise<BossRingBoxList>;
   findLunaCrystalSweet?(
     kind: '일반' | '스페셜',
     signal: AbortSignal,
@@ -317,6 +318,29 @@ async function fetchWithRetry(
     if (error instanceof Error && error.name === 'AbortError') throw error;
     return await fetcher(input, init);
   }
+}
+
+/**
+ * Creates a child signal for optional/secondary requests. A slow air-quality
+ * provider must not hold up the primary weather response, while the caller's
+ * abort still cancels both requests.
+ */
+function childTimeoutSignal(
+  parent: AbortSignal,
+  timeoutMs: number,
+): { signal: AbortSignal; dispose: () => void } {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const abortFromParent = () => controller.abort();
+  if (parent.aborted) controller.abort();
+  else parent.addEventListener('abort', abortFromParent, { once: true });
+  return {
+    signal: controller.signal,
+    dispose: () => {
+      clearTimeout(timer);
+      parent.removeEventListener('abort', abortFromParent);
+    },
+  };
 }
 
 function decodeHtml(value: string): string {
@@ -1170,6 +1194,17 @@ export function createNexonClient(
         levelProbabilities: parseRingLevelProbabilities(html),
       };
     },
+    async findBlackJadeBossRingBox(signal) {
+      const sourceUrl =
+        'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxBlackJade';
+      const response = await fetchWithRetry(fetcher, sourceUrl, { signal });
+      if (!response.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      const html = await response.text();
+      return {
+        ...parseProbabilityPage(html, sourceUrl, 'first'),
+        levelProbabilities: parseRingLevelProbabilities(html),
+      };
+    },
     async findLunaCrystalSweet(kind, signal) {
       const sourceUrl =
         kind === '스페셜'
@@ -1286,26 +1321,37 @@ export function createNexonClient(
         current: 'pm2_5,pm10',
         timezone: 'auto',
       });
-      const [weatherResponse, airResponse] = await Promise.all([
-        fetchWithRetry(fetcher, `https://api.open-meteo.com/v1/forecast?${query}`, { signal }),
-        fetchWithRetry(
-          fetcher,
-          `https://air-quality-api.open-meteo.com/v1/air-quality?${airQuery}`,
-          {
-            signal,
-          },
-        ),
-      ]);
-      if (!weatherResponse.ok || !airResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
+      const airSignal = childTimeoutSignal(signal, 1200);
+      const weatherPromise = fetchWithRetry(
+        fetcher,
+        `https://api.open-meteo.com/v1/forecast?${query}`,
+        { signal },
+      );
+      const airPromise = fetchWithRetry(
+        fetcher,
+        `https://air-quality-api.open-meteo.com/v1/air-quality?${airQuery}`,
+        { signal: airSignal.signal },
+      )
+        .then(async (response) => {
+          if (!response.ok) return undefined;
+          const body = (await response.json()) as {
+            current?: { pm2_5?: number | null; pm10?: number | null };
+          } | null;
+          return {
+            pm25: optionalNumber(body?.current?.pm2_5),
+            pm10: optionalNumber(body?.current?.pm10),
+          };
+        })
+        .catch(() => undefined)
+        .finally(airSignal.dispose);
+      const [weatherResponse, air] = await Promise.all([weatherPromise, airPromise]);
+      if (!weatherResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
       const weatherBody = (await weatherResponse.json()) as {
         current?: {
           temperature_2m?: number;
           relative_humidity_2m?: number;
           weather_code?: number;
         };
-      };
-      const airBody = (await airResponse.json()) as {
-        current?: { pm2_5?: number | null; pm10?: number | null };
       };
       const current = weatherBody.current;
       if (
@@ -1318,8 +1364,8 @@ export function createNexonClient(
         !Number.isInteger(current.weather_code)
       )
         throw new Error('PROVIDER_SCHEMA');
-      const pm25 = optionalNumber(airBody.current?.pm2_5);
-      const pm10 = optionalNumber(airBody.current?.pm10);
+      const pm25 = air?.pm25;
+      const pm10 = air?.pm10;
       return {
         query: region,
         location: place.name,

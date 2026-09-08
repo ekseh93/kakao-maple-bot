@@ -111,11 +111,53 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
     const usageStats = { increment: vi.fn().mockResolvedValue(42) };
     const result = await handleMessage(
       { ...message('!통계'), roomId: 'usage-stats-room' },
-      { ...env, ALLOWED_ROOMS: 'usage-stats-room' },
+      { ...env, ALLOWED_ROOMS: 'usage-stats-room', ADMIN_SENDERS: 'sender' },
       { usageStats, now: () => new Date(Date.now() + 120_000) },
     );
     expect(result.reply).toBe('[봇 사용 통계]\n현재까지 명령어 호출: 42회');
     expect(usageStats.increment).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides usage statistics from non-admin senders', async () => {
+    const usageStats = { increment: vi.fn().mockResolvedValue(99) };
+    const result = await handleMessage(
+      { ...message('!통계'), roomId: 'non-admin-stats-room', senderId: 'not-admin' },
+      { ...env, ALLOWED_ROOMS: 'non-admin-stats-room', ADMIN_SENDERS: 'admin-only' },
+      { usageStats },
+    );
+    expect(result.reply).toBeNull();
+    expect(usageStats.increment).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows the private admin phrase only for the configured sender', async () => {
+    const allowed = await handleMessage(
+      { ...message('!씨발놈'), roomId: 'admin-phrase-room', senderId: 'fixture-admin' },
+      {
+        ...env,
+        ALLOWED_ROOMS: 'admin-phrase-room',
+        PRIVATE_COMMAND_SENDER: 'fixture-admin',
+        PRIVATE_COMMAND_REPLY: 'Private fixture response',
+      },
+    );
+    const denied = await handleMessage(
+      { ...message('!씨발놈'), roomId: 'admin-phrase-denied-room', senderId: 'not-admin' },
+      {
+        ...env,
+        ALLOWED_ROOMS: 'admin-phrase-denied-room',
+        PRIVATE_COMMAND_SENDER: 'fixture-admin',
+        PRIVATE_COMMAND_REPLY: 'Private fixture response',
+      },
+    );
+    expect(allowed.reply).toBe('Private fixture response');
+    expect(denied.reply).toBeNull();
+  });
+
+  it('keeps the private command disabled without explicit private configuration', async () => {
+    const result = await handleMessage(
+      { ...message('!씨발놈'), roomId: 'unconfigured-phrase-room', senderId: 'fixture-admin' },
+      { ...env, ALLOWED_ROOMS: 'unconfigured-phrase-room' },
+    );
+    expect(result.reply).toBeNull();
   });
 
   it('formats Inven 10-recommendation titles and board link', async () => {
@@ -821,6 +863,21 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
           'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxWhiteJade',
         fetchedAt: '2026-08-29T00:00:00.000Z',
       }),
+      findBlackJadeBossRingBox: vi.fn().mockResolvedValue({
+        items: [
+          { name: '리스트레인트 링', probability: 12.5 },
+          { name: '컨티뉴어스 링', probability: 12.5 },
+        ],
+        levelProbabilities: [
+          { level: 1, probability: 25 },
+          { level: 2, probability: 25 },
+          { level: 3, probability: 30 },
+          { level: 4, probability: 20 },
+        ],
+        sourceUrl:
+          'https://maplestory.nexon.com/Guide/OtherProbability/bossRingBox/ringBoxBlackJade',
+        fetchedAt: '2026-08-29T00:00:00.000Z',
+      }),
     };
     const result = await handleMessage(
       { ...message('!시드링'), roomId: 'seed-ring-room', senderId: 'seed-ring-sender' },
@@ -828,8 +885,10 @@ describe('Lambda boundary (FR-010..012, T-002..005, T-016..020)', () => {
       { nexon },
     );
     expect(result.reply).toContain('[백옥의 보스 반지 상자 5회 뽑기]');
-    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(5);
+    expect(result.reply).toContain('[흑옥의 보스 반지 상자 5회 뽑기]');
+    expect(result.reply?.match(/^\d+\./gm) ?? []).toHaveLength(10);
     expect(nexon.findWhiteJadeBossRingBox).toHaveBeenCalledTimes(1);
+    expect(nexon.findBlackJadeBossRingBox).toHaveBeenCalledTimes(1);
   });
   it('handles the static Black Accessory Box draw', async () => {
     const result = await handleMessage(

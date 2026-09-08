@@ -52,6 +52,20 @@ variable "stock_enabled" {
   default     = false
 }
 
+variable "private_command_sender" {
+  description = "Optional private command sender. Leave empty to disable; never commit a real identity."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "private_command_reply" {
+  description = "Optional private command response. Keep personal content outside Git."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "notice_alert_enabled" {
   description = "Enable proactive Nexon notice keyword alerts through the phone relay."
   type        = bool

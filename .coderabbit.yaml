@@ -44,7 +44,12 @@ reviews:
       instructions: >-
         Check requirement traceability and cover normal, boundary, and error paths
         with deterministic fixtures that contain no real personal data.
-    - path: 'docs/**.md'
+    - path: 'docs/**/*.md'
       instructions: >-
         Check that claims match repository evidence, AWS observations, or explicitly
         labeled user confirmation; keep Japanese clear and exclude private identifiers.
+    - path: 'README*.md'
+      instructions: >-
+        Keep Japanese natural and link claims to a revision or check run. Describe
+        AI-assisted work truthfully. Distinguish memory caches from durable state,
+        backend API keys from the relay credential, and samples from operational evidence.
