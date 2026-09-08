@@ -58,6 +58,7 @@ PR本文は「変更ファイルの一覧」ではなく、問題、設計判断
 - CodeRabbitは日本語の補助レビューとして、見落とし、境界条件、文書と実装の不一致を指摘します。
 - AIコメントは自動的に正解とは扱いません。採用、修正、却下の判断と理由をPRへ残します。
 - AI reviewをrequired checkにはせず、外部サービス障害で保守作業が停止しないようにします。
+- CodeRabbitがreview skippedを成功statusで返す場合も、レビュー完了とは扱いません。必要時はPRの手動レビュー操作を使用し、実際のreview本文と対象commitを確認します。
 - secret、個人情報、非公開会話はissue、PR、AI reviewへ送信しません。
 
 ## 5. main branchの保護方針

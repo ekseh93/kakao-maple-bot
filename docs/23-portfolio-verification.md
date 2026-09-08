@@ -16,6 +16,16 @@ Review date: 2026-09-08. Tracking: [Issue #10](https://github.com/ekseh93/kakao-
 
 The test count is a dated local observation, not a permanent badge or a production success-rate measurement. CI logs are the revision-specific source for later test totals.
 
+### Observed delivery checks
+
+- [PR #11](https://github.com/ekseh93/kakao-maple-bot/pull/11) integrates the snapshot. Revision `a365f2a32650f0dd201fda2c7d2f66a6fc2c2af8` passed all suites and `verify` in [PR CI run 34214463752](https://github.com/ekseh93/kakao-maple-bot/actions/runs/34214463752).
+- Local formatting, lint, typecheck, policy check, secret scan, 4 secret-scanner tests, audit, relay/adapter syntax, and Lambda bundling passed. Terraform backend-free initialization and `terraform validate` passed without AWS credentials.
+- Relative file links were checked in the edited Markdown files. This check does not validate external URLs or heading anchors.
+- The active `main-requires-pull-request` ruleset (ID 22531401) was queried after creation: PR required, zero approving reviews, conversation resolution required, no bypass actors. Existing branch protection retains required `verify` and prohibits force pushes/deletion.
+- CodeRabbit initially reported a skipped review, which is not a completed review despite a green status. Manual review was requested using its supported controls; the PR review timeline is authoritative.
+- Issues #1 and #3 were closed on code-level evidence. Obsolete scopes #2 and #6 were closed as not planned. Acceptance audits #4/#5 and device reliability #7 remain open with explicit limits.
+- GitHub Projects could not be inspected because the current token lacks `read:project`. No board or additional permission was created.
+
 ## Integration choices
 
 - Start a new branch from main, import the follow-up snapshot, then sanitize and review the resulting files. Existing branches are not rewritten.
