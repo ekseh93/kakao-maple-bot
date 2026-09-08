@@ -1021,6 +1021,104 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     });
     expect(fetcher).toHaveBeenCalledTimes(3);
   });
+  it('returns weather when the optional air-quality provider is unavailable', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ results: [{ name: '서울', latitude: 37.56, longitude: 126.98 }] }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            current: { temperature_2m: 24, relative_humidity_2m: 55, weather_code: 1 },
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response('upstream unavailable', { status: 503 }));
+
+    const result = await createNexonClient(undefined, fetcher).findWeather?.(
+      '서울',
+      new AbortController().signal,
+    );
+
+    expect(result).toMatchObject({ location: '서울', temperatureC: 24, humidityPercent: 55 });
+    expect(result?.pm25).toBeUndefined();
+    expect(result?.pm10).toBeUndefined();
+  });
+  it.each(['not json', 'null', '{"current":{"pm10":"invalid"}}'])(
+    'returns weather when optional air-quality JSON is unusable: %s',
+    async (airBody) => {
+      const fetcher = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              results: [{ name: 'Fixture city', latitude: 35, longitude: 139 }],
+            }),
+          ),
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              current: { temperature_2m: 24, relative_humidity_2m: 55, weather_code: 1 },
+            }),
+          ),
+        )
+        .mockResolvedValueOnce(new Response(airBody));
+      const result = await createNexonClient(undefined, fetcher).findWeather!(
+        'Fixture city',
+        new AbortController().signal,
+      );
+      expect(result).toMatchObject({ temperatureC: 24, humidityPercent: 55 });
+      expect(result.pm10).toBeUndefined();
+      expect(result.pm25).toBeUndefined();
+    },
+  );
+
+  it('bounds optional air-quality body reading to 1.2 seconds', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetcher = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        if (url.includes('geocoding-api'))
+          return new Response(
+            JSON.stringify({
+              results: [{ name: 'Fixture city', latitude: 35, longitude: 139 }],
+            }),
+          );
+        if (url.includes('air-quality-api'))
+          return {
+            ok: true,
+            json: () =>
+              new Promise((_resolve, reject) => {
+                init?.signal?.addEventListener('abort', () => reject(new Error('aborted')), {
+                  once: true,
+                });
+              }),
+          };
+        return new Response(
+          JSON.stringify({
+            current: { temperature_2m: 24, relative_humidity_2m: 55, weather_code: 1 },
+          }),
+        );
+      });
+      const resultPromise = createNexonClient(undefined, fetcher).findWeather!(
+        'Fixture city',
+        new AbortController().signal,
+      );
+      await vi.advanceTimersByTimeAsync(1200);
+      const result = await resultPromise;
+      expect(result.temperatureC).toBe(24);
+      expect(result.pm10).toBeUndefined();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('maps eight official experience history snapshots', async () => {
     const fetcher = vi
       .fn()

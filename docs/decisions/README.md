@@ -7,5 +7,6 @@
 | [ADR-003](ADR-003-official-data-and-links.md)      | 공식 데이터 직접 조회와 제3자 링크 전용 | Accepted |
 | [ADR-004](ADR-004-zero-cost-private-repository.md) | 무료 범위·비공개 저장소 기본값          | Accepted |
 | [ADR-005](ADR-005-aws-lambda-backend.md)           | AWS Lambda + API Gateway HTTP API 전환  | Accepted |
+| [ADR-006](ADR-006-reviewed-portfolio-delivery.md) | PR 기반 통합과 검증 가능한 포트폴리오 | Accepted |
 
 새 결정은 기존 ADR을 수정하기보다 새 ADR에서 supersede 관계를 기록합니다.

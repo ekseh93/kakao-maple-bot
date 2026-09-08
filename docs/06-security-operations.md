@@ -73,6 +73,8 @@ MVP 최소안:
 
 ## 6. 비밀 관리
 
+비공개 응답 명령은 `PRIVATE_COMMAND_SENDER`와 `PRIVATE_COMMAND_REPLY`가 모두 있을 때만 동작합니다. 실제 값은 Git 밖에서 주입하며 공용 fixture에는 가상 값만 사용합니다. Terraform의 대응 변수도 sensitive로 지정합니다. 표시명 일치만으로 강한 본인 인증을 주장하지 않습니다.
+
 - .dev.vars, .env, Android local-config.js는 .gitignore에 포함합니다.
 - .env.example에는 값이 없는 변수명만 둡니다.
 - GitHub Actions에는 실제 배포 키를 MVP에서 넣지 않습니다.

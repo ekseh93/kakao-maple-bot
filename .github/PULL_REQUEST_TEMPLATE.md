@@ -21,6 +21,7 @@ Closes #
 - [ ] `pnpm secret:test`
 - [ ] `pnpm secret:check`
 - [ ] `pnpm phone:check`
+- [ ] `pnpm pc-deals:check`
 - [ ] `pnpm audit`
 - [ ] `pnpm lint`
 - [ ] `pnpm typecheck`

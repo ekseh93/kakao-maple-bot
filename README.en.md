@@ -1,202 +1,105 @@
 # Kakao Maple Bot
 
-> A personal project that connects KakaoTalk on a spare Android phone to an AWS serverless backend, automating recurring lookups and calculations for a real group chat.
+[日本語](README.ja.md) · [한국어](README.md)
 
-[한국어](README.md) · [日本語](README.ja.md)
+[![checks](https://github.com/ekseh93/kakao-maple-bot/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/ekseh93/kakao-maple-bot/actions/workflows/checks.yml)
 
-`TypeScript` · `AWS Lambda` · `API Gateway` · `DynamoDB` · `Terraform` · `Nexon Open API` · `Vitest`
+> A personal AWS serverless chatbot that automates group-chat lookups and calculations, with improvements driven by user feedback.
 
-## Technical summary in 30 seconds
+`TypeScript` · `AWS Lambda` · `API Gateway` · `DynamoDB` · `Terraform` · `Vitest` · `GitHub Actions`
 
-KakaoTalk is the **user interface**, not the architectural center. The system keeps Android as a thin HTTPS relay and places authentication, validation, command routing, provider-failure isolation, caching, and observability in a messenger-independent serverless backend. Changes follow `Issue → PR → CI → advisory AI review → verification record`, with repository, AWS, and user-device evidence reported separately.
+## Start here
 
-- **Boundary design:** HTTP contract between a legacy Android runtime and TypeScript domain logic
-- **Reliability:** per-provider timeout, cache, retry, stale fallback, and partial-failure handling
-- **Security/operations:** deny-by-default rooms, Bearer authentication, least-privilege IaC, no personal-message storage
-- **Quality:** strict TypeScript, 186 tests, and automated policy, secret, build, and Lambda dry-run checks
+An Android phone relays commands over HTTPS and splits long responses. The backend validates requests, routes commands, calls external APIs, and calculates results. Group-chat use is user-confirmed; independent reboot, network-recovery, and 24-hour device tests remain open.
 
-## At a glance
+Development uses AI assistance. Requirements and operating decisions, generated code, review findings, and executed checks are distinct evidence. This repository does not claim unaided implementation of all code or professional team-development experience.
 
-| Item          | Details                                                                                           |
-| ------------- | ------------------------------------------------------------------------------------------------- |
-| Development   | August 2026–present                                                                               |
-| Type          | Personal, non-commercial portfolio project in active use                                          |
-| Scope         | Requirements, architecture, TypeScript implementation, IaC, tests, AWS deployment, and operations |
-| Users         | A limited KakaoTalk group of the developer and consenting acquaintances                           |
-| Current state | Deployed in Tokyo; backend smoke tests completed                                                  |
-| Quality       | 186 automated tests, strict typecheck, lint, policy and phone-script checks                       |
-
-The main engineering question was not simply how many commands could be added, but **how to isolate the risks of an unofficial messenger integration and operate it with verifiable evidence**. AI-assisted development tools were used; changes are checked against official documentation, code review, automated tests, and post-deployment smoke tests.
-
-## Problem and approach
-
-MapleStory players repeatedly move between character sites, symbol calculators, boss-income tables, and event pages. Group chats also contain small decisions—food, games, and recommendations—that benefit from immediate answers.
-
-- One short KakaoTalk command returns the essential result.
-- The Android device remains a thin relay; business logic and secrets stay in AWS.
-- MapleStory data comes from the Nexon Open API, while calculations use versioned project-owned logic.
-- Provider-specific timeouts, caches, retries, and stale fallbacks isolate failures.
-- Message text, room names, and sender identities are not stored; only an anonymous aggregate count is retained.
+Read the [three engineering case studies (Japanese)](docs/22-engineering-case-studies.ja.md), [actual review and fixes in PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9), and [verification scope](docs/23-portfolio-verification.md).
 
 ## Architecture
 
-```text
-KakaoTalk
-    ↕ Android notification / reply
-MessengerBot R v40 on a spare phone
-    ↕ HTTPS + Bearer secret
-Amazon API Gateway HTTP API
-    ↓
-AWS Lambda (Node.js 22 / TypeScript)
-    ├─ authentication, allowed rooms, rate limits, event deduplication
-    ├─ command router / formatter
-    ├─ Nexon Open API adapter
-    ├─ read-only provider adapters
-    ├─ calculators / static data / random features
-    └─ anonymous counter ─ DynamoDB (Tokyo)
+```mermaid
+flowchart TD
+    User["KakaoTalk / Android notifications"] --> Relay["MessengerBot R · HTTPS relay"]
+    Relay --> Gateway["API Gateway HTTP API"]
+    Gateway --> Lambda["Lambda · authentication / validation / routing"]
+    Lambda --> Core["Calculations / formatters"]
+    Lambda --> Providers["External API adapters"]
+    Providers --> APIs["Nexon / Open-Meteo and others"]
+    Lambda --> Memory["Execution-local cache / deduplication"]
+    Lambda --> DynamoDB["DynamoDB · anonymous total"]
 ```
 
-Keeping the phone script thin preserves the HTTP contract and backend logic when the device changes. Calculations, provider calls, caching, and authentication can be tested without a phone. See the [architecture](docs/03-architecture.md) and [ADRs](docs/decisions/README.md).
+- External API keys stay in the backend. The phone still needs a backend-authentication secret, kept outside Git.
+- Caches, rate-limit buckets, and event deduplication use Lambda execution-local memory. They are neither durable nor shared across instances.
+- DynamoDB retains an anonymous counter and update time, not conversations or user identities.
+- Core logic can be tested without a phone. Porting to another messenger has not been verified.
 
-## Engineering highlights
+[Architecture details](docs/03-architecture.md) · [ADRs](docs/decisions/README.md)
 
-### Clear external-service boundaries
+## Engineering decisions
 
-- Character, dojo, union, equipment, and experience data use the Nexon Open API.
-- Maple.GG and Maplescouter are link-only destinations; the bot does not crawl them or use private APIs.
-- Symbol and boss-income calculations use sourced, date-versioned static data and pure functions.
+| Problem                                       | Decision                                                                      | Evidence                                                                                             |
+| --------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Air-quality failures suppress useful weather  | Treat air quality as optional; apply a 1.2-second budget through body parsing | [Provider](packages/providers/src/index.ts), [regressions](tests/providers.test.ts)                  |
+| User arithmetic must not execute code         | Dedicated tokenizer and recursive-descent parser                              | [Calculator](packages/core/src/calculator.ts)                                                        |
+| Secret scanning rejects safe examples         | Distinguish placeholders/references and redact finding values                 | [Scanner](scripts/secret-check-core.mjs), [PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9) |
+| Long equipment output is unreadable on mobile | Preserve backend results and split messages at the relay                      | [Phone script](apps/phone-relay/bot.js)                                                              |
 
-### Calculator without code evaluation
+## Change management
 
-The bot accepts game-native Korean input such as `!계산기 25.3억 2명 5퍼`. A dedicated tokenizer and recursive-descent parser handles arithmetic, units, fees, and equal splits without `eval` or `Function`.
+`Issue → short-lived branch → PR → CI / CodeRabbit → reviewed fixes → main`
 
-### Failure isolation and mobile output
+Quality, security, and test/build checks run independently. The final `verify` gate succeeds only when every suite succeeds. Japanese CodeRabbit reviews are advisory; accepted and rejected findings need reasons.
 
-- Timeouts, caches, and retries are isolated per provider.
-- A permitted recent-success fallback covers temporary public-board failures; access controls are never bypassed.
-- Long equipment responses retain the data and are split by the phone relay for KakaoTalk.
+[PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9) demonstrates real review responses and regression fixes. Subsequent work accumulated on a branch with failing CI; [Issue #10](https://github.com/ekseh93/kakao-maple-bot/issues/10) reconciles that work and improves the process. Earlier changes are not retroactively presented as having followed this workflow.
 
-### Security and privacy by default
+[Workflow](docs/21-development-workflow.md) · [Troubleshooting](docs/13-troubleshooting.md) · [Change log](docs/14-change-log.md)
 
-- Deny-by-default rooms, a Bearer secret, kill switch, rate limits, and event-ID TTL are enforced.
-- API keys, shared secrets, and real room names are injected outside Git.
-- CloudWatch records command type, outcome, and latency—not message text or user identity.
-- `!통계` updates only one aggregate DynamoDB `TOTAL` item.
+## Features and evidence
 
-### Reproducible AWS operations
+| Area             | Examples                                     | Focus                                        |
+| ---------------- | -------------------------------------------- | -------------------------------------------- |
+| Character data   | `!정보 nickname`, `!장비 nickname`           | Official API, validation, aggregation        |
+| Calculations     | `!계산기 25.3억 2명 5퍼`, `!사우나 nickname` | Units, fees, boundary cases                  |
+| Utilities        | `!날씨 도쿄`, `!환율`, `!주유소 서울`        | Caching, timeouts, partial failure           |
+| Events and draws | `!썬데이`, `!시드링`, `!부티크`              | Notification state, probability tables       |
+| PC lookups       | `!다나와견적`                                | Authenticated adapter/process boundary       |
+| Operations       | `!통계`, `!상태`                             | Administrator restrictions, anonymous totals |
 
-The initial Cloudflare Worker design was migrated to Lambda and API Gateway to build hands-on AWS operations, IAM, and IaC experience. Terraform restricts deployment to Tokyo and manages least-privilege IAM, encrypted DynamoDB, and Lambda configuration.
+[Full command contract](docs/04-command-specification.md)
 
-## Representative features
+<img src="docs/assets/kakao-bot-evidence-en.png" width="320" alt="Redacted, translated illustration of bot usage" />
 
-| Area                 | Example                                           | Engineering focus                                     |
-| -------------------- | ------------------------------------------------- | ----------------------------------------------------- |
-| Character data       | `!정보 nickname`, `!장비 nickname`                | Schema validation, partial failure, mobile formatting |
-| Progress calculators | `!심볼 기어드락 1 11`, `!사우나 nickname`         | Versioned data and boundary tests                     |
-| Boss income          | `!보스수익 검마 하드 2인 / 세렌 노말 3인`         | Weekly/monthly rules, party validation, flooring      |
-| General calculator   | `!계산기 12퍼 x 11개`                             | Dedicated parser with no code evaluation              |
-| Notices and events   | `!공지`, `!이벤트`, `!썬데이`                     | Official data, caching, keyword alerts                |
-| PC/Danawa lookup     | `!다나와견적`, `!다나와최저가`, `!다나와가격비교` | MCP tools through an authenticated ECS adapter        |
-| Utility data         | `!날씨 도쿄`, `!환율`, `!주유소 서울`             | Read-only providers and error isolation               |
-| Chat utilities       | `!짜장vs짬뽕`, `!뭐먹지`, `!로또`                 | Pure local logic                                      |
-| Stocks               | `!주식 삼성전자`, `!주식 Tesla`                   | Read-only data; no orders or account access           |
+The image is an edited presentation asset, not primary evidence of exact API output. [Publication policy](docs/17-portfolio-evidence.md)
 
-The complete input and error contract is in the [command specification](docs/04-command-specification.md).
+[Verification records](docs/23-portfolio-verification.md) distinguish local checks, historical AWS observations, and user-device confirmation. Performance targets are not measured achievements. Merging a PR does not deploy it; deployment requires separate approval and recorded observations.
 
-## From user feedback to a feature
+## Local checks
 
-On 2026-09-01, a user in a restricted chat room asked for “computer build recommendations by price range.” The expected experience was similar to Danawa PC's budget-based recommendations: show a parts list and estimated total directly in KakaoTalk rather than returning only a link. This feedback led to `!견적 <budget> <use case> [include monitor]`, up to three candidates, and an isolated PC-price adapter boundary. Participant names, room identifiers, and the original conversation image are not stored; only the requirement and verification decision are documented. See the [troubleshooting record](docs/13-troubleshooting.md).
+Use Node.js 22 and pnpm 11.19.0. Tests use fixtures without real API credentials.
 
-## Verifiable results
-
-| Check             | Observed result                                         | Evidence                                               |
-| ----------------- | ------------------------------------------------------- | ------------------------------------------------------ |
-| Automated tests   | **186 passed** (`core 66`, `providers 51`, `lambda 69`) | `pnpm test`                                            |
-| Static quality    | strict typecheck, ESLint, Prettier, policy check        | [Verification record](docs/10-local-verification.md)   |
-| Phone relay       | MessengerBot R JavaScript syntax check                  | `pnpm phone:check`                                     |
-| AWS deployment    | Tokyo Lambda/API Gateway, `/health` HTTP 200            | [Release gate](docs/12-release-gate.md)                |
-| Authenticated API | Help and boss-income responses from `/v1/messages`      | [Verification record](docs/10-local-verification.md)   |
-| KakaoTalk use     | In use in a limited group chat                          | User-confirmed; Android E2E not independently observed |
-
-A healthy `/health` endpoint is not presented as proof of the complete KakaoTalk path. Repository checks, AWS-observed results, and user-device confirmation are documented separately.
-
-## Development and review flow
-
-Each new change starts with an Issue that defines the problem and acceptance criteria, then proceeds through a focused branch and a PR containing `Closes #N`. Deterministic GitHub Actions checks are the merge gate; CodeRabbit's Japanese review is advisory and helps surface omissions and boundary cases. The author verifies each AI comment and records why it was accepted, adapted, or rejected.
-
-See [Issue, PR, and review workflow](docs/21-development-workflow.md) for branch protection and evidence layers, and [troubleshooting](docs/13-troubleshooting.md) for observed failures and verification limits.
-
-## Usage evidence
-
-<p align="center">
-  <img src="docs/assets/kakao-bot-evidence-en.png" width="420" alt="Privacy-safe English portfolio view of Kakao Maple Bot usage" />
-</p>
-
-This is a privacy-safe translated presentation asset, not authoritative OCR or primary evidence of deployment. See the [evidence and publication policy](docs/17-portfolio-evidence.md).
-
-## Technology
-
-| Area           | Stack                                                                                  |
-| -------------- | -------------------------------------------------------------------------------------- |
-| Backend        | TypeScript 5, Node.js 22, AWS Lambda                                                   |
-| API / State    | API Gateway HTTP API, DynamoDB                                                         |
-| Infrastructure | Terraform, CloudFormation, IAM Identity Center                                         |
-| External data  | Nexon Open API, Open-Meteo, TMDB, Yahoo Finance, Tiingo, and other read-only providers |
-| Quality        | Vitest, TypeScript strict, ESLint, Prettier, dependency audit, policy check            |
-| Device relay   | MessengerBot R v40, JavaScript                                                         |
-
-## Repository layout
-
-```text
-apps/lambda/         AWS Lambda HTTP boundary
-apps/phone-relay/    MessengerBot R thin relay
-packages/core/       command, parser, calculator, formatter
-packages/providers/  external API adapters and schemas
-infra/terraform/     AWS infrastructure as code
-tests/               unit, provider-contract, Lambda-integration tests
-docs/                requirements, architecture, policy, operations, evidence
-```
-
-## Local verification
-
-Node.js 22 and pnpm 11 are expected. Mock-based tests run without real API keys.
-
-```powershell
-pnpm install --ignore-scripts
-pnpm typecheck
-pnpm test
-pnpm lint
-pnpm build
-pnpm lambda:dry-run
+```sh
+pnpm install --frozen-lockfile --ignore-scripts
 pnpm format:check
+pnpm lint
+pnpm phone:check
+pnpm pc-deals:check
 pnpm policy:check
 pnpm secret:test
 pnpm secret:check
-pnpm phone:check
 pnpm audit
+pnpm typecheck
+pnpm test
+pnpm lambda:dry-run
 ```
 
-[.env.example](.env.example) contains empty variable names only. Allowed rooms also default to empty, so the bot does not respond until explicitly configured.
+[Configuration names](.env.example) · [Terraform guide](infra/terraform/README.md) · [Test strategy](docs/07-test-strategy.md)
 
-AWS deployment requires explicit approval and valid IAM Identity Center authentication. See the [Terraform operations guide](infra/terraform/README.md) and [release gate](docs/12-release-gate.md).
+## Constraints
 
-## Documentation
-
-- [Product requirements](docs/01-product-requirements.md) · [Functional and non-functional requirements](docs/02-requirements.md)
-- [Architecture](docs/03-architecture.md) · [Command contract](docs/04-command-specification.md)
-- [API and data policy](docs/05-api-data-policy.md) · [Security and operations](docs/06-security-operations.md)
-- [Test strategy](docs/07-test-strategy.md) · [Troubleshooting](docs/13-troubleshooting.md)
-- [Development and review workflow](docs/21-development-workflow.md) · [Change log](docs/14-change-log.md)
-- [Phone E2E checklist](docs/16-phone-e2e-checklist.md) · [Portfolio evidence policy](docs/17-portfolio-evidence.md)
-
-## Limitations
-
-- Automating a regular KakaoTalk account is not an official chatbot path and carries account-restriction risk.
-- Free Tier does not guarantee a zero bill; AWS Budgets and usage monitoring are still required.
-- Providers based on public HTML can fail when page structure or access policy changes.
-- An independent 24-hour Android soak test and reboot/network-recovery test remain pending.
-- Stock output is informational only; there is no trading, recommendation, or return guarantee.
-
-## License
-
-No license has been granted. This repository is published as a personal, non-commercial portfolio and does not grant permission to copy, redistribute, or use it commercially.
+- Personal, non-commercial project. The ordinary-account relay is not an official Kakao chatbot integration and depends on device/account behavior.
+- Free tiers do not guarantee a zero bill. No commercial SLA or cross-instance deduplication guarantee is claimed.
+- Public-HTML providers can fail after structure or access-policy changes. Maple.GG and Maplescouter are link-only.
+- Stock features are read-only; no trades or return guarantees.
+- No license has been granted. Publication does not grant redistribution or commercial-use rights.

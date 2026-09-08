@@ -1,10 +1,21 @@
 name: checks
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 permissions:
   contents: read
+concurrency:
+  group: checks-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  verify:
+  checks:
+    name: ${{ matrix.suite }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [quality, security, test-build]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -12,14 +23,34 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile --ignore-scripts
-      - run: pnpm format:check
-      - run: pnpm policy:check
-      - run: pnpm phone:check
-      - run: pnpm audit
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm build
-      - run: pnpm lambda:dry-run
-      - run: pnpm secret:test
-      - run: pnpm secret:check
+      - name: Formatting, lint, and relay syntax
+        if: matrix.suite == 'quality'
+        run: |
+          pnpm format:check
+          pnpm lint
+          pnpm phone:check
+          pnpm pc-deals:check
+      - name: Policy, secret scanner, and dependencies
+        if: matrix.suite == 'security'
+        run: |
+          pnpm policy:check
+          pnpm secret:test
+          pnpm secret:check
+          pnpm audit
+      - name: Types, regression tests, and Lambda bundle
+        if: matrix.suite == 'test-build'
+        run: |
+          pnpm typecheck
+          pnpm test
+          pnpm lambda:dry-run
+  verify:
+    name: verify
+    needs: checks
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every suite to succeed
+        env:
+          SUITE_RESULT: ${{ needs.checks.result }}
+        run: test "$SUITE_RESULT" = "success"
