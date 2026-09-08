@@ -455,6 +455,26 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     );
     expect(String(fetcher.mock.calls[0]?.[0])).toContain('name=Mito');
   });
+  it('maps Gimhae Korean aliases to a globally geocodable city name', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ results: [{ name: 'Gimhae', latitude: 35.23, longitude: 128.88 }] }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            current: { temperature_2m: 20, relative_humidity_2m: 60, weather_code: 1 },
+          }),
+          { status: 200 },
+        ),
+      );
+    await createNexonClient(undefined, fetcher).findWeather?.('김해', new AbortController().signal);
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain('name=Gimhae');
+  });
   it('returns not found when Open-Meteo cannot geocode a location', async () => {
     const fetcher = vi
       .fn()

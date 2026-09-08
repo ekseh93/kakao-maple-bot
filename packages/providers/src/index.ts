@@ -215,6 +215,8 @@ const weatherSearchAliases: Record<string, string> = {
   서울: 'Seoul',
   부산: 'Busan',
   대구: 'Daegu',
+  김해: 'Gimhae',
+  김해시: 'Gimhae',
   인천: 'Incheon',
   광주: 'Gwangju',
   대전: 'Daejeon',
