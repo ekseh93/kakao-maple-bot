@@ -14,6 +14,8 @@ KakaoTalkは韓国で使われるメッセンジャーです。本プロジェ�
 
 開発にはAI支援ツールを使用しています。要件と運用上の判断、AIが生成したコード、レビュー内容、実行した検証を区別して記録します。全コードをAIなしで独力実装した実績や、チーム開発の職歴を示すものではありません。
 
+現在の自動検証は、TypeScriptの回帰テスト196件とMessengerBot R relay契約テスト3件に分かれています。実際のKakaoTalkとAndroid端末を使うE2E検証は、別の未完了範囲として管理しています。
+
 まずは[技術事例3件](docs/22-engineering-case-studies.ja.md)、[実際のレビュー・修正PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9)、[検証範囲](docs/23-portfolio-verification.md)をご覧ください。
 
 [匿名統計の合成サンプルを表示](docs/assets/command-usage-sample.svg)
@@ -95,6 +97,7 @@ pnpm install --frozen-lockfile --ignore-scripts
 pnpm format:check
 pnpm lint
 pnpm phone:check
+pnpm phone:test
 pnpm pc-deals:check
 pnpm policy:check
 pnpm secret:test

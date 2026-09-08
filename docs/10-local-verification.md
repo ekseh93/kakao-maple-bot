@@ -5,6 +5,18 @@
 
 ## 관측된 결과
 
+### 2026-09-08 릴레이 계약 테스트 보강
+
+현재 기준 TypeScript 회귀 테스트는 196건(`core 68`, `providers 56`, `lambda 72`)이며, MessengerBot R 릴레이 계약 테스트 3건을 별도 Node test로 통과했습니다.
+
+```text
+pnpm phone:check
+pnpm phone:test       # 3 tests passed
+pnpm test             # 196 tests passed
+```
+
+릴레이 테스트는 실제 카카오톡·Android 공기계·AWS 응답을 관측하지 않고, 가상 HTTP 경계에서만 고정 방 이름 payload·비명령어 무시·긴 응답 분할을 검증합니다.
+
 다음 명령을 현재 작업 트리에서 실행했고 모두 통과했습니다.
 
 ```text

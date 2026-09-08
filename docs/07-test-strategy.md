@@ -63,6 +63,8 @@
 
 MessengerBot R 호환 JavaScript 문법을 실제 앱 컴파일로 확인합니다.
 
+실제 앱과 공기계가 없는 로컬 경계 검증은 `pnpm phone:test`로 수행합니다. 이 테스트는 고정 방 payload 전달, 비명령어 무시, 긴 응답의 줄바꿈 기준 분할을 가상 HTTP 응답으로 검증하지만 카카오톡·Android·AWS의 실제 E2E를 대신하지 않습니다.
+
 ### End-to-end
 
 비공개 시험방에서 실제 공기계 → API Gateway → Lambda → 외부 API → Kakao 답장을 검증합니다. 이 단계는 계정·키·배포 준비와 사용자 승인이 필요합니다.

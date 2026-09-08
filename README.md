@@ -14,6 +14,8 @@ Android 공기계는 메시지를 HTTPS로 전달하고 응답을 나누어 보�
 
 개인 비상업 프로젝트이며 개발에 AI 지원 도구를 사용했습니다. 요구사항과 운영 피드백, 생성된 코드, 자동 테스트와 배포 관측 기록을 구분합니다. 이 저장소는 AI 도움 없이 전체 코드를 직접 구현했다거나 팀 개발 경력이 있음을 주장하는 자료가 아닙니다.
 
+현재 자동 검증은 TypeScript 회귀 테스트 196건과 MessengerBot R 릴레이 계약 테스트 3건으로 나뉩니다. 실제 카카오톡·Android 공기계 E2E는 별도 미완료 범위입니다.
+
 처음 보시는 분은 [일본어 기술 사례 3개](docs/22-engineering-case-studies.ja.md), [실제 CodeRabbit 리뷰와 수정 PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9), [검증 범위](docs/23-portfolio-verification.md) 순서로 읽으면 됩니다.
 
 [익명 통계 가상 샘플 시각화](docs/assets/command-usage-sample.svg)
@@ -96,6 +98,7 @@ pnpm install --frozen-lockfile --ignore-scripts
 pnpm format:check
 pnpm lint
 pnpm phone:check
+pnpm phone:test
 pnpm pc-deals:check
 pnpm policy:check
 pnpm secret:test
