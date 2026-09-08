@@ -397,6 +397,20 @@ function decodeHtml(value: string): string {
     .trim();
 }
 
+function metNoSymbolToWeatherCode(symbol: string | undefined): number {
+  const normalized = symbol?.toLocaleLowerCase() ?? '';
+  if (normalized.includes('thunder')) return 95;
+  if (normalized.includes('sleet')) return 66;
+  if (normalized.includes('snow')) return 71;
+  if (normalized.includes('shower')) return 80;
+  if (normalized.includes('rain')) return 61;
+  if (normalized.includes('fog')) return 45;
+  if (normalized.includes('cloudy')) return normalized.includes('partly') ? 2 : 3;
+  if (normalized.includes('fair')) return 1;
+  if (normalized.includes('clearsky')) return 0;
+  return 3;
+}
+
 function parseLatestSundayEventPage(html: string): EventItem | null {
   const pattern =
     /<li>[\s\S]*?<a\s+href="(\/News\/Event\/\d+(?:\?[^\"]*)?)"[^>]*>[\s\S]*?<img\s+src="([^"]+)"[^>]*>[\s\S]*?<\/a>[\s\S]*?<dt>\s*<a\s+href="[^\"]+"[^>]*>([\s\S]*?)<\/a>\s*<\/dt>[\s\S]*?<dd>\s*<a\s+href="[^\"]+"[^>]*>([\s\S]*?)<\/a>\s*<\/dd>[\s\S]*?<\/li>/gi;
@@ -1314,42 +1328,52 @@ export function createNexonClient(
         expiresAt: Date.now() + 60 * 60_000,
       });
       const query = new URLSearchParams({
-        latitude: String(place.latitude),
-        longitude: String(place.longitude),
-        current: 'temperature_2m,relative_humidity_2m,weather_code',
-        timezone: 'auto',
+        lat: String(place.latitude),
+        lon: String(place.longitude),
       });
       const weatherResponse = await fetchWithRetry(
         fetcher,
-        `https://api.open-meteo.com/v1/forecast?${query}`,
-        { signal },
+        `https://api.met.no/weatherapi/locationforecast/2.0/compact?${query}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'KakaoMapleBot/1.0 (portfolio weather bot)',
+          },
+          signal,
+        },
       );
       if (!weatherResponse.ok) throw new Error('PROVIDER_UNAVAILABLE');
       const weatherBody = (await weatherResponse.json()) as {
-        current?: {
-          temperature_2m?: number;
-          relative_humidity_2m?: number;
-          weather_code?: number;
+        properties?: {
+          timeseries?: Array<{
+            data?: {
+              instant?: { details?: { air_temperature?: number; relative_humidity?: number } };
+              next_1_hours?: { summary?: { symbol_code?: string } };
+              next_6_hours?: { summary?: { symbol_code?: string } };
+            };
+          }>;
         };
       };
-      const current = weatherBody.current;
+      const current = weatherBody.properties?.timeseries?.[0]?.data;
+      const details = current?.instant?.details;
+      const weatherCode = metNoSymbolToWeatherCode(
+        current?.next_1_hours?.summary?.symbol_code ?? current?.next_6_hours?.summary?.symbol_code,
+      );
       if (
-        !current ||
-        typeof current.temperature_2m !== 'number' ||
-        !Number.isFinite(current.temperature_2m) ||
-        typeof current.relative_humidity_2m !== 'number' ||
-        !Number.isFinite(current.relative_humidity_2m) ||
-        typeof current.weather_code !== 'number' ||
-        !Number.isInteger(current.weather_code)
+        !details ||
+        typeof details.air_temperature !== 'number' ||
+        !Number.isFinite(details.air_temperature) ||
+        typeof details.relative_humidity !== 'number' ||
+        !Number.isFinite(details.relative_humidity)
       )
         throw new Error('PROVIDER_SCHEMA');
       return {
         query: region,
         location: place.name,
         ...(place.country ? { country: place.country } : {}),
-        temperatureC: current.temperature_2m,
-        humidityPercent: current.relative_humidity_2m,
-        weatherCode: current.weather_code,
+        temperatureC: details.air_temperature,
+        humidityPercent: details.relative_humidity,
+        weatherCode,
         fetchedAt: new Date().toISOString(),
       };
     },

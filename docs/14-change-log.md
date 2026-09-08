@@ -1023,3 +1023,8 @@
 - 별칭에 없는 지역은 영문·현지 표기를 Open-Meteo 글로벌 Geocoding에 직접 전달합니다.
 - 테스트 195개·타입 검사·ESLint 통과 후 Lambda Version 21을 배포하고 `/health` 200 응답을 확인했습니다.
 - 커밋 이유: `feat: expand global weather aliases` (`269ddad`)
+
+### 날씨 예보 공급자 교체
+
+- Open-Meteo Forecast 대신 MET Norway Locationforecast를 사용해 현재 날씨를 조회합니다.
+- 김해 기준 단일 예보 요청 실측 속도는 MET Norway가 약 1.32초로 가장 빨랐습니다.

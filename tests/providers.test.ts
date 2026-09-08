@@ -444,7 +444,16 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            current: { temperature_2m: 25, relative_humidity_2m: 70, weather_code: 1 },
+            properties: {
+              timeseries: [
+                {
+                  data: {
+                    instant: { details: { air_temperature: 25, relative_humidity: 70 } },
+                    next_1_hours: { summary: { symbol_code: 'clearsky_day' } },
+                  },
+                },
+              ],
+            },
           }),
           { status: 200 },
         ),
@@ -467,7 +476,16 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            current: { temperature_2m: 20, relative_humidity_2m: 60, weather_code: 1 },
+            properties: {
+              timeseries: [
+                {
+                  data: {
+                    instant: { details: { air_temperature: 20, relative_humidity: 60 } },
+                    next_1_hours: { summary: { symbol_code: 'clearsky_day' } },
+                  },
+                },
+              ],
+            },
           }),
           { status: 200 },
         ),
@@ -492,7 +510,16 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            current: { temperature_2m: 20, relative_humidity_2m: 60, weather_code: 1 },
+            properties: {
+              timeseries: [
+                {
+                  data: {
+                    instant: { details: { air_temperature: 20, relative_humidity: 60 } },
+                    next_1_hours: { summary: { symbol_code: 'clearsky_day' } },
+                  },
+                },
+              ],
+            },
           }),
           { status: 200 },
         ),
@@ -1019,7 +1046,16 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            current: { temperature_2m: 28.4, relative_humidity_2m: 72, weather_code: 1 },
+            properties: {
+              timeseries: [
+                {
+                  data: {
+                    instant: { details: { air_temperature: 28.4, relative_humidity: 72 } },
+                    next_1_hours: { summary: { symbol_code: 'clearsky_day' } },
+                  },
+                },
+              ],
+            },
           }),
           { status: 200 },
         ),

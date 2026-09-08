@@ -162,6 +162,12 @@ Lambda `ADMIN_SENDERS` 환경변수에 과거 PowerShell 인코딩 오류로 깨
 - `김해`·`김해시`는 Open-Meteo가 인식하는 `Gimhae`로 변환합니다. API 공급자를 교체하지 않고도 해당 지역 검색 실패를 해결합니다.
 - 한국·일본·미국과 주요 세계 도시·국가의 한국어 별칭을 사전에 추가했습니다. 목록에 없는 지역도 영문·현지 표기로 입력하면 글로벌 Geocoding에 직접 전달됩니다.
 
+## 2026-09-08 날씨 공급자 교체
+
+- 김해 기준 실측 요청에서 MET Norway 약 1.32초, Open-Meteo Forecast 약 1.47초, wttr.in 약 1.63초로 확인했습니다.
+- 예보 공급자를 MET Norway Locationforecast로 교체했습니다. 좌표 기반 글로벌 예보이며 요청에 식별 가능한 `User-Agent`를 포함합니다.
+- Open-Meteo Geocoding은 지역명→좌표 변환 용도로만 유지합니다. 대기질 API와 Nominatim fallback은 호출하지 않습니다.
+
 ### 운영 기록 규칙
 
 - 이후 기능 배포마다 `docs/14-change-log.md`에 변경 내용과 검증 결과를 추가합니다.
