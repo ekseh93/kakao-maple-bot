@@ -13,6 +13,7 @@
     "secret:check": "node scripts/secret-check.mjs",
     "secret:test": "node --test scripts/secret-check.test.mjs",
     "phone:check": "node --check apps/phone-relay/bot.js",
+    "phone:test": "node --test scripts/phone-relay.test.mjs",
     "pc-deals:check": "node --check apps/pc-deals-adapter/server.mjs",
     "audit": "pnpm audit --audit-level high",
     "lambda:dry-run": "pnpm build && esbuild apps/lambda/src/index.ts --bundle --format=cjs --platform=node --target=node22 --outfile=apps/lambda/dist/bundle.js",

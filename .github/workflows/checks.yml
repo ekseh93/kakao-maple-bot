@@ -29,6 +29,7 @@ jobs:
           pnpm format:check
           pnpm lint
           pnpm phone:check
+          pnpm phone:test
           pnpm pc-deals:check
       - name: Policy, secret scanner, and dependencies
         if: matrix.suite == 'security'
