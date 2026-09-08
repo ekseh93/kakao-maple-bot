@@ -1008,3 +1008,5 @@
 
 - 대기질 API·Nominatim fallback·PM10/PM2.5 출력을 제거해 날씨 조회를 Open-Meteo Geocoding + Forecast 경로로 단순화했습니다.
 - 날씨 응답은 지역·상태·기온·습도만 표시합니다.
+- 테스트 190개·타입 검사·ESLint 통과 후 Lambda Version 19를 배포하고 `/health` 200 응답을 확인했습니다.
+- 커밋 이유: `perf: simplify weather response path` (`d7b0c41`)
