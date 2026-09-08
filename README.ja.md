@@ -42,6 +42,8 @@ Android端末を中継処理に限定し、業務ロジックをHTTP APIの先�
 
 [詳細設計](docs/03-architecture.md) · [設計判断の記録](docs/decisions/README.md)
 
+[匿名統計の運用観測ランブック](docs/24-observability-runbook.md)
+
 ## 技術的な判断と根拠
 
 | 課題                                   | 判断                                                     | 確認できる資料                                                                                          |

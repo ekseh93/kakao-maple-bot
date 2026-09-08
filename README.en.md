@@ -41,6 +41,8 @@ flowchart TD
 
 [Architecture details](docs/03-architecture.md) · [ADRs](docs/decisions/README.md)
 
+[Anonymous observability runbook](docs/24-observability-runbook.md)
+
 ## Engineering decisions
 
 | Problem                                       | Decision                                                                      | Evidence                                                                                             |

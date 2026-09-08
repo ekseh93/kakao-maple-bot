@@ -41,6 +41,8 @@ flowchart TD
 
 [상세 아키텍처](docs/03-architecture.md) · [설계 결정 ADR](docs/decisions/README.md)
 
+[익명 통계 운영 관측 런북](docs/24-observability-runbook.md)
+
 ## 설명할 수 있는 기술적 판단
 
 | 문제                                        | 선택과 이유                                                        | 근거                                                                                                    |
