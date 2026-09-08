@@ -14,6 +14,8 @@ An Android phone relays commands over HTTPS and splits long responses. The backe
 
 Development uses AI assistance. Requirements and operating decisions, generated code, review findings, and executed checks are distinct evidence. This repository does not claim unaided implementation of all code or professional team-development experience.
 
+Current automated verification is split into 196 TypeScript regression tests and 3 MessengerBot R relay contract tests. Real KakaoTalk and Android-device end-to-end verification remains a separate open scope.
+
 Read the [three engineering case studies (Japanese)](docs/22-engineering-case-studies.ja.md), [actual review and fixes in PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9), and [verification scope](docs/23-portfolio-verification.md).
 
 [View the synthetic anonymous-usage chart](docs/assets/command-usage-sample.svg)
@@ -90,6 +92,7 @@ pnpm install --frozen-lockfile --ignore-scripts
 pnpm format:check
 pnpm lint
 pnpm phone:check
+pnpm phone:test
 pnpm pc-deals:check
 pnpm policy:check
 pnpm secret:test
