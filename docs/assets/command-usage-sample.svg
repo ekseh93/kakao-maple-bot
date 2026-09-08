@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="title desc">
+  <title id="title">Synthetic anonymous command usage sample</title>
+  <desc id="desc">Seven days of synthetic command totals shown as bars and average latency shown as a line. This is not production data.</desc>
+  <rect width="960" height="480" rx="20" fill="#0f172a"/>
+  <text x="56" y="56" fill="#f8fafc" font-family="Arial, sans-serif" font-size="24" font-weight="700">Anonymous command usage</text>
+  <text x="56" y="84" fill="#94a3b8" font-family="Arial, sans-serif" font-size="15">Synthetic portfolio sample · not production telemetry</text>
+  <line x1="78" y1="378" x2="884" y2="378" stroke="#475569" stroke-width="2"/>
+  <line x1="78" y1="132" x2="78" y2="378" stroke="#475569" stroke-width="2"/>
+  <line x1="78" y1="316" x2="884" y2="316" stroke="#1e293b"/>
+  <line x1="78" y1="254" x2="884" y2="254" stroke="#1e293b"/>
+  <line x1="78" y1="192" x2="884" y2="192" stroke="#1e293b"/>
+  <text x="48" y="383" fill="#94a3b8" font-family="Arial, sans-serif" font-size="12" text-anchor="end">0</text>
+  <text x="48" y="321" fill="#94a3b8" font-family="Arial, sans-serif" font-size="12" text-anchor="end">2</text>
+  <text x="48" y="259" fill="#94a3b8" font-family="Arial, sans-serif" font-size="12" text-anchor="end">4</text>
+  <text x="48" y="197" fill="#94a3b8" font-family="Arial, sans-serif" font-size="12" text-anchor="end">6</text>
+  <g fill="#38bdf8">
+    <rect x="112" y="254" width="56" height="124" rx="6"/><rect x="220" y="254" width="56" height="124" rx="6"/>
+    <rect x="328" y="254" width="56" height="124" rx="6"/><rect x="436" y="285" width="56" height="93" rx="6"/>
+    <rect x="544" y="254" width="56" height="124" rx="6"/><rect x="652" y="285" width="56" height="93" rx="6"/>
+    <rect x="760" y="285" width="56" height="93" rx="6"/>
+  </g>
+  <g fill="#e0f2fe" font-family="Arial, sans-serif" font-size="13" text-anchor="middle">
+    <text x="140" y="246">4</text><text x="248" y="246">4</text><text x="356" y="246">4</text><text x="464" y="277">3</text>
+    <text x="572" y="246">4</text><text x="680" y="277">3</text><text x="788" y="277">3</text>
+  </g>
+  <g fill="#94a3b8" font-family="Arial, sans-serif" font-size="12" text-anchor="middle">
+    <text x="140" y="402">08/22</text><text x="248" y="402">08/23</text><text x="356" y="402">08/24</text><text x="464" y="402">08/25</text>
+    <text x="572" y="402">08/26</text><text x="680" y="402">08/27</text><text x="788" y="402">08/28</text>
+  </g>
+  <polyline points="140,228 248,260 356,298 464,290 572,330 680,296 788,332" fill="none" stroke="#fbbf24" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#fbbf24" stroke="#0f172a" stroke-width="3">
+    <circle cx="140" cy="228" r="6"/><circle cx="248" cy="260" r="6"/><circle cx="356" cy="298" r="6"/><circle cx="464" cy="290" r="6"/>
+    <circle cx="572" cy="330" r="6"/><circle cx="680" cy="296" r="6"/><circle cx="788" cy="332" r="6"/>
+  </g>
+  <g font-family="Arial, sans-serif" font-size="13">
+    <rect x="112" y="438" width="14" height="14" rx="3" fill="#38bdf8"/><text x="134" y="450" fill="#cbd5e1">daily commands</text>
+    <rect x="282" y="438" width="14" height="14" rx="3" fill="#fbbf24"/><text x="304" y="450" fill="#cbd5e1">average latency (ms, relative scale)</text>
+  </g>
+</svg>

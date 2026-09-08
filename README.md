@@ -16,6 +16,10 @@ Android 공기계는 메시지를 HTTPS로 전달하고 응답을 나누어 보�
 
 처음 보시는 분은 [일본어 기술 사례 3개](docs/22-engineering-case-studies.ja.md), [실제 CodeRabbit 리뷰와 수정 PR #9](https://github.com/ekseh93/kakao-maple-bot/pull/9), [검증 범위](docs/23-portfolio-verification.md) 순서로 읽으면 됩니다.
 
+[익명 통계 가상 샘플 시각화](docs/assets/command-usage-sample.svg)
+
+위 차트는 실제 운영 데이터가 아닌 고정 샘플입니다. 집계 필드와 개인정보 보호 범위는 [통계 문서](docs/portfolio/command-usage.md)에서 확인할 수 있습니다.
+
 ## 아키텍처와 경계
 
 ```mermaid
