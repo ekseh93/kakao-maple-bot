@@ -2,6 +2,12 @@
 
 이 문서는 Kakao Maple Bot 저장소에 반영한 주요 변경을 구현 문서와 별도로 추적합니다.
 
+## 2026-09-08 공기계 릴레이 계약 테스트
+
+- MessengerBot R 레거시 콜백을 실제 기기 없이 가상 HTTP 경계에서 재현하는 `pnpm phone:test`를 추가했습니다.
+- 비명령어 무시, `fixedRoomName` 전달, 긴 응답의 줄바꿈 기준 분할을 검증합니다.
+- 이 테스트는 카카오톡 오픈채팅 수신·Android 백그라운드 실행·실제 AWS 응답을 증명하지 않습니다.
+
 ## 2026-09-08 GitHub Actions 런타임 경고 정리
 
 - 공식 `actions/checkout`, `actions/setup-node`, `pnpm/action-setup`을 Node 24 호환 버전으로 올렸습니다.
