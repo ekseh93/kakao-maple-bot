@@ -1010,3 +1010,9 @@
 - 날씨 응답은 지역·상태·기온·습도만 표시합니다.
 - 테스트 190개·타입 검사·ESLint 통과 후 Lambda Version 19를 배포하고 `/health` 200 응답을 확인했습니다.
 - 커밋 이유: `perf: simplify weather response path` (`d7b0c41`)
+
+### 김해 날씨 별칭 보강
+
+- `!날씨 김해`·`!날씨 김해시`를 Open-Meteo가 인식하는 `Gimhae`로 변환했습니다.
+- 테스트 191개 통과 후 Lambda Version 20을 배포하고 `/health` 200 응답을 확인했습니다.
+- 커밋 이유: `fix: support Gimhae weather alias` (`a6103dc`)
