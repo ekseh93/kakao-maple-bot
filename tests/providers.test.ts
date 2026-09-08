@@ -475,6 +475,33 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     await createNexonClient(undefined, fetcher).findWeather?.('김해', new AbortController().signal);
     expect(String(fetcher.mock.calls[0]?.[0])).toContain('name=Gimhae');
   });
+  it.each([
+    ['한국', 'Seoul'],
+    ['뉴욕', 'New York'],
+    ['런던', 'London'],
+    ['싱가포르', 'Singapore'],
+  ])('normalizes common global weather alias %s', async (alias, geocodedName) => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ results: [{ name: geocodedName, latitude: 1, longitude: 1 }] }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            current: { temperature_2m: 20, relative_humidity_2m: 60, weather_code: 1 },
+          }),
+          { status: 200 },
+        ),
+      );
+    await createNexonClient(undefined, fetcher).findWeather?.(alias, new AbortController().signal);
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain(
+      `name=${encodeURIComponent(geocodedName).replace(/%20/g, '+')}`,
+    );
+  });
   it('returns not found when Open-Meteo cannot geocode a location', async () => {
     const fetcher = vi
       .fn()
