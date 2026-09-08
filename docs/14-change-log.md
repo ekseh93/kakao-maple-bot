@@ -1003,3 +1003,8 @@
 - 대기질 요청이 1.2초 안에 완료되지 않으면 PM10·PM2.5를 생략하고 기온·습도·상태를 먼저 반환합니다.
 - 공급자 후보와 무료 운영 제약, 장애 시 동작을 `docs/13-troubleshooting.md`에 기록했습니다.
 - 자동 테스트 191개, TypeScript 타입 검사, ESLint를 통과했습니다.
+
+### 날씨 초단순 응답 경로
+
+- 대기질 API·Nominatim fallback·PM10/PM2.5 출력을 제거해 날씨 조회를 Open-Meteo Geocoding + Forecast 경로로 단순화했습니다.
+- 날씨 응답은 지역·상태·기온·습도만 표시합니다.

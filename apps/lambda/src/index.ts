@@ -1828,8 +1828,6 @@ function formatWeather(weather: WeatherSnapshot): string {
     `상태: ${weatherDescription(weather.weatherCode)}`,
     `기온: ${weather.temperatureC.toFixed(1)}°C`,
     `습도: ${weather.humidityPercent.toFixed(0)}%`,
-    `미세먼지 PM10: ${weather.pm10 !== undefined ? `${weather.pm10.toFixed(1)} μg/m³` : '정보 없음'}`,
-    `초미세먼지 PM2.5: ${weather.pm25 !== undefined ? `${weather.pm25.toFixed(1)} μg/m³` : '정보 없음'}`,
   ].join('\n');
 }
 function formatStock(q: StockQuote): string {

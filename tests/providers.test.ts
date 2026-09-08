@@ -448,9 +448,6 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
           }),
           { status: 200 },
         ),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ current: { pm2_5: 5, pm10: 10 } }), { status: 200 }),
       );
     await createNexonClient(undefined, fetcher).findWeather?.(
       '이바라키',
@@ -458,40 +455,16 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     );
     expect(String(fetcher.mock.calls[0]?.[0])).toContain('name=Mito');
   });
-  it('falls back to a Korean-aware geocoder for unknown Korean global locations', async () => {
+  it('returns not found when Open-Meteo cannot geocode a location', async () => {
     const fetcher = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }))
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify([
-            {
-              name: '뉴욕',
-              lat: '40.7128',
-              lon: '-74.0060',
-              address: { country: '미국' },
-            },
-          ]),
-          { status: 200 },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            current: { temperature_2m: 20, relative_humidity_2m: 60, weather_code: 1 },
-          }),
-          { status: 200 },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ current: { pm2_5: 4, pm10: 8 } }), { status: 200 }),
-      );
+      .mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }));
     const result = await createNexonClient(undefined, fetcher).findWeather?.(
       '뉴욕',
       new AbortController().signal,
     );
-    expect(result).toMatchObject({ location: '뉴욕', country: '미국' });
-    expect(String(fetcher.mock.calls[1]?.[0])).toContain('q=%EB%89%B4%EC%9A%95');
+    expect(result).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
   it('finds the newest weekly new product post from the Naver Blog RSS feed', async () => {
     const xml = `
@@ -985,7 +958,7 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
     });
     expect(fetcher.mock.calls[0]?.[0]).toContain('SpecialLunaCrystalDream');
   });
-  it('maps global weather, geocoding, and air quality fixtures', async () => {
+  it('maps global weather and geocoding fixtures', async () => {
     const fetcher = vi
       .fn()
       .mockResolvedValueOnce(
@@ -1003,9 +976,6 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
           }),
           { status: 200 },
         ),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ current: { pm2_5: 8.2, pm10: 14.6 } }), { status: 200 }),
       );
     const result = await createNexonClient(undefined, fetcher).findWeather?.(
       '도쿄',
@@ -1016,38 +986,8 @@ describe('provider contracts (FR-003, FR-009, T-006..008, T-014..015)', () => {
       country: '일본',
       temperatureC: 28.4,
       humidityPercent: 72,
-      pm25: 8.2,
-      pm10: 14.6,
     });
-    expect(fetcher).toHaveBeenCalledTimes(3);
-  });
-  it('returns weather when the optional air-quality provider is unavailable', async () => {
-    const fetcher = vi
-      .fn()
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ results: [{ name: '서울', latitude: 37.56, longitude: 126.98 }] }),
-          { status: 200 },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            current: { temperature_2m: 24, relative_humidity_2m: 55, weather_code: 1 },
-          }),
-          { status: 200 },
-        ),
-      )
-      .mockResolvedValueOnce(new Response('upstream unavailable', { status: 503 }));
-
-    const result = await createNexonClient(undefined, fetcher).findWeather?.(
-      '서울',
-      new AbortController().signal,
-    );
-
-    expect(result).toMatchObject({ location: '서울', temperatureC: 24, humidityPercent: 55 });
-    expect(result?.pm25).toBeUndefined();
-    expect(result?.pm10).toBeUndefined();
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
   it('maps eight official experience history snapshots', async () => {
     const fetcher = vi
