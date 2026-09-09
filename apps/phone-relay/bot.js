@@ -17,6 +17,26 @@ var runtimePolling = false;
 var lastRuntimeAlertAt = 0;
 var lastScheduledSlot = '';
 
+// MessengerBot R API2 room sender. Api.replyRoom is a legacy API and is not
+// available in every current MessengerBot R build. Bot.send supports both
+// immediate and timer-triggered messages; keep all proactive sends here.
+function sendRoom(roomName, text) {
+  if (typeof Bot === 'undefined' || !Bot || typeof Bot.send !== 'function')
+    return false;
+  try {
+    var sent = Bot.send(roomName, text, 'com.kakao.talk');
+    if (sent !== false) return true;
+    // Some API2 builds infer the package and reject the optional third arg.
+    return Bot.send(roomName, text) !== false;
+  } catch (error) {
+    try {
+      return Bot.send(roomName, text) !== false;
+    } catch (fallbackError) {
+      return false;
+    }
+  }
+}
+
 // Kakao chat has a per-message length limit. Preserve the complete backend
 // reply by sending newline-aligned chunks instead of truncating it.
 function replyInChunks(replier, text) {
@@ -56,11 +76,9 @@ function pollNoticeAlerts() {
     var notices = Array.isArray(body.notices) ? body.notices : [];
     notices.forEach(function (notice) {
       if (!notice || typeof notice.title !== 'string' || typeof notice.url !== 'string') return;
-      if (typeof Api !== 'undefined' && typeof Api.replyRoom === 'function') {
-        CONFIG.noticeRooms.forEach(function (roomName) {
-          Api.replyRoom(roomName, '[메이플 공지 알림]\n' + notice.title + '\n' + notice.url);
-        });
-      }
+      CONFIG.noticeRooms.forEach(function (roomName) {
+        sendRoom(roomName, '[메이플 공지 알림]\n' + notice.title + '\n' + notice.url);
+      });
       knownNoticeUrls.push(notice.url);
     });
     knownNoticeUrls = knownNoticeUrls.slice(-20);
@@ -96,19 +114,17 @@ function pollSundayAlerts() {
       return;
     }
     if (event.url === knownSundayUrl) return;
-    if (typeof Api !== 'undefined' && typeof Api.replyRoom === 'function') {
-      CONFIG.noticeRooms.forEach(function (roomName) {
-        Api.replyRoom(
-          roomName,
-          '[썬데이 메이플 새 게시글]\n' +
-            (typeof event.title === 'string' ? event.title + '\n' : '') +
-            event.url
-        );
-        if (typeof event.imageUrl === 'string' && event.imageUrl) {
-          Api.replyRoom(roomName, '[썬데이 이미지]\n' + event.imageUrl);
-        }
-      });
-    }
+    CONFIG.noticeRooms.forEach(function (roomName) {
+      sendRoom(
+        roomName,
+        '[썬데이 메이플 새 게시글]\n' +
+          (typeof event.title === 'string' ? event.title + '\n' : '') +
+          event.url
+      );
+      if (typeof event.imageUrl === 'string' && event.imageUrl) {
+        sendRoom(roomName, '[썬데이 이미지]\n' + event.imageUrl);
+      }
+    });
     knownSundayUrl = event.url;
   } catch (error) {
     return;
@@ -133,15 +149,13 @@ function checkBackendRuntime() {
     var result = connection.execute();
     if (result.statusCode() === 200) return;
     if (Date.now() - lastRuntimeAlertAt < 86400000) return;
-    if (typeof Api !== 'undefined' && typeof Api.replyRoom === 'function') {
-      CONFIG.noticeRooms.forEach(function (roomName) {
-        Api.replyRoom(
-          roomName,
-          '[봇 런타임 점검]\n백엔드 상태 확인에 실패했습니다. 공기계에서 MessengerBot R 실행 상태를 확인해 주세요.'
-        );
-      });
-      lastRuntimeAlertAt = Date.now();
-    }
+    CONFIG.noticeRooms.forEach(function (roomName) {
+      sendRoom(
+        roomName,
+        '[봇 런타임 점검]\n백엔드 상태 확인에 실패했습니다. 공기계에서 MessengerBot R 실행 상태를 확인해 주세요.'
+      );
+    });
+    lastRuntimeAlertAt = Date.now();
   } catch (error) {
     return;
   } finally {
@@ -166,7 +180,7 @@ function seoulDateParts(now) {
 }
 
 function sendWeeklyCourseReminder() {
-  if (!CONFIG.noticeRooms.length || typeof Api === 'undefined' || typeof Api.replyRoom !== 'function')
+  if (!CONFIG.noticeRooms.length || typeof Bot === 'undefined' || !Bot || typeof Bot.send !== 'function')
     return;
   var parts = seoulDateParts(new Date());
   if (parts.day !== 3) return;
@@ -191,7 +205,7 @@ function sendWeeklyCourseReminder() {
   var slot = parts.date + '-' + matchedSlot.hour + ':' + matchedSlot.minute;
   if (slot === lastScheduledSlot) return;
   CONFIG.noticeRooms.forEach(function (roomName) {
-    Api.replyRoom(roomName, '★보스☆수로☆ 플래그★');
+    sendRoom(roomName, '★보스☆수로☆ 플래그★');
   });
   lastScheduledSlot = slot;
 }

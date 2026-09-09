@@ -2,6 +2,13 @@
 
 이 문서는 Kakao Maple Bot 저장소에 반영한 주요 변경을 구현 문서와 별도로 추적합니다.
 
+## 2026-09-09 예약 발신 API2 전환
+
+- `Api.replyRoom` 미지원 MessengerBot R 환경에서 예약·공지 메시지가 발신되지 않던 문제를 수정했습니다.
+- 공기계 릴레이의 proactive 발신을 API2 `Bot.send(room, message, 'com.kakao.talk')`로 통합했습니다.
+- AWS Lambda/API Gateway는 변경하지 않으며, 공기계에서 수정된 `bot.js`를 다시 컴파일하고 실행해야 합니다.
+- 커밋 이유: `fix: use API2 room sender for reminders`
+
 ## 2026-09-04 관리자 통계 접근 제한 배포
 
 ### `!루나스윗` 설아 라벨 수정
