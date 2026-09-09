@@ -14,7 +14,7 @@
 
 ## 이유
 
-AWS Lambda/API Gateway는 카카오톡 방으로 먼저 메시지를 보낼 연결을 갖고 있지 않습니다. 따라서 명시적으로 동의된 방 이름을 알고 있는 공기계 릴레이에서 예약 여부를 판정합니다. 릴레이는 최신 MessengerBot R 호환성을 위해 API2 `Bot.send(roomName, message, 'com.kakao.talk')`를 사용하며, 백엔드는 계속 요청/응답 및 데이터 처리만 담당합니다.
+AWS Lambda/API Gateway는 카카오톡 방으로 먼저 메시지를 보낼 연결을 갖고 있지 않습니다. 따라서 명시적으로 동의된 방 이름을 알고 있는 공기계 릴레이에서 예약 여부를 판정합니다. 릴레이는 최신 MessengerBot R 호환성을 위해 API2 현재 봇 객체(`Bot` 또는 `BotManager.getCurrentBot()`)의 `send(roomName, message, 'com.kakao.talk')`를 사용하며, 백엔드는 계속 요청/응답 및 데이터 처리만 담당합니다.
 
 ## 제한과 잔여 위험
 

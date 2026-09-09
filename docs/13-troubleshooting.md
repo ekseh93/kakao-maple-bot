@@ -360,7 +360,7 @@ HTTP 200이지만 응답 내용이 없습니다.
 
 원인: MessengerBot R 레거시 콜백의 `room` 값과 카카오톡 오픈채팅 표시명이 환경별로 다를 수 있습니다. 또한 일부 최신 빌드에서는 레거시 `Api.replyRoom`을 지원하지 않습니다.
 
-해결: 예약·공지 발신은 API2 `Bot.send(roomName, message, 'com.kakao.talk')`를 사용합니다. 공기계에 API2가 없는 오래된 빌드라면 MessengerBot R을 업데이트한 뒤 컴파일합니다. 현재 레거시 요청 경로는 동의된 단일 방을 `fixedRoomName`으로 고정하는 제한적 호환 방식입니다. 여러 오픈채팅방을 안정적으로 운영하려면 실제 `channelId`를 제공하는 API2 호환 환경과 별도 어댑터가 필요합니다. 방 이름을 무작정 늘리거나 발신자 닉네임을 허용 목록에 넣는 방식은 사용하지 않습니다.
+해결: 예약·공지 발신은 API2의 현재 봇 객체(`Bot` 또는 `BotManager.getCurrentBot()`)에서 `send(roomName, message, 'com.kakao.talk')`를 사용합니다. 공기계에 API2가 없는 오래된 빌드라면 MessengerBot R을 업데이트한 뒤 컴파일합니다. 현재 레거시 요청 경로는 동의된 단일 방을 `fixedRoomName`으로 고정하는 제한적 호환 방식입니다. 여러 오픈채팅방을 안정적으로 운영하려면 실제 `channelId`를 제공하는 API2 호환 환경과 별도 어댑터가 필요합니다. 방 이름을 무작정 늘리거나 발신자 닉네임을 허용 목록에 넣는 방식은 사용하지 않습니다.
 
 ### 14. 공개 게시판 명령의 외부 응답 오류
 

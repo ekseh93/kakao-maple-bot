@@ -9,6 +9,11 @@
 - AWS Lambda/API Gateway는 변경하지 않으며, 공기계에서 수정된 `bot.js`를 다시 컴파일하고 실행해야 합니다.
 - 커밋 이유: `fix: use API2 room sender for reminders`
 
+### 자동 발신 봇 객체 조회 보강
+
+- API2 봇이 전역 `Bot`으로 노출되지 않는 MessengerBot R 환경을 위해 `BotManager.getCurrentBot()` 조회를 추가했습니다.
+- 커밋 이유: `fix: resolve current API2 bot for scheduled sends`
+
 ## 2026-09-04 관리자 통계 접근 제한 배포
 
 ### `!루나스윗` 설아 라벨 수정

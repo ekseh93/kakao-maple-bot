@@ -16,21 +16,43 @@ var knownSundayUrl = '';
 var runtimePolling = false;
 var lastRuntimeAlertAt = 0;
 var lastScheduledSlot = '';
+var cachedRoomBot = null;
+
+function getRoomBot() {
+  if (cachedRoomBot && typeof cachedRoomBot.send === 'function') return cachedRoomBot;
+  if (typeof Bot !== 'undefined' && Bot && typeof Bot.send === 'function') {
+    cachedRoomBot = Bot;
+    return cachedRoomBot;
+  }
+  if (typeof BotManager !== 'undefined' && BotManager &&
+      typeof BotManager.getCurrentBot === 'function') {
+    try {
+      var currentBot = BotManager.getCurrentBot();
+      if (currentBot && typeof currentBot.send === 'function') {
+        cachedRoomBot = currentBot;
+        return cachedRoomBot;
+      }
+    } catch (error) {
+      return null;
+    }
+  }
+  return null;
+}
 
 // MessengerBot R API2 room sender. Api.replyRoom is a legacy API and is not
 // available in every current MessengerBot R build. Bot.send supports both
 // immediate and timer-triggered messages; keep all proactive sends here.
 function sendRoom(roomName, text) {
-  if (typeof Bot === 'undefined' || !Bot || typeof Bot.send !== 'function')
-    return false;
+  var roomBot = getRoomBot();
+  if (!roomBot) return false;
   try {
-    var sent = Bot.send(roomName, text, 'com.kakao.talk');
+    var sent = roomBot.send(roomName, text, 'com.kakao.talk');
     if (sent !== false) return true;
     // Some API2 builds infer the package and reject the optional third arg.
-    return Bot.send(roomName, text) !== false;
+    return roomBot.send(roomName, text) !== false;
   } catch (error) {
     try {
-      return Bot.send(roomName, text) !== false;
+      return roomBot.send(roomName, text) !== false;
     } catch (fallbackError) {
       return false;
     }
@@ -180,8 +202,7 @@ function seoulDateParts(now) {
 }
 
 function sendWeeklyCourseReminder() {
-  if (!CONFIG.noticeRooms.length || typeof Bot === 'undefined' || !Bot || typeof Bot.send !== 'function')
-    return;
+  if (!CONFIG.noticeRooms.length || !getRoomBot()) return;
   var parts = seoulDateParts(new Date());
   if (parts.day !== 3) return;
   var scheduledSlots = [
