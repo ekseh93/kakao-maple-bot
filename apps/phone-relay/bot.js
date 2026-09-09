@@ -170,8 +170,9 @@ function sendWeeklyCourseReminder() {
     return;
   var parts = seoulDateParts(new Date());
   var isTestSlot = parts.hour === 22 && parts.minute === 15;
+  var isSecondTestSlot = parts.hour === 22 && parts.minute === 20;
   var isWeeklySlot = parts.minute === 30 && (parts.hour === 22 || parts.hour === 23);
-  if (parts.day !== 3 || (!isTestSlot && !isWeeklySlot)) return;
+  if (parts.day !== 3 || (!isTestSlot && !isSecondTestSlot && !isWeeklySlot)) return;
   var slot = parts.date + '-' + parts.hour + ':' + parts.minute;
   if (slot === lastScheduledSlot) return;
   CONFIG.noticeRooms.forEach(function (roomName) {
