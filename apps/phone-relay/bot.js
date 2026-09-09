@@ -17,6 +17,8 @@ var runtimePolling = false;
 var lastRuntimeAlertAt = 0;
 var lastScheduledSlot = '';
 var cachedRoomBot = null;
+var testReminderDate = null;
+var lastTestReminderSlot = '';
 
 function getRoomBot() {
   if (cachedRoomBot && typeof cachedRoomBot.send === 'function') return cachedRoomBot;
@@ -200,6 +202,26 @@ function seoulDateParts(now) {
     date: seoul.getUTCFullYear() + '-' + (seoul.getUTCMonth() + 1) + '-' + seoul.getUTCDate()
   };
 }
+
+// One-day test schedule: every three minutes from 11:00 through 11:20 Seoul
+// time. The date is captured when the script starts, so this never becomes a
+// permanent daily broadcast.
+function sendTestReminder() {
+  if (!CONFIG.noticeRooms.length || !getRoomBot()) return;
+  var parts = seoulDateParts(new Date());
+  if (!testReminderDate) testReminderDate = parts.date;
+  if (parts.date !== testReminderDate || parts.hour !== 11 || parts.minute > 20)
+    return;
+  if (parts.minute % 3 !== 0 && parts.minute !== 20) return;
+  var slot = parts.date + '-' + parts.hour + ':' + parts.minute;
+  if (slot === lastTestReminderSlot) return;
+  CONFIG.noticeRooms.forEach(function (roomName) {
+    sendRoom(roomName, '★보스☆수로☆ 플래그★');
+  });
+  lastTestReminderSlot = slot;
+}
+
+if (typeof setInterval === 'function') setInterval(sendTestReminder, 30000);
 
 function sendWeeklyCourseReminder() {
   if (!CONFIG.noticeRooms.length || !getRoomBot()) return;
