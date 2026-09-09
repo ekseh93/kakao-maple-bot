@@ -176,7 +176,7 @@ function sendWeeklyCourseReminder() {
   var slot = parts.date + '-' + parts.hour + ':' + parts.minute;
   if (slot === lastScheduledSlot) return;
   CONFIG.noticeRooms.forEach(function (roomName) {
-    Api.replyRoom(roomName, '★☆☆☆☆수로플래그☆☆☆☆★');
+    Api.replyRoom(roomName, '★보스☆수로☆ 플래그★');
   });
   lastScheduledSlot = slot;
 }
