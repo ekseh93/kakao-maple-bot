@@ -211,7 +211,7 @@ function sendTestReminder() {
   var parts = seoulDateParts(new Date());
   if (!testReminderDate) testReminderDate = parts.date;
   if (parts.date !== testReminderDate) return;
-  if (parts.hour === 22 && parts.minute === 6) {
+  if (parts.hour === 22 && (parts.minute === 6 || parts.minute === 7)) {
     var singleTestSlot = parts.date + '-22:6';
     if (singleTestSlot === lastTestReminderSlot) return;
     CONFIG.noticeRooms.forEach(function (roomName) {
@@ -220,10 +220,15 @@ function sendTestReminder() {
     lastTestReminderSlot = singleTestSlot;
     return;
   }
-  if (parts.hour !== 23 || parts.minute > 20)
-    return;
-  if (parts.minute % 3 !== 0 && parts.minute !== 20) return;
-  var slot = parts.date + '-' + parts.hour + ':' + parts.minute;
+  if (parts.hour !== 23 || parts.minute > 21) return;
+  var testTargets = [0, 3, 6, 9, 12, 15, 18, 20];
+  var matchedTestMinute = null;
+  testTargets.forEach(function (targetMinute) {
+    if (parts.minute >= targetMinute && parts.minute <= targetMinute + 1)
+      matchedTestMinute = targetMinute;
+  });
+  if (matchedTestMinute === null) return;
+  var slot = parts.date + '-23:' + matchedTestMinute;
   if (slot === lastTestReminderSlot) return;
   CONFIG.noticeRooms.forEach(function (roomName) {
     sendRoom(roomName, '★보스☆수로☆ 플래그★');
