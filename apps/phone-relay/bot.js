@@ -169,7 +169,9 @@ function sendWeeklyCourseReminder() {
   if (!CONFIG.noticeRooms.length || typeof Api === 'undefined' || typeof Api.replyRoom !== 'function')
     return;
   var parts = seoulDateParts(new Date());
-  var isWeeklySlot = parts.minute === 30 && (parts.hour === 22 || parts.hour === 23);
+  var isWeeklySlot =
+    (parts.hour === 22 && (parts.minute === 0 || parts.minute === 30)) ||
+    (parts.hour === 23 && parts.minute === 0);
   if (parts.day !== 3 || !isWeeklySlot) return;
   var slot = parts.date + '-' + parts.hour + ':' + parts.minute;
   if (slot === lastScheduledSlot) return;

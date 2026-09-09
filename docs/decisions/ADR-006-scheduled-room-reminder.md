@@ -6,7 +6,7 @@
 
 ## 결정
 
-매주 수요일 `Asia/Seoul` 기준 22:30과 23:00에 공기계 MessengerBot R 릴레이가 `noticeRooms`에 설정된 방으로 다음 문구를 한 번씩 발신합니다.
+매주 수요일 `Asia/Seoul` 기준 22:00, 22:30과 23:00에 공기계 MessengerBot R 릴레이가 `noticeRooms`에 설정된 방으로 다음 문구를 한 번씩 발신합니다.
 
 ```text
 ★☆☆☆☆수로플래그☆☆☆☆★
