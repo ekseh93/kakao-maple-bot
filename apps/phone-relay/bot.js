@@ -159,12 +159,12 @@ if (typeof setInterval === 'function') setInterval(checkBackendRuntime, 86400000
 // message; the backend remains request/response based.
 function seoulDateParts(now) {
   var utcMillis = now.getTime() + now.getTimezoneOffset() * 60000;
-  var tokyo = new Date(utcMillis + 9 * 60 * 60000);
+  var seoul = new Date(utcMillis + 9 * 60 * 60000);
   return {
-    day: tokyo.getUTCDay(),
-    hour: tokyo.getUTCHours(),
-    minute: tokyo.getUTCMinutes(),
-    date: tokyo.getUTCFullYear() + '-' + (tokyo.getUTCMonth() + 1) + '-' + tokyo.getUTCDate()
+    day: seoul.getUTCDay(),
+    hour: seoul.getUTCHours(),
+    minute: seoul.getUTCMinutes(),
+    date: seoul.getUTCFullYear() + '-' + (seoul.getUTCMonth() + 1) + '-' + seoul.getUTCDate()
   };
 }
 
