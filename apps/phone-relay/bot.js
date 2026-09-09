@@ -171,7 +171,12 @@ function sendWeeklyCourseReminder() {
   var parts = seoulDateParts(new Date());
   var isWeeklySlot =
     (parts.hour === 18 && parts.minute === 0) ||
-    (parts.hour === 22 && (parts.minute === 0 || parts.minute === 30)) ||
+    (parts.hour === 22 &&
+      (parts.minute === 0 ||
+        parts.minute === 30 ||
+        parts.minute === 38 ||
+        parts.minute === 42 ||
+        parts.minute === 48)) ||
     (parts.hour === 23 && parts.minute === 0);
   if (parts.day !== 3 || !isWeeklySlot) return;
   var slot = parts.date + '-' + parts.hour + ':' + parts.minute;
