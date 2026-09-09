@@ -170,6 +170,7 @@ function sendWeeklyCourseReminder() {
     return;
   var parts = seoulDateParts(new Date());
   var isWeeklySlot =
+    (parts.hour === 18 && parts.minute === 0) ||
     (parts.hour === 22 && (parts.minute === 0 || parts.minute === 30)) ||
     (parts.hour === 23 && parts.minute === 0);
   if (parts.day !== 3 || !isWeeklySlot) return;
