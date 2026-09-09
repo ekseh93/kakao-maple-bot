@@ -169,17 +169,26 @@ function sendWeeklyCourseReminder() {
   if (!CONFIG.noticeRooms.length || typeof Api === 'undefined' || typeof Api.replyRoom !== 'function')
     return;
   var parts = seoulDateParts(new Date());
-  var isWeeklySlot =
-    (parts.hour === 18 && parts.minute === 0) ||
-    (parts.hour === 22 &&
-      (parts.minute === 0 ||
-        parts.minute === 30 ||
-        parts.minute === 38 ||
-        parts.minute === 42 ||
-        parts.minute === 48)) ||
-    (parts.hour === 23 && parts.minute === 0);
-  if (parts.day !== 3 || !isWeeklySlot) return;
-  var slot = parts.date + '-' + parts.hour + ':' + parts.minute;
+  if (parts.day !== 3) return;
+  var scheduledSlots = [
+    { hour: 18, minute: 0 },
+    { hour: 22, minute: 0 },
+    { hour: 22, minute: 30 },
+    { hour: 22, minute: 38 },
+    { hour: 22, minute: 42 },
+    { hour: 22, minute: 48 },
+    { hour: 23, minute: 0 }
+  ];
+  var currentMinutes = parts.hour * 60 + parts.minute;
+  var matchedSlot = null;
+  scheduledSlots.forEach(function (scheduled) {
+    var targetMinutes = scheduled.hour * 60 + scheduled.minute;
+    // Allow one minute of timer/Android scheduling jitter.
+    if (currentMinutes >= targetMinutes && currentMinutes <= targetMinutes + 1)
+      matchedSlot = scheduled;
+  });
+  if (!matchedSlot) return;
+  var slot = parts.date + '-' + matchedSlot.hour + ':' + matchedSlot.minute;
   if (slot === lastScheduledSlot) return;
   CONFIG.noticeRooms.forEach(function (roomName) {
     Api.replyRoom(roomName, '★보스☆수로☆ 플래그★');
