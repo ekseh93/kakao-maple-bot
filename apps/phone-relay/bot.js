@@ -65,7 +65,6 @@ function pollNoticeAlerts() {
     });
     knownNoticeUrls = knownNoticeUrls.slice(-20);
   } catch (error) {
-    void error;
     return;
   } finally {
     noticePolling = false;
@@ -112,7 +111,6 @@ function pollSundayAlerts() {
     }
     knownSundayUrl = event.url;
   } catch (error) {
-    void error;
     return;
   } finally {
     sundayPolling = false;
@@ -145,7 +143,6 @@ function checkBackendRuntime() {
       lastRuntimeAlertAt = Date.now();
     }
   } catch (error) {
-    void error;
     return;
   } finally {
     runtimePolling = false;
@@ -221,7 +218,6 @@ function response(room, message, sender, isGroupChat, replier, imageDB, packageN
       replyInChunks(replier, body.reply);
     }
   } catch (error) {
-    void error;
     return;
   }
 }
