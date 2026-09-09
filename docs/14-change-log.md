@@ -2,6 +2,13 @@
 
 이 문서는 Kakao Maple Bot 저장소에 반영한 주요 변경을 구현 문서와 별도로 추적합니다.
 
+## 2026-09-09 Android 전용 봇 앱 골격 추가
+
+- MessengerBot R 스크립트 대신 사용할 수 있는 `apps/android-bot` 고정형 Android 릴레이 앱 골격을 추가했습니다.
+- Notification Listener로 카카오톡 `!` 명령을 감지하고 AWS `/v1/messages`의 응답을 알림 답장 액션으로 전달합니다.
+- endpoint·secret·허용 방은 앱 내부 설정에만 저장하며, 이 환경에서는 Android SDK가 없어 APK 빌드는 아직 검증하지 않았습니다.
+- 커밋 이유: `feat: scaffold standalone Android Kakao bot`
+
 ## 2026-09-09 일회성 자동 발신 테스트 슬롯
 
 - 스크립트 시작일의 서울 시간 기준 22:06 단일 테스트와 23:00부터 23:20까지 3분 간격으로 테스트 문구를 발신하도록 추가했습니다.
