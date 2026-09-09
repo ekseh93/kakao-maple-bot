@@ -15,6 +15,7 @@ var sundayInitialized = false;
 var knownSundayUrl = '';
 var runtimePolling = false;
 var lastRuntimeAlertAt = 0;
+var lastScheduledSlot = '';
 
 // Kakao chat has a per-message length limit. Preserve the complete backend
 // reply by sending newline-aligned chunks instead of truncating it.
@@ -152,6 +153,35 @@ function checkBackendRuntime() {
 }
 
 if (typeof setInterval === 'function') setInterval(checkBackendRuntime, 86400000);
+
+// Sends the weekly 수로/플래그 reminder only to the explicitly configured
+// notice rooms. The relay is the only component that can initiate a Kakao
+// message; the backend remains request/response based.
+function tokyoDateParts(now) {
+  var utcMillis = now.getTime() + now.getTimezoneOffset() * 60000;
+  var tokyo = new Date(utcMillis + 9 * 60 * 60000);
+  return {
+    day: tokyo.getUTCDay(),
+    hour: tokyo.getUTCHours(),
+    minute: tokyo.getUTCMinutes(),
+    date: tokyo.getUTCFullYear() + '-' + (tokyo.getUTCMonth() + 1) + '-' + tokyo.getUTCDate()
+  };
+}
+
+function sendWeeklyCourseReminder() {
+  if (!CONFIG.noticeRooms.length || typeof Api === 'undefined' || typeof Api.replyRoom !== 'function')
+    return;
+  var parts = tokyoDateParts(new Date());
+  if (parts.day !== 3 || parts.minute !== 30 || (parts.hour !== 22 && parts.hour !== 23)) return;
+  var slot = parts.date + '-' + parts.hour + ':' + parts.minute;
+  if (slot === lastScheduledSlot) return;
+  CONFIG.noticeRooms.forEach(function (roomName) {
+    Api.replyRoom(roomName, '★☆☆☆☆수로플래그☆☆☆☆★');
+  });
+  lastScheduledSlot = slot;
+}
+
+if (typeof setInterval === 'function') setInterval(sendWeeklyCourseReminder, 30000);
 
 // MessengerBot R passes: room, message, sender, isGroupChat, replier, imageDB, packageName.
 // eslint-disable-next-line no-unused-vars

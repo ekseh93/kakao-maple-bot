@@ -1030,3 +1030,10 @@
 - 김해 기준 단일 예보 요청 실측 속도는 MET Norway가 약 1.32초로 가장 빨랐습니다.
 - 테스트 195개·타입 검사·ESLint 통과 후 Lambda Version 22를 배포하고 `/health` 200 응답을 확인했습니다.
 - 커밋 이유: `perf: switch weather forecast provider` (`58d7798`)
+
+### 수로·플래그 주간 예약 리마인더
+
+- `apps/phone-relay/bot.js`에 매주 수요일 `Asia/Tokyo` 22:30·23:00 예약 발신을 추가했습니다.
+- 발신 대상은 공기계의 `noticeRooms`에 설정한 명시적 동의 방이며, 문구는 `★☆☆☆☆수로플래그☆☆☆☆★`입니다.
+- 불특정 다수 선제 알림이 아닌 단일 동의 방 기능으로 ADR-006에 정책·잔여 위험을 기록했습니다.
+- `node --check apps/phone-relay/bot.js` 통과. AWS Lambda 배포가 아닌 공기계 스크립트 교체가 필요한 변경입니다.
