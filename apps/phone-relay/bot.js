@@ -157,7 +157,7 @@ if (typeof setInterval === 'function') setInterval(checkBackendRuntime, 86400000
 // Sends the weekly 수로/플래그 reminder only to the explicitly configured
 // notice rooms. The relay is the only component that can initiate a Kakao
 // message; the backend remains request/response based.
-function tokyoDateParts(now) {
+function seoulDateParts(now) {
   var utcMillis = now.getTime() + now.getTimezoneOffset() * 60000;
   var tokyo = new Date(utcMillis + 9 * 60 * 60000);
   return {
@@ -171,7 +171,7 @@ function tokyoDateParts(now) {
 function sendWeeklyCourseReminder() {
   if (!CONFIG.noticeRooms.length || typeof Api === 'undefined' || typeof Api.replyRoom !== 'function')
     return;
-  var parts = tokyoDateParts(new Date());
+  var parts = seoulDateParts(new Date());
   if (parts.day !== 3 || parts.minute !== 30 || (parts.hour !== 22 && parts.hour !== 23)) return;
   var slot = parts.date + '-' + parts.hour + ':' + parts.minute;
   if (slot === lastScheduledSlot) return;
