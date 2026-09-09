@@ -203,14 +203,24 @@ function seoulDateParts(now) {
   };
 }
 
-// One-day test schedule: every three minutes from 23:00 through 23:20 Seoul
-// time. The date is captured when the script starts, so this never becomes a
-// permanent daily broadcast.
+// One-day test schedule: 22:06 plus every three minutes from 23:00 through
+// 23:20 Seoul time. The date is captured when the script starts, so this never
+// becomes a permanent daily broadcast.
 function sendTestReminder() {
   if (!CONFIG.noticeRooms.length || !getRoomBot()) return;
   var parts = seoulDateParts(new Date());
   if (!testReminderDate) testReminderDate = parts.date;
-  if (parts.date !== testReminderDate || parts.hour !== 23 || parts.minute > 20)
+  if (parts.date !== testReminderDate) return;
+  if (parts.hour === 22 && parts.minute === 6) {
+    var singleTestSlot = parts.date + '-22:6';
+    if (singleTestSlot === lastTestReminderSlot) return;
+    CONFIG.noticeRooms.forEach(function (roomName) {
+      sendRoom(roomName, '★보스☆수로☆ 플래그★');
+    });
+    lastTestReminderSlot = singleTestSlot;
+    return;
+  }
+  if (parts.hour !== 23 || parts.minute > 20)
     return;
   if (parts.minute % 3 !== 0 && parts.minute !== 20) return;
   var slot = parts.date + '-' + parts.hour + ':' + parts.minute;
